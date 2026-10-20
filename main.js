@@ -660,24 +660,9 @@
         return [lng + dLng, lat + dLat];
     }
 
-    // ---------- 我的位置：原生GPS优先 + 网络定位兜底 + 记忆校正 + 可拖动/多点校正 ----------
-    var geoMarker = null, geoCircle = null, calibrateHandler = null;
-    var GEO_MEM_KEY = 'webgis_mypos_v1';
-    var geoLastClick = 0;
+    // ---------- 我的位置：高德定位组件优先 + 持续收敛（纯定位追踪，无手动移动/校正） ----------
+    var geoMarker = null, geoCircle = null;
 
-    // 记忆用户手动校正过的真实位置（localStorage 持久化）
-    function saveGeoMem(lnglat) {
-        try { localStorage.setItem(GEO_MEM_KEY, lnglat.lng + ',' + lnglat.lat); } catch (e) { /* 忽略 */ }
-    }
-    function loadGeoMem() {
-        try {
-            var s = localStorage.getItem(GEO_MEM_KEY);
-            if (!s) return null;
-            var p = s.split(',').map(Number);
-            if (!isFinite(p[0]) || !isFinite(p[1])) return null;
-            return new AMap.LngLat(p[0], p[1]);
-        } catch (e) { return null; }
-    }
     function makeGeoCircle(center, radius) {
         return new AMap.Circle({
             center: center,
@@ -702,57 +687,19 @@
         return best ? { name: best, dist: Math.round(bestD) } : null;
     }
 
-    // 创建可拖动的蓝色定位点
+    // 蓝色定位点：纯定位追踪标记（不可拖动，也不支持点击地图手动移动）
     function makeGeoMarker(lnglat, title) {
-        var m = new AMap.Marker({
+        return new AMap.Marker({
             position: lnglat,
             content: '<div class="geo-marker"></div>',
             offset: new AMap.Pixel(-8, -8),
             zIndex: 80,
-            title: title,
-            draggable: true
+            title: title
         });
-        // 记录最近一次程序性设定的位置：位置未变时触发的 dragend 视为假事件，忽略
-        m._lastPos = lnglat;
-        m.on('dragend', function () {
-            var p = m.getPosition();
-            if (m._lastPos && p.lng === m._lastPos.lng && p.lat === m._lastPos.lat) return;
-            m._lastPos = p;
-            if (geoCircle) geoCircle.setCenter(p);
-            saveGeoMem(p);
-            showToast('已拖动校正到新位置并记住（下次点"我的位置"直接回到这里）');
-        });
-        return m;
-    }
-
-    // 手动校正：点击地图任意位置作为真实位置（持续有效），并记住该位置
-    function enableCalibrate() {
-        if (calibrateHandler) return;
-        calibrateHandler = function (e) {
-            var p = e.lnglat;
-            if (!geoMarker) {
-                geoMarker = makeGeoMarker(p, '我的位置（手动校正）');
-                geoMarker.setMap(map);
-            } else {
-                geoMarker.setPosition(p);
-                geoMarker._lastPos = p;
-            }
-            if (!geoCircle) {
-                geoCircle = makeGeoCircle(p, 15);
-                geoCircle.setMap(map);
-            } else {
-                geoCircle.setCenter(p);
-            }
-            saveGeoMem(p);
-            showToast('已校正到点击位置并记住（可继续点击/拖动调整；连点两次"我的位置"重新自动定位）');
-        };
-        map.on('click', calibrateHandler);
     }
 
     // 强制重新自动定位：高德定位组件优先（自动处理坐标系与国产手机纠偏，内部含IP兜底），多次采样取精度最优
-    // fallbackMem=true 时：定位失败或精度过粗（>300m）时，自动回退显示上次校正/记忆的位置，避免显示错误位置
-    function doAutoLocate(btn, fallbackMem) {
-        if (calibrateHandler) { map.off('click', calibrateHandler); calibrateHandler = null; }
+    function doAutoLocate(btn) {
         btn.disabled = true;
         showToast('正在定位当前位置…');
         var MAX_TRIES = 3, tries = 0, best = null, settled = false;
@@ -829,39 +776,14 @@
 
         function failOut() {
             btn.disabled = false;
-            showToast('定位失败：请允许浏览器"精确位置"权限（Android 设置→应用→浏览器→权限→位置→选"精确"），并开启 WiFi/蓝牙增强定位；也可以直接点击地图校正位置', true);
-            enableCalibrate();
-        }
-
-        // 回退显示记忆位置（上次手动校正/拖动），并保留校正入口
-        function renderMem(mem, msg) {
-            if (geoMarker) geoMarker.setMap(null);
-            if (geoCircle) geoCircle.setMap(null);
-            geoMarker = makeGeoMarker(mem, '我的位置（上次校正位置）');
-            geoMarker.setMap(map);
-            geoCircle = makeGeoCircle(mem, 15);
-            geoCircle.setMap(map);
-            map.setZoomAndCenter(16, mem);
-            enableCalibrate();
-            showToast(msg);
+            showToast('定位失败：请允许浏览器"精确位置"权限（Android 设置→应用→浏览器→权限→位置→选"精确"），并开启 WiFi/蓝牙增强定位后重试', true);
         }
 
         function finish() {
             if (settled) return;
             settled = true;
             btn.disabled = false;
-            if (!best) {
-                // 彻底失败：有记忆则回退显示，否则失败提示
-                var mem0 = loadGeoMem();
-                if (fallbackMem && mem0) { renderMem(mem0, '自动定位不可用，已回到上次校正的位置；可连点两次"我的位置"强制重新定位'); return; }
-                failOut();
-                return;
-            }
-            // 精度过粗（IP 级/粗定位）且有记忆：显示记忆位置，不拿错误坐标误导
-            if (fallbackMem && best.accuracy > 300) {
-                var mem1 = loadGeoMem();
-                if (mem1) { renderMem(mem1, '自动定位精度不足（±' + Math.round(best.accuracy) + '米），已显示上次校正的位置；可点击地图手动校正'); return; }
-            }
+            if (!best) { failOut(); return; }
             var lnglat = best.position;
             var src = best.source === 'gps' ? '卫星/GPS' : (best.source === 'network' ? '网络(WiFi/基站)' : 'IP 网络');
             var isIp = (best.source === 'ip') || best.accuracy >= 9999;
@@ -878,30 +800,18 @@
             var lm = nearestLandmark(lnglat);
             var lmText = lm ? '；附近地标：' + lm.name + '（约' + lm.dist + ' 米）' : '';
             if (isIp) {
-                showToast('已定位到当前位置（IP 网络定位，仅供参考' + accText + '）' + lmText + '；如不准，点击地图或拖动蓝点校正');
+                showToast('已定位到当前位置（IP 网络定位，仅供参考' + accText + '）' + lmText + '；如不准可再次点击重新定位');
             } else {
-                showToast('已定位到当前位置（' + src + '定位' + accText + '）' + lmText + '；如不准，点击地图或拖动蓝点校正');
+                showToast('已定位到当前位置（' + src + '定位' + accText + '）' + lmText + '；如不准可再次点击重新定位');
             }
-            enableCalibrate();
         }
 
         viaAmap();
     }
 
     document.getElementById('btn-geoloc').addEventListener('click', function () {
-        var btn = this;
-        var now = Date.now();
-        var dbl = (now - geoLastClick) < 800;
-        geoLastClick = now;
-        if (dbl) {
-            // 连点两次 = 清除记忆，强制全新定位（换地方 / 想彻底重新测时使用）
-            try { localStorage.removeItem(GEO_MEM_KEY); } catch (e) { /* 忽略 */ }
-            showToast('已清除上次记忆，开始全新定位…');
-            doAutoLocate(btn, false);
-            return;
-        }
-        // 单击 = 立即重新定位（符合直觉）；定位太差/失败时自动回退到记忆位置
-        doAutoLocate(btn, true);
+        // 单击 = 立即重新定位（纯定位追踪：每次点击都重新定位并显示最新结果，无手动移动干扰）
+        doAutoLocate(this);
     });
     document.getElementById('btn-distance').addEventListener('click', function () {
         // 再次点击：取消测量
