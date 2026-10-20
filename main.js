@@ -701,6 +701,13 @@
     // 强制重新自动定位：高德定位组件优先（自动处理坐标系与国产手机纠偏，内部含IP兜底），多次采样取精度最优
     function doAutoLocate(btn) {
         btn.disabled = true;
+        // 国产/系统浏览器定位能力受限检测（小米浏览器/UC/夸克等）：提前提醒换 Chrome
+        try {
+            var ua = navigator.userAgent || '';
+            if (/MiuiBrowser|UCBrowser|Quark|baiduboxapp|Coolpad|DingTalk|MicroMessenger/i.test(ua)) {
+                showToast('检测到系统/国产浏览器，定位能力受限。建议用手机 Chrome 打开本页后重试（当前仍继续定位，但精度可能不理想）', true);
+            }
+        } catch (e) { /* 忽略 */ }
         showToast('正在定位当前位置…');
         var MAX_TRIES = 3, tries = 0, best = null, settled = false;
 
