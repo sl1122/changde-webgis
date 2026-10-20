@@ -754,7 +754,7 @@
         if (calibrateHandler) { map.off('click', calibrateHandler); calibrateHandler = null; }
         btn.disabled = true;
         showToast('正在定位当前位置…');
-        var MAX_TRIES = 3, tries = 0, best = null;
+        var MAX_TRIES = 3, tries = 0, best = null, settled = false;
 
         // ① 高德定位组件（推荐）：返回已是 GCJ-02 高德坐标，无需手动转换，
         //    且能识别国产手机浏览器返回的错误坐标系并自动纠偏，避免二次偏移
@@ -773,7 +773,7 @@
                 if (tries < MAX_TRIES && (!best || best.accuracy > 150)) {
                     setTimeout(function () { geo.getCurrentPosition(onResult); }, 800);
                 } else {
-                    finish();
+                    tryConverge();
                 }
             }
             geo.getCurrentPosition(onResult);
@@ -789,20 +789,52 @@
                         var g = wgs84togcj02(pos.coords.longitude, pos.coords.latitude);
                         best = { position: new AMap.LngLat(g[0], g[1]), accuracy: acc, source: 'gps' };
                     }
-                    finish();
+                    tryConverge();
                 },
                 failOut,
                 { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
             );
         }
 
+        // ③ 精度收敛：GPS 冷启动时 getCurrentPosition 只拿到"第一秒的粗定位"（几百米），
+        //    用 watchPosition 持续监听几秒，等设备收敛到更小精度圆（类似苹果的持续定位）。
+        //    仅在当前精度仍较粗（>80m）时启用；精确到 40m 内或超时即收工。
+        function tryConverge() {
+            if (best && best.accuracy <= 80) { finish(); return; }       // 已经很准，不再校准
+            if (!navigator.geolocation) { finish(); return; }
+            showToast('精度不足，持续校准中…（约几秒）');
+            var t0 = Date.now();
+            var wid = navigator.geolocation.watchPosition(
+                function (pos) {
+                    var acc = pos.coords.accuracy || 9999;
+                    if (acc > 0 && acc < 8000 && acc < (best ? best.accuracy : 9999)) {
+                        var g = wgs84togcj02(pos.coords.longitude, pos.coords.latitude);
+                        best = { position: new AMap.LngLat(g[0], g[1]), accuracy: acc, source: 'gps' };
+                    }
+                    if ((best && best.accuracy <= 40) || (Date.now() - t0 > 12000)) {
+                        navigator.geolocation.clearWatch(wid);
+                        finish();
+                    }
+                },
+                function () { finish(); },
+                { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            );
+            // 兜底：watch 无回调也无报错时，14 秒后强制收工（settled 守卫避免重复渲染）
+            setTimeout(function () {
+                navigator.geolocation.clearWatch(wid);
+                finish();
+            }, 14000);
+        }
+
         function failOut() {
             btn.disabled = false;
-            showToast('定位失败：请在浏览器中允许"精确位置"权限，并确认系统定位服务已开启；也可以直接点击地图校正位置', true);
+            showToast('定位失败：请允许浏览器"精确位置"权限（Android 设置→应用→浏览器→权限→位置→选"精确"），并开启 WiFi/蓝牙增强定位；也可以直接点击地图校正位置', true);
             enableCalibrate();
         }
 
         function finish() {
+            if (settled) return;
+            settled = true;
             btn.disabled = false;
             if (!best) { failOut(); return; }
             var lnglat = best.position;
