@@ -750,7 +750,8 @@
     }
 
     // 强制重新自动定位：高德定位组件优先（自动处理坐标系与国产手机纠偏，内部含IP兜底），多次采样取精度最优
-    function doAutoLocate(btn) {
+    // fallbackMem=true 时：定位失败或精度过粗（>300m）时，自动回退显示上次校正/记忆的位置，避免显示错误位置
+    function doAutoLocate(btn, fallbackMem) {
         if (calibrateHandler) { map.off('click', calibrateHandler); calibrateHandler = null; }
         btn.disabled = true;
         showToast('正在定位当前位置…');
@@ -832,11 +833,35 @@
             enableCalibrate();
         }
 
+        // 回退显示记忆位置（上次手动校正/拖动），并保留校正入口
+        function renderMem(mem, msg) {
+            if (geoMarker) geoMarker.setMap(null);
+            if (geoCircle) geoCircle.setMap(null);
+            geoMarker = makeGeoMarker(mem, '我的位置（上次校正位置）');
+            geoMarker.setMap(map);
+            geoCircle = makeGeoCircle(mem, 15);
+            geoCircle.setMap(map);
+            map.setZoomAndCenter(16, mem);
+            enableCalibrate();
+            showToast(msg);
+        }
+
         function finish() {
             if (settled) return;
             settled = true;
             btn.disabled = false;
-            if (!best) { failOut(); return; }
+            if (!best) {
+                // 彻底失败：有记忆则回退显示，否则失败提示
+                var mem0 = loadGeoMem();
+                if (fallbackMem && mem0) { renderMem(mem0, '自动定位不可用，已回到上次校正的位置；可连点两次"我的位置"强制重新定位'); return; }
+                failOut();
+                return;
+            }
+            // 精度过粗（IP 级/粗定位）且有记忆：显示记忆位置，不拿错误坐标误导
+            if (fallbackMem && best.accuracy > 300) {
+                var mem1 = loadGeoMem();
+                if (mem1) { renderMem(mem1, '自动定位精度不足（±' + Math.round(best.accuracy) + '米），已显示上次校正的位置；可点击地图手动校正'); return; }
+            }
             var lnglat = best.position;
             var src = best.source === 'gps' ? '卫星/GPS' : (best.source === 'network' ? '网络(WiFi/基站)' : 'IP 网络');
             var isIp = (best.source === 'ip') || best.accuracy >= 9999;
@@ -866,23 +891,17 @@
     document.getElementById('btn-geoloc').addEventListener('click', function () {
         var btn = this;
         var now = Date.now();
-        var dbl = (now - geoLastClick) < 800;   // 连点两次 = 强制重新自动定位
+        var dbl = (now - geoLastClick) < 800;
         geoLastClick = now;
-        if (dbl) { doAutoLocate(btn); return; }
-        // 单击：优先回到上次校正/拖动的真实位置（不再跳回错误的自动定位）
-        var mem = loadGeoMem();
-        if (mem) {
-            if (calibrateHandler) { map.off('click', calibrateHandler); calibrateHandler = null; }
-            if (geoMarker) { geoMarker.setPosition(mem); geoMarker._lastPos = mem; }
-            else { geoMarker = makeGeoMarker(mem, '我的位置（上次校正位置）'); geoMarker.setMap(map); }
-            if (geoCircle) geoCircle.setCenter(mem);
-            else { geoCircle = makeGeoCircle(mem, 15); geoCircle.setMap(map); }
-            map.setZoomAndCenter(16, mem);
-            enableCalibrate();
-            showToast('已回到上次校正的位置；连点两次"我的位置"可重新自动定位');
+        if (dbl) {
+            // 连点两次 = 清除记忆，强制全新定位（换地方 / 想彻底重新测时使用）
+            try { localStorage.removeItem(GEO_MEM_KEY); } catch (e) { /* 忽略 */ }
+            showToast('已清除上次记忆，开始全新定位…');
+            doAutoLocate(btn, false);
             return;
         }
-        doAutoLocate(btn);
+        // 单击 = 立即重新定位（符合直觉）；定位太差/失败时自动回退到记忆位置
+        doAutoLocate(btn, true);
     });
     document.getElementById('btn-distance').addEventListener('click', function () {
         // 再次点击：取消测量
