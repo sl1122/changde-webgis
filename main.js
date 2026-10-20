@@ -762,8 +762,14 @@
             var wid = navigator.geolocation.watchPosition(
                 function (pos) {
                     var acc = pos.coords.accuracy || 9999;
+                    var g = wgs84togcj02(pos.coords.longitude, pos.coords.latitude);
+                    // 交叉校验（参考开源方案）：部分国产手机浏览器返回的已是 GCJ-02，
+                    // 再转一次会造成数百米双转偏移。与高德权威结果距离过大时视为异常样本丢弃。
+                    if (best && acc < best.accuracy) {
+                        var d = distanceMeters(best.position, new AMap.LngLat(g[0], g[1]));
+                        if (d > 1500) { return; }   // 疑似双转/异常样本，忽略继续等下一个
+                    }
                     if (acc > 0 && acc < 8000 && acc < (best ? best.accuracy : 9999)) {
-                        var g = wgs84togcj02(pos.coords.longitude, pos.coords.latitude);
                         best = { position: new AMap.LngLat(g[0], g[1]), accuracy: acc, source: 'gps' };
                     }
                     if ((best && best.accuracy <= 40) || (Date.now() - t0 > 12000)) {
@@ -779,6 +785,13 @@
                 navigator.geolocation.clearWatch(wid);
                 finish();
             }, 14000);
+        }
+
+        // 两坐标间近似距离（米），用于定位交叉校验
+        function distanceMeters(a, b) {
+            var dLng = (a.lng - b.lng) * 85000;
+            var dLat = (a.lat - b.lat) * 110000;
+            return Math.sqrt(dLng * dLng + dLat * dLat);
         }
 
         function failOut() {
