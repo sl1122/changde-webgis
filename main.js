@@ -799,10 +799,15 @@
             var accText = best.accuracy > 0 ? '，精度约±' + Math.round(best.accuracy) + ' 米' : '';
             var lm = nearestLandmark(lnglat);
             var lmText = lm ? '；附近地标：' + lm.name + '（约' + lm.dist + ' 米）' : '';
+            // 精度差时的诊断引导（小米/国产浏览器常见：粗略权限或自带浏览器弱定位）
+            var poorHint = '';
+            if (isIp || best.accuracy > 500) {
+                poorHint = '；定位偏粗，建议①用手机 Chrome 打开本页 ②授"精确位置"权限（小米：设置→应用设置→应用管理→Chrome→权限→位置→精确）③开启"位置信息增强"（WiFi/蓝牙扫描）';
+            }
             if (isIp) {
-                showToast('已定位到当前位置（IP 网络定位，仅供参考' + accText + '）' + lmText + '；如不准可再次点击重新定位');
+                showToast('已定位到当前位置（IP 网络定位，仅供参考' + accText + '）' + lmText + poorHint);
             } else {
-                showToast('已定位到当前位置（' + src + '定位' + accText + '）' + lmText + '；如不准可再次点击重新定位');
+                showToast('已定位到当前位置（' + src + '定位' + accText + '）' + lmText + poorHint);
             }
         }
 
