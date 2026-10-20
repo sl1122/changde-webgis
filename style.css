@@ -81,6 +81,26 @@ body {
     text-overflow: ellipsis;
     z-index: 1;
 }
+/* 右上角版本号 */
+.ver-tag {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, .18);
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 10px;
+    padding: 2px 7px;
+    letter-spacing: .5px;
+    user-select: none;
+    z-index: 2;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(60, 10, 30, .2);
+    cursor: default;
+}
 
 /* ===== 主体左右布局 ===== */
 .container {
@@ -572,6 +592,7 @@ body {
     .page-header h1 { font-size: 17px; }
     .page-header .author { font-size: 14px; }
     .subtitle { max-width: 42vw; }
+    .ver-tag { right: 6px; font-size: 10px; padding: 1px 5px; }
 }
 
 /* ===== 响应式：手机（≤768px）：侧边栏变抽屉 + 紧凑控件 ===== */
