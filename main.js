@@ -102,13 +102,15 @@
         if (tile) map.removeLayer(tile);
         tileIdx = idx; tileErr = 0;
         var t = TILE_CHAIN[idx];
+        // maxNativeZoom：超过该级别不请求不存在的瓦片，改用本级瓦片放大显示，避免放大后地图空白缺失
+        var mz = t.maxZoom || 20;
         tile = L.tileLayer(t.url, {
-            maxZoom: t.maxZoom || 20, subdomains: '1234',
+            maxZoom: mz, maxNativeZoom: mz, subdomains: '1234',
             attribution: t.attr
         });
         tile.on('tileerror', function () {
             tileErr++;
-            if (tileErr >= 5 && tileIdx < TILE_CHAIN.length - 1) {
+            if (tileErr >= 3 && tileIdx < TILE_CHAIN.length - 1) {
                 activateTile(tileIdx + 1);
                 toast('底图加载不畅，已自动切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
             }
@@ -123,7 +125,7 @@
             if (typeof pointsLayer !== 'undefined' && pointsLayer &&
                 (pointsLayer.clusters.school || pointsLayer.plains.school)) map.setView(map.getCenter(), map.getZoom());
         }
-        // 加载超时看门狗：9 秒后瓦片仍稀少或 4 秒内无增长则判定当前源过慢，自动降级
+        // 加载超时看门狗：6 秒后瓦片仍稀少或 4 秒内无增长则判定当前源过慢，自动降级
         function loadedCount() {
             var n = 0;
             try {
