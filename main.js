@@ -1206,10 +1206,21 @@
         if (backdropEl) backdropEl.classList.remove('show');
     }
     var menuBtn = document.getElementById('btn-menu');
-    if (menuBtn) menuBtn.addEventListener('click', function () {
+    // 手机端强制显示菜单按钮（防 CSS 竞态被隐藏，保证左上角可点）
+    if (menuBtn && window.matchMedia && window.matchMedia('(max-width:768px)').matches) menuBtn.style.display = 'flex';
+    var menuHandledByPointer = false;
+    function toggleDrawer() {
         var open = sidebarEl ? sidebarEl.classList.toggle('open') : false;
         if (backdropEl) backdropEl.classList.toggle('show', open);
-    });
+    }
+    if (menuBtn) {
+        // pointerdown 兜底：兼容部分 iframe / WebView 环境下 click 合成事件丢失
+        menuBtn.addEventListener('pointerdown', function () { menuHandledByPointer = true; toggleDrawer(); });
+        menuBtn.addEventListener('click', function () {
+            if (menuHandledByPointer) { menuHandledByPointer = false; return; }
+            toggleDrawer();
+        });
+    }
     if (backdropEl) backdropEl.addEventListener('click', closeDrawer);
     var layerListEl = document.getElementById('layer-list');
     if (layerListEl) layerListEl.addEventListener('click', closeDrawer);
@@ -1373,7 +1384,9 @@
         { v: 'v58', t: '区分度与丝滑', pts: ['设施四色区分度回归', '粒子池化 + 0.7s 平滑过渡'] },
         { v: 'v59', t: '视觉语言统一', pts: ['logo 形状随材质、图例联动', '玻璃面板深色适配'] },
         { v: 'v60', t: '版本更新日志 + 灵动倾斜', pts: ['点击版本号打开更新日志（回顾全部版本）', '高透光泽玻璃卡片 + 果冻动画 + 随材质包', '工具栏按钮 3D 倾斜 + 顶部高光扫过'] },
-        { v: 'v61', t: '胶囊质感 + 布局修复', pts: ['版本号改回椭圆玻璃胶囊（渐变 + 内高光 + 毛玻璃）', '修复 CSS 结构问题导致的地图 / 工具栏不显示'] }
+        { v: 'v61', t: '胶囊质感 + 布局修复', pts: ['版本号改回椭圆玻璃胶囊（渐变 + 内高光 + 毛玻璃）', '修复 CSS 结构问题导致的地图 / 工具栏不显示'] },
+        { v: 'v62', t: '地图回归 + 日志完善', pts: ['修复多余花括号导致的布局崩溃，地图 / 工具栏恢复显示', '更新日志收录 v60 / v61 版本'] },
+        { v: 'v63', t: '手机端体验优化', pts: ['标题栏名字与版本号不再重叠', '缩放键移到右下角贴底、比例尺底部居中', '菜单按钮可见性与点击稳定性加固'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');

@@ -781,7 +781,7 @@ body {
 
 /* ===== 响应式：手机（≤768px）：侧边栏变抽屉 + 紧凑控件 ===== */
 @media (max-width: 768px) {
-    .menu-btn { display: flex; position: relative; z-index: 22; }
+    .menu-btn { display: flex !important; position: relative; z-index: 22; }
     .page-header { padding: 0 12px; gap: 10px; }
     .page-header h1 { font-size: 15px; letter-spacing: .5px; gap: 5px; }
     .page-header .author { font-size: 13px; }
