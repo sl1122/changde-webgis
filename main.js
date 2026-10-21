@@ -56,10 +56,11 @@
         maxZoom: 19,
         attributionControl: true
     });
-    // 底图多源链：高德（GCJ-02，国内最快最稳）为主力 → OSM → CartoDB → ArcGIS（WGS-84）
-    // 数据坐标按当前底图坐标系动态转换（WGS-84 ↔ GCJ-02），保证任意底图下严格对齐
+    // 底图多源链：高德矢量/栅格（GCJ-02，国内最快最稳）→ OSM → CartoDB → ArcGIS（WGS-84）
+    // 同坐标系内先切换（高德矢量→高德栅格，数据不重绘、无缝），跨坐标系才重绘数据
     var TILE_CHAIN = [
-        { url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', name: '高德', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
+        { url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', name: '高德·矢量', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
+        { url: 'https://wprd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}', name: '高德·栅格', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
         { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
         { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', name: 'CartoDB', attr: '&copy; OpenStreetMap &copy; <a href="https://carto.com/">CARTO</a>' },
         { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', name: 'ArcGIS', attr: 'Tiles &copy; Esri &mdash; Source: Esri, TomTom' }
@@ -112,26 +113,32 @@
         var ll = [c[1], c[0]];
         return gcjMode ? ll : gcj2wgs(ll);
     }
-    var tile = null, tileIdx = 0, tileErr = 0, tileWatchdog = null;
-    function activateTile(idx) {
-        if (tile) map.removeLayer(tile);
-        tileIdx = idx; tileErr = 0;
+    var tile = null, tileIdx = 0, tileWatchdog = null;
+    function activateTile(idx, silent) {
+        var old = tile;
         var t = TILE_CHAIN[idx];
-        // maxNativeZoom：超过该级别不请求不存在的瓦片，改用本级瓦片放大显示，避免放大后地图空白缺失
         var mz = t.maxZoom || 20;
-        tile = L.tileLayer(t.url, {
+        var newT = L.tileLayer(t.url, {
             maxZoom: mz, maxNativeZoom: mz, subdomains: '1234',
             attribution: t.attr
         });
-        tile.on('tileerror', function () {
-            tileErr++;
-            if (tileErr >= 3 && tileIdx < TILE_CHAIN.length - 1) {
-                activateTile(tileIdx + 1);
-                toast('底图加载不畅，已自动切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+        var errN = 0;
+        newT.on('tileerror', function () {
+            errN++;
+            // 单源连续失败过多（≥8 张）才降级下一源，避免偶发 403/超时误切换造成底图跳变
+            if (errN >= 8 && tileIdx < TILE_CHAIN.length - 1) {
+                activateTile(tileIdx + 1, true);
+                toast('底图加载不畅，已切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
             }
         });
-        tile.addTo(map);
-        // 底图坐标系切换 → 全部数据与定位点重绘对齐
+        // 平滑切换：新源首张瓦片加载成功后移除旧层，避免切换瞬间地图空白
+        newT.on('load', function () {
+            if (old && old !== newT) { try { map.removeLayer(old); } catch (e) { } }
+        });
+        newT.addTo(map);
+        tile = newT;
+        tileIdx = idx;
+        // 底图坐标系切换 → 全部数据与定位点重绘对齐（高德矢量/栅格同为 GCJ-02，不触发重绘）
         var wasGcj = gcjMode;
         gcjMode = !!t.gcj;
         if (wasGcj !== gcjMode) {
@@ -140,12 +147,16 @@
             if (typeof pointsLayer !== 'undefined' && pointsLayer &&
                 (pointsLayer.clusters.school || pointsLayer.plains.school)) map.setView(map.getCenter(), map.getZoom());
         }
-        // 加载超时看门狗：6 秒后瓦片仍稀少或 4 秒内无增长则判定当前源过慢，自动降级
+        // 兜底：3 秒后新源仍无任何瓦片加载则强制移除旧层（避免双重叠加）
+        setTimeout(function () {
+            if (old && old !== newT) { try { map.removeLayer(old); } catch (e) { } }
+        }, 3000);
+        // 看门狗：12 秒后瓦片仍稀少且 5 秒内无增长才判定当前源过慢，降级下一源
         function loadedCount() {
             var n = 0;
             try {
-                Object.keys(tile._tiles).forEach(function (k) {
-                    if (tile._tiles[k] && tile._tiles[k].loaded) n++;
+                Object.keys(newT._tiles).forEach(function (k) {
+                    if (newT._tiles[k] && newT._tiles[k].loaded) n++;
                 });
             } catch (e) { }
             return n;
@@ -155,14 +166,14 @@
             var n1 = loadedCount();
             setTimeout(function () {
                 var n2 = loadedCount();
-                if (n2 < 12 && n2 - n1 < 3 && tileIdx < TILE_CHAIN.length - 1) {
-                    activateTile(tileIdx + 1);
-                    toast('底图加载缓慢，已自动切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+                if (n2 < 10 && n2 - n1 < 2 && tileIdx < TILE_CHAIN.length - 1) {
+                    activateTile(tileIdx + 1, true);
+                    toast('底图加载缓慢，已切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
                 }
-            }, 4000);
-        }, 9000);
+            }, 5000);
+        }, 12000);
     }
-    // 默认直接启用高德瓦片（国内加载最快），异常自动降级 OSM/CartoDB/ArcGIS
+    // 默认直接启用高德矢量瓦片（国内加载最快），异常自动在同坐标系内切换高德栅格，再降级 OSM/CartoDB/ArcGIS
     activateTile(0);
     L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 140 }).addTo(map);
     // 自定义放大缩小按钮
