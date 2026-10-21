@@ -40,7 +40,10 @@
     function showMeasure(msg) {
         var el = document.getElementById('measure-result');
         if (!el) return;
-        el.textContent = msg;
+        var txt = document.getElementById('measure-text');
+        if (txt) txt.textContent = msg; else el.textContent = msg;
+        var done = document.getElementById('measure-done');
+        if (done) done.hidden = !measure || !measure.mode;
         el.hidden = false;
         clearTimeout(showMeasure._t);
         showMeasure._t = setTimeout(function () { el.hidden = true; }, 6000);
@@ -556,6 +559,8 @@
     }
     map.on('click', function (e) {
         if (!measure.mode) return;
+        // 双击结束时的第二次 click（detail>1）不添加测量点，避免距离/面积多算
+        if (e.originalEvent && e.originalEvent.detail > 1) return;
         var ll = [e.latlng.lat, e.latlng.lng];
         measure.pts.push(ll);
         var dot = L.circleMarker(ll, { radius: 4, color: '#2563eb', weight: 1.5, fillColor: '#2563eb', fillOpacity: 0.9 });
@@ -618,6 +623,23 @@
         showMeasure('单击地图添加顶点，双击闭合计算面积');
     });
     document.getElementById('btn-clear').addEventListener('click', clearMeasure);
+    // 「完成测量」按钮（手机端无法双击结束，必须有明确结束入口）
+    var measureDoneBtn = document.getElementById('measure-done');
+    if (measureDoneBtn) measureDoneBtn.addEventListener('click', function () {
+        if (measure.mode === 'dist') {
+            showMeasure('总距离：' + (measure.total / 1000).toFixed(3) + ' 公里');
+        } else if (measure.mode === 'area' && measure.pts.length >= 3) {
+            if (measure.line) map.removeLayer(measure.line);
+            measure.poly = L.polygon(measure.pts, { color: '#059669', weight: 2, fillColor: '#059669', fillOpacity: 0.15 });
+            map.addLayer(measure.poly);
+            var area = polygonAreaM2(measure.pts);
+            showMeasure('面积：' + (area / 1000000).toFixed(3) + ' 平方公里');
+        }
+        measure.mode = null;
+        document.getElementById('btn-distance').classList.remove('active');
+        document.getElementById('btn-area').classList.remove('active');
+        measureDoneBtn.hidden = true;
+    });
 
     // ---------------- 8.5 手动底图切换 ----------------
     var btnBasemap = document.getElementById('btn-basemap');
@@ -1226,9 +1248,9 @@
             var open = sidebarEl ? sidebarEl.classList.toggle('open') : false;
             if (backdropEl) backdropEl.classList.toggle('show', open);
         } else if (sidebarEl) {
-            // 桌面端：折叠 / 展开侧边栏
+            // 桌面端：折叠 / 展开侧边栏（等 width 动画结束再 invalidateSize，避免地图顿跳）
             sidebarEl.classList.toggle('hidden');
-            if (typeof map !== 'undefined' && map) setTimeout(function () { map.invalidateSize(); }, 260);
+            if (typeof map !== 'undefined' && map) setTimeout(function () { map.invalidateSize(); }, 420);
         }
     }
     if (menuBtn) {
@@ -1238,6 +1260,13 @@
             e.menuHandled = true;
             toggleDrawer();
         });
+        // touchstart 兜底：部分移动浏览器 click 合成事件被触摸滚动/屏蔽层吞掉时仍可靠触发
+        menuBtn.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            if (e.menuHandled) return;
+            e.menuHandled = true;
+            toggleDrawer();
+        }, { passive: false });
     }
     if (backdropEl) backdropEl.addEventListener('click', closeDrawer);
     // document 级捕获兜底：某些 iframe / WebView 环境点击事件在冒泡阶段被吞，
@@ -1419,7 +1448,8 @@
         { v: 'v63', t: '手机端体验优化', pts: ['标题栏名字与版本号不再重叠', '缩放键移到右下角贴底、比例尺底部居中', '菜单按钮可见性与点击稳定性加固'] },
         { v: 'v64', t: '菜单按钮彻底修复', pts: ['修复 v63 推送时 CSS/JS 版本号漏升导致旧缓存', '菜单按钮四层加固：display!important + z-index + JS 强制显示 + pointerdown 兜底'] },
         { v: 'v65', t: '全端菜单按钮', pts: ['所有屏幕显示汉堡菜单按钮', '桌面端点击折叠 / 展开侧边栏，地图自动占满'] },
-        { v: 'v66', t: '操作手感全面优化', pts: ['缩小限制放宽到全球（minZoom 9→3）', '桌面折叠改为平滑宽度动画，不再生硬', '缩放键防抖 320ms，手机端不再卡顿连跳', '菜单按钮 document 捕获级兜底，任何环境点击必触发', '手机端比例尺改绝对定位固定在底部中间，不再消失'] }
+        { v: 'v66', t: '操作手感全面优化', pts: ['缩小限制放宽到全球（minZoom 9→3）', '桌面折叠改为平滑宽度动画，不再生硬', '缩放键防抖 320ms，手机端不再卡顿连跳', '菜单按钮 document 捕获级兜底，任何环境点击必触发', '手机端比例尺改绝对定位固定在底部中间，不再消失'] },
+        { v: 'v67', t: '悬浮球工具栏 + 测量修复', pts: ['右侧工具栏改为果冻质感悬浮球，点击扇形展开 + 弹性动画', '按钮点击果冻回弹 + 高光扫过，夜间深色果冻适配', '测距/测面修复：双击结束不再多加点，手机端新增「完成测量」按钮', '标题栏层级提升（z-index 2000）防被遮挡', '菜单按钮新增 touchstart 兜底，真实手机触摸必触发', '比例尺移到左下角（不再被缩放键遮挡）'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1455,6 +1485,46 @@
             if (e.key === 'Escape' && clBackdrop && !clBackdrop.hidden && clBackdrop.classList.contains('show')) closeChangelog();
         });
     }
+
+    // ---------------- 13.5 悬浮球工具栏（果冻质感，扇形展开） ----------------
+    (function initFab() {
+        var fab = document.querySelector('.toolbar');
+        if (!fab) return;
+        var btns = Array.prototype.slice.call(fab.querySelectorAll('button'));
+        var open = false;
+        function layout(doOpen) {
+            open = doOpen;
+            fab.classList.toggle('fab-open', doOpen);
+            var n = btns.length;
+            var R = 104;
+            var start = -Math.PI / 2 - 0.72;
+            var span = 1.44;
+            btns.forEach(function (b, i) {
+                var a = start + (n > 1 ? (i / (n - 1)) * span : 0);
+                var dx = Math.cos(a) * R;
+                var dy = Math.sin(a) * R;
+                b.style.transitionDelay = (doOpen ? i * 26 : (n - 1 - i) * 16) + 'ms';
+                if (doOpen) {
+                    b.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(1)';
+                    b.style.opacity = '1';
+                } else {
+                    b.style.transform = 'translate(-50%, -50%) scale(.3)';
+                    b.style.opacity = '0';
+                }
+            });
+        }
+        fab.addEventListener('click', function (e) {
+            if (e.target.closest && e.target.closest('button')) return;
+            layout(!open);
+        });
+        // 点击悬浮球外部区域收起（捕获阶段）
+        document.addEventListener('click', function (e) {
+            if (open && (!e.target.closest || !e.target.closest('.toolbar'))) layout(false);
+        }, true);
+        document.addEventListener('touchstart', function (e) {
+            if (open && (!e.target.closest || !e.target.closest('.toolbar'))) layout(false);
+        }, true);
+    })();
 
     // ---------------- 14. 启动 ----------------
     loadTheme();
