@@ -42,7 +42,7 @@
             </svg>
             常德市城市公共服务WebGIS系统 <span class="author">- 佘磊</span>
         </h1>
-        <span class="ver-tag" id="ver-tag" title="当前版本">v39</span>
+        <span class="ver-tag" id="ver-tag" title="当前版本">v40</span>
         <p class="subtitle">基于开源地图（Leaflet + OpenStreetMap）的常德市区公共服务空间信息查询平台 · 桃花源里好读书</p>
     </header>
 
@@ -152,6 +152,10 @@
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3c-1.4 1.5-1.9 3.6-1.3 5.4.5 1.8 2.4 3.1 4.1 2.7 1.8-.4 2.8-2.3 2.3-4.1-.6-1.8-2.4-3.2-4.2-3.5-.4-.1-.7-.4-.9-.5zm0 7.2c-1.4 1.5-1.9 3.6-1.3 5.4.5 1.8 2.4 3.1 4.1 2.7 1.8-.4 2.8-2.3 2.3-4.1-.6-1.8-2.4-3.2-4.2-3.5-.4-.1-.7-.4-.9-.5zM6.5 9.4c-1.3 1.2-1.8 3-1.4 4.7.5 1.7 2.2 2.9 3.8 2.6 1.6-.3 2.5-2.1 2-3.8-.5-1.7-2.2-2.9-3.9-3.2-.2 0-.4-.2-.5-.3zm10.9.2c1.3 1.2 1.8 3 1.4 4.7-.5 1.7-2.2 2.9-3.8 2.6-1.6-.3-2.5-2.1-2-3.8.5-1.7 2.2-2.9 3.9-3.2.2 0 .4-.2.5-.3z"/></svg>
                     <span>花瓣</span>
                 </button>
+                <button id="btn-settings" title="显示设置（玻璃效果调节）">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.62l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.62l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.62l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.62l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
+                    <span>设置</span>
+                </button>
             </div>
             <div class="zoom-ctrl" id="zoom-ctrl">
                 <button id="btn-zoom-in" title="放大地图">
@@ -165,16 +169,38 @@
             <div id="map-toast" class="map-toast" hidden></div>
             <div id="legend-panel" class="legend-panel" hidden>
                 <div class="legend-title">图例</div>
-                <div class="legend-row"><span class="lg-dot" style="background:#2563eb"></span>学校</div>
-                <div class="legend-row"><span class="lg-dot" style="background:#dc2626"></span>医院</div>
-                <div class="legend-row"><span class="lg-dot" style="background:#059669"></span>景点</div>
-                <div class="legend-row"><span class="lg-line" style="background:#d97706"></span>道路（主干道）</div>
+                <div class="legend-row" data-layer="school"><span class="lg-dot" style="background:#2563eb"></span>学校</div>
+                <div class="legend-row" data-layer="hospital"><span class="lg-dot" style="background:#dc2626"></span>医院</div>
+                <div class="legend-row" data-layer="scenic"><span class="lg-dot" style="background:#059669"></span>景点</div>
+                <div class="legend-row" data-layer="road"><span class="lg-line" style="background:#d97706"></span>道路（主干道）</div>
                 <div class="legend-note">数字圆点 = 同区域要素聚合数量，点击可放大查看单个点位</div>
+            </div>
+            <div id="settings-panel" class="settings-panel" hidden>
+                <div class="settings-title">显示设置<span class="settings-close" id="settings-close" title="关闭">×</span></div>
+                <div class="set-row">
+                    <span class="set-name">毛玻璃强度</span>
+                    <span class="set-val" id="set-blur-val">12px</span>
+                    <input type="range" id="set-blur" min="0" max="24" step="1" value="12">
+                </div>
+                <div class="set-row">
+                    <span class="set-name">面板透明度</span>
+                    <span class="set-val" id="set-alpha-val">92%</span>
+                    <input type="range" id="set-alpha" min="40" max="100" step="1" value="92">
+                </div>
+                <div class="set-row">
+                    <span class="set-name">花瓣特效</span>
+                    <button id="set-petal" class="set-toggle">关闭</button>
+                </div>
+                <div class="set-row">
+                    <span class="set-name">聚合气泡</span>
+                    <button id="set-cluster" class="set-toggle">开启</button>
+                </div>
+                <button id="set-reset" class="set-reset">恢复默认设置</button>
             </div>
             <div id="petal-wrap" aria-hidden="true"></div>
         </main>
     </div>
 
-    <script src="main.js?v=39"></script>
+    <script src="main.js?v=40"></script>
 </body>
 </html>

@@ -117,16 +117,23 @@
             '</div>';
     }
 
+    // 类别图标（白色符号，彩色圆底）
+    var CAT_ICONS = {
+        school: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3L1 9l11 6 9-4.9V17h2V9L12 3zm0 12.5L5 13v4c0 1.7 3.1 3 7 3s7-1.3 7-3v-4l-7 3.5z"/></svg>',
+        hospital: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6V3z"/></svg>',
+        scenic: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 19l7-9 5 6 3-3 5 6H2z"/></svg>'
+    };
     function makePointMarker(key, feat) {
         var p = feat.properties;
         var coords = feat.geometry.coordinates;
         var c = LAYER_CONFIG[key];
         var icon = L.divIcon({
-            className: 'poi-dot-wrap',
-            html: '<div class="poi-dot" style="background:' + c.color + '"></div>',
-            iconSize: [12, 12], iconAnchor: [6, 6]
+            className: 'poi-icon-wrap',
+            html: '<div class="poi-icon" style="background:' + c.color + '">' + (CAT_ICONS[key] || '') + '</div>',
+            iconSize: [18, 18], iconAnchor: [9, 9]
         });
         return L.marker([coords[1], coords[0]], { icon: icon })
+            .bindTooltip(p.name, { direction: 'top', offset: [0, -10], className: 'poi-tip' })
             .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 });
     }
 
@@ -146,10 +153,12 @@
         var g = L.layerGroup();
         feats.forEach(function (f) {
             var coords = f.geometry.coordinates;
+            var p = f.properties;
             g.addLayer(L.circleMarker([coords[1], coords[0]], {
                 radius: 5, color: LAYER_CONFIG[key].color, weight: 1.5,
                 fillColor: LAYER_CONFIG[key].color, fillOpacity: 0.85
-            }).bindPopup(pointPopupHtml(key, f.properties), { autoPan: true, maxWidth: 280 }));
+            }).bindTooltip(p.name, { direction: 'top', offset: [0, -8], className: 'poi-tip' })
+                .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 }));
         });
         return g;
     }
@@ -159,15 +168,20 @@
         layerState.road.data.forEach(function (f) {
             var coords = f.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
             if (coords.length < 2) return;
+            // 双层线：浅色底衬 + 琥珀主线（质感更佳）
+            g.addLayer(L.polyline(coords, {
+                color: '#ffffff', weight: 8.5, opacity: 0.4,
+                lineJoin: 'round', lineCap: 'round'
+            }));
             var line = L.polyline(coords, {
                 color: LAYER_CONFIG.road.color, weight: 4.5, opacity: 0.95,
                 lineJoin: 'round', lineCap: 'round'
             }).bindPopup(roadPopupHtml(f.properties), { autoPan: true, maxWidth: 280 });
             // 悬停高亮
-            line.on('mouseover', function () { line.setStyle({ weight: 7, opacity: 1 }); });
+            line.on('mouseover', function () { line.setStyle({ weight: 7.5, opacity: 1 }); });
             line.on('mouseout', function () { line.setStyle({ weight: 4.5, opacity: 0.95 }); });
             g.addLayer(line);
-            // 路名标签（中点）
+            // 路名标签（中点，玻璃质感）
             if (!f.properties.no_name) {
                 var mid = coords[Math.floor(coords.length / 2)];
                 var tag = L.tooltip({
@@ -207,6 +221,7 @@
         clusterEnabled = this.checked;
         ['school', 'hospital', 'scenic'].forEach(refreshLayer);
         updateCounts();
+        syncSetToggles();
     });
 
     // ---------------- 5. 视野实时计数 ----------------
@@ -236,11 +251,19 @@
     map.on('zoomend', updateCounts);
 
     // ---------------- 6. 图层勾选 / 全选 / 隐藏 ----------------
+    // 图例动态联动：勾选状态 ↔ 图例行增删（带过渡）
+    function syncLegend() {
+        GEO_KEYS.forEach(function (k) {
+            var row = document.querySelector('.legend-row[data-layer="' + k + '"]');
+            if (row) row.classList.toggle('off', !layerState[k].visible);
+        });
+    }
     function bindLayerCheck(k) {
         document.getElementById('chk-' + k).addEventListener('change', function () {
             layerState[k].visible = this.checked;
             refreshLayer(k);
             updateCounts();
+            syncLegend();
         });
     }
     GEO_KEYS.forEach(bindLayerCheck);
@@ -248,10 +271,12 @@
         GEO_KEYS.forEach(function (k) { document.getElementById('chk-' + k).checked = true; layerState[k].visible = true; });
         document.getElementById('chk-cluster').checked = true; clusterEnabled = true;
         refreshAllLayers();
+        syncLegend(); syncSetToggles();
     });
     document.getElementById('btn-none').addEventListener('click', function () {
         GEO_KEYS.forEach(function (k) { document.getElementById('chk-' + k).checked = false; layerState[k].visible = false; });
         refreshAllLayers();
+        syncLegend();
     });
 
     // ---------------- 7. 搜索与类型筛选 ----------------
@@ -553,11 +578,21 @@
             wrap.appendChild(d);
         }
     }
-    document.getElementById('btn-petal').addEventListener('click', function () {
+    function syncSetToggles() {
+        var pOn = document.getElementById('petal-wrap').classList.contains('on');
+        var st = document.getElementById('set-petal');
+        if (st) { st.textContent = pOn ? '开启' : '关闭'; st.classList.toggle('on', pOn); }
+        var cOn = document.getElementById('chk-cluster').checked;
+        var sc = document.getElementById('set-cluster');
+        if (sc) { sc.textContent = cOn ? '开启' : '关闭'; sc.classList.toggle('on', cOn); }
+    }
+    function togglePetals() {
         var w = document.getElementById('petal-wrap');
         var on = w.classList.toggle('on');
-        this.classList.toggle('active', on);
-    });
+        document.getElementById('btn-petal').classList.toggle('active', on);
+        syncSetToggles();
+    }
+    document.getElementById('btn-petal').addEventListener('click', togglePetals);
 
     // ---------------- 12. 移动端抽屉 ----------------
     var sidebarEl = document.querySelector('.sidebar');
@@ -576,12 +611,55 @@
     if (layerListEl) layerListEl.addEventListener('click', closeDrawer);
     if (searchResultEl) searchResultEl.addEventListener('click', closeDrawer);
 
-    // ---------------- 13. 启动 ----------------
+    // ---------------- 13. 设置面板（玻璃调节，Apple glass-liquid） ----------------
+    var settingsPanel = document.getElementById('settings-panel');
+    var btnSettings = document.getElementById('btn-settings');
+    var setBlur = document.getElementById('set-blur');
+    var setAlpha = document.getElementById('set-alpha');
+    function applyGlass() {
+        var blur = setBlur.value, alpha = setAlpha.value;
+        document.documentElement.style.setProperty('--glass-blur', blur + 'px');
+        document.documentElement.style.setProperty('--glass-alpha', (alpha / 100).toFixed(2));
+        document.getElementById('set-blur-val').textContent = blur + 'px';
+        document.getElementById('set-alpha-val').textContent = alpha + '%';
+        try { localStorage.setItem('cd_glass', JSON.stringify({ blur: blur, alpha: alpha })); } catch (e) { }
+    }
+    if (btnSettings && settingsPanel) {
+        btnSettings.addEventListener('click', function () {
+            settingsPanel.hidden = !settingsPanel.hidden;
+            btnSettings.classList.toggle('active', !settingsPanel.hidden);
+        });
+        document.getElementById('settings-close').addEventListener('click', function () {
+            settingsPanel.hidden = true;
+            btnSettings.classList.remove('active');
+        });
+        setBlur.addEventListener('input', applyGlass);
+        setAlpha.addEventListener('input', applyGlass);
+        document.getElementById('set-petal').addEventListener('click', togglePetals);
+        document.getElementById('set-cluster').addEventListener('click', function () {
+            var c = document.getElementById('chk-cluster');
+            c.checked = !c.checked;
+            c.dispatchEvent(new Event('change', { bubbles: true }));
+            syncSetToggles();
+        });
+        document.getElementById('set-reset').addEventListener('click', function () {
+            setBlur.value = 12; setAlpha.value = 92;
+            applyGlass();
+        });
+        try {
+            var g = JSON.parse(localStorage.getItem('cd_glass') || 'null');
+            if (g && g.blur !== undefined) { setBlur.value = g.blur; setAlpha.value = g.alpha; applyGlass(); }
+        } catch (e) { }
+    }
+
+    // ---------------- 14. 启动 ----------------
     initPetals();
+    syncSetToggles();
     var isMobileDevice = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
     if (!isMobileDevice) {
         document.getElementById('petal-wrap').classList.add('on');
         document.getElementById('btn-petal').classList.add('active');
+        syncSetToggles();
     }
     var loaders = GEO_KEYS.map(function (k) {
         return fetchOrEmbed(k).then(function () {
