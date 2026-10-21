@@ -1,1 +1,4127 @@
-{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670274, 29.04702]}, "properties": {"name": "湖南文理学院", "address": "洞庭大道3150号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.640841, 29.033872]}, "properties": {"name": "常德职业技术学院", "address": "人民路4253号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.682296, 28.988541]}, "properties": {"name": "湖南应用技术学院(西校区)", "address": "同德路", "type": "高等院校", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.671492, 29.043075]}, "properties": {"name": "湖南文理学院西校区", "address": "滨湖路1709号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.719969, 29.023881]}, "properties": {"name": "湖南文理学院东校区", "address": "高专路100号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.628021, 29.025168]}, "properties": {"name": "常德学院", "address": "高泗路806号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670439, 29.048929]}, "properties": {"name": "湖南文理学院西校区(北院)", "address": "滨湖路1708号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.639265, 29.025266]}, "properties": {"name": "湖南幼儿师范高等专科学校", "address": "高泗路600号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.63312, 29.026913]}, "properties": {"name": "常德科技职业技术学院", "address": "高泗路602号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.639436, 29.020577]}, "properties": {"name": "常德技师学院", "address": "高泗路601号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.677381, 29.01292]}, "properties": {"name": "常德市鼎城区第一中学", "address": "鼎城路338号", "type": "中学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.696294, 29.033486]}, "properties": {"name": "湖南省常德市第一中学", "address": "朗州路263号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.700521, 29.054004]}, "properties": {"name": "常德芷兰实验学校", "address": "柳叶大道2388号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.667292, 29.042927]}, "properties": {"name": "常德开放大学", "address": "芙蓉路988号", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670881, 29.031053]}, "properties": {"name": "常德市第七中学", "address": "人民路2777号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.671392, 29.006768]}, "properties": {"name": "淮阳中学", "address": "桃花源路120号", "type": "中学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.705317, 29.032306]}, "properties": {"name": "常德市第三中学", "address": "光荣路138号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.707407, 29.011971]}, "properties": {"name": "湖南省常德市第六中学", "address": "红旗路", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.675911, 29.035266]}, "properties": {"name": "湖南省常德市第五中学", "address": "人民路2666号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.675602, 29.057195]}, "properties": {"name": "常德外国语学校", "address": "龙港路638号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.696354, 29.04351]}, "properties": {"name": "常德市第十一中学", "address": "朗州北路77号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.727583, 29.030648]}, "properties": {"name": "常德沅郡实验学校", "address": "常德大道2058号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.724484, 29.09122]}, "properties": {"name": "常德市郡德学校", "address": "万寿路双桥路口", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.720487, 29.032105]}, "properties": {"name": "常德长怡学校", "address": "稻香路85号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.690562, 29.056228]}, "properties": {"name": "常德市常英学校", "address": "芷兰街道柳菱社区沙港路289号(鸿升小区旁)", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.667994, 29.043779]}, "properties": {"name": "常德中山外语职业学校", "address": "长源路173号", "type": "职业技术学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.688372, 29.007168]}, "properties": {"name": "常德市鼎城区阳明中学", "address": "武陵镇花溪路325号", "type": "中学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.665548, 28.992147]}, "properties": {"name": "善卷中学", "address": "桃花源路", "type": "中学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.729518, 29.067711]}, "properties": {"name": "常德市一中柳叶湖学校", "address": "柳叶湖旅游度假区柳泉路913号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.673952, 29.015376]}, "properties": {"name": "常德市鼎城区江南中学", "address": "武陵镇临沅路521号", "type": "中学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.66911, 29.046382]}, "properties": {"name": "湖南文理学院西校区第三教学楼", "address": "滨湖路1708湖南文理学院西校区北院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.673734, 29.013008]}, "properties": {"name": "常德朗州高级中学", "address": "鼎城路638号", "type": "中学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.703157, 29.022625]}, "properties": {"name": "常德市第四中学", "address": "城南建设东路117号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.658621, 29.041183]}, "properties": {"name": "常德市第十三中学", "address": "长庚路679号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.638375, 29.035078]}, "properties": {"name": "常德职业技术学院第一教学楼", "address": "人民路4253号常德职业技术学院", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.713314, 29.027128]}, "properties": {"name": "中共常德市武陵区委党校", "address": "红庙街653号", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.632728, 29.029401]}, "properties": {"name": "常德科技职业技术学院北校区", "address": "岩坪路与金丹路交叉口西北340米", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.735728, 29.066834]}, "properties": {"name": "柳叶湖旅游度假区复基小学", "address": "柳叶湖旅游度假区柳泉路1198号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.704442, 29.046907]}, "properties": {"name": "紫桥小学", "address": "紫桥路", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.71501, 29.025702]}, "properties": {"name": "常德嘉树学校", "address": "三闾路457号", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.688348, 29.027109]}, "properties": {"name": "育英小学", "address": "人民路1773号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.65811, 29.008089]}, "properties": {"name": "江南小学", "address": "武陵镇花船庙村九组临沅路140号", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.687029, 29.055448]}, "properties": {"name": "常德市武陵区第五小学", "address": "沙港路399号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.634151, 29.024732]}, "properties": {"name": "常德科技职业技术学院南校区", "address": "金丹路与高泗路交叉口西北280米", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.711895, 29.022075]}, "properties": {"name": "常德市体育运动学校", "address": "高专路463号", "type": "职业技术学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.678066, 29.030781]}, "properties": {"name": "湖南幼儿师范高等专科学校附属小学", "address": "人民路2555号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.686868, 29.005582]}, "properties": {"name": "严家岗完小", "address": "武陵镇向群巷331号", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.687561, 29.015388]}, "properties": {"name": "武陵小学", "address": "光明巷6号", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.692853, 29.029859]}, "properties": {"name": "卫门口小学", "address": "建设路1219号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.717183, 29.040359]}, "properties": {"name": "武陵区第六小学", "address": "老堤障路与三闾路交叉口西北角", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.676497, 29.014577]}, "properties": {"name": "中共常德市鼎城区委党校", "address": "隆阳路566号", "type": "学校", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.715938, 29.007174]}, "properties": {"name": "常德市特殊教育学校", "address": "皇经阁巷旺企路附近", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.685671, 29.069533]}, "properties": {"name": "武陵区东风小学", "address": "武陵区火车站皂果路清坪树乡东风中心小学", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.652195, 29.045312]}, "properties": {"name": "金丹实验学校", "address": "长庚街道滨湖路", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.698768, 29.032775]}, "properties": {"name": "北正街小学", "address": "朗州路298号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.665975, 29.033219]}, "properties": {"name": "芙蓉路小学", "address": "芙蓉路333号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.714729, 29.024544]}, "properties": {"name": "育才小学(暂停营业)", "address": "三闾路", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.671416, 29.035445]}, "properties": {"name": "工农小学", "address": "人民西路578号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.705595, 29.016933]}, "properties": {"name": "东升小学", "address": "人民路836号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.694393, 29.034129]}, "properties": {"name": "常德市育才中学", "address": "育才路127号", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.667915, 29.041115]}, "properties": {"name": "三岔路小学", "address": "长源路83号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.692428, 29.007698]}, "properties": {"name": "鼎城区常沅完全小学", "address": "花溪路231号", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.675594, 29.014649]}, "properties": {"name": "花船庙小学", "address": "善池路与隆阳路交叉口东100米", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.706454, 29.05722]}, "properties": {"name": "北正街恒大华府小学", "address": "恒大华府西门北320米", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.702111, 29.061636]}, "properties": {"name": "紫菱小学", "address": "穿紫河街道新河路103号(柳都水语对面)", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.675564, 29.042265]}, "properties": {"name": "育英德景园小学", "address": "德景园(龙港路东)", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.742617, 29.003969]}, "properties": {"name": "常德市第十七中学", "address": "芦荻山乡", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.715199, 29.014078]}, "properties": {"name": "旭辉东升小学", "address": "人民东路488号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.694696, 29.043029]}, "properties": {"name": "滨湖小学", "address": "芙蓉东路168号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.668802, 29.016165]}, "properties": {"name": "江南小学分校", "address": "武陵镇花船庙村九组临沅路140号", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.667727, 29.015157]}, "properties": {"name": "朗州小学", "address": "临沅路", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.636658, 29.005328]}, "properties": {"name": "丹洲中心小学", "address": "277乡道北50米", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.704454, 29.06067]}, "properties": {"name": "常德芷兰实验学校小学部", "address": "紫菱路", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.706374, 29.026844]}, "properties": {"name": "武陵区胜利路小学", "address": "胜利街与青年路交叉口南180米", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.688983, 29.064018]}, "properties": {"name": "武陵区朝阳小学", "address": "新河路420号", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.642847, 29.062583]}, "properties": {"name": "青林小学", "address": "青林1组", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.718783, 28.995549]}, "properties": {"name": "东源小学", "address": "东郊乡双拥路申湘汽车旁", "type": "小学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.688389, 29.007161]}, "properties": {"name": "常德市鼎城区第九中学", "address": "武陵镇花溪路325号", "type": "中学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.754076, 29.091591]}, "properties": {"name": "白鹤镇中学", "address": "白鹤镇万金障", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.642201, 29.001877]}, "properties": {"name": "常德市第十六中学", "address": "丹州乡丹洲中学附近", "type": "中学", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.702886, 29.046834]}, "properties": {"name": "紫桥幼儿园", "address": "紫桥北路", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.686578, 29.060166]}, "properties": {"name": "乐享·爱弥儿国际幼稚园", "address": "紫菱路与东风路交汇处(交警四大队对面)", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.706362, 29.017824]}, "properties": {"name": "常德市第一幼儿园", "address": "百胜巷32号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.663325, 29.04871]}, "properties": {"name": "艾兰德·伊顿幼儿园", "address": "渡缘路与仙源路交叉口东北100米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.695237, 29.012058]}, "properties": {"name": "善卷幼儿园", "address": "玉霞街道临江社区善德路", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.657487, 29.029863]}, "properties": {"name": "天源星城幼儿园", "address": "天源星城小区西门", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.654117, 29.044599]}, "properties": {"name": "常德女子外语学校附属幼儿园", "address": "滨湖西路2860号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.686373, 29.003917]}, "properties": {"name": "小红帽幼儿园(永安社区园)", "address": "永安社区卫星池小区", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.703978, 29.021506]}, "properties": {"name": "武陵区中心幼儿园", "address": "城门口路", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.668596, 29.054924]}, "properties": {"name": "特乐思幼儿园", "address": "沙港路白马社区对面", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.685589, 29.006626]}, "properties": {"name": "智慧树幼儿园", "address": "大湖路537号", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.68162, 29.001655]}, "properties": {"name": "纽伯瑞幼儿园", "address": "阳明路与永安路交汇处", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.676503, 29.005905]}, "properties": {"name": "大地幼儿园", "address": "建新路(博大·江山如画-南区西侧)", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.684924, 29.05659]}, "properties": {"name": "沙港社区明星幼儿园", "address": "南坪街道沙港社区东风南路500号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.681563, 29.014374]}, "properties": {"name": "常德市鼎城区实验幼儿园", "address": "隆阳路360号", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.728796, 29.056959]}, "properties": {"name": "保利和乐稚美幼儿园(常德分园)", "address": "柳溪路保利中央公园", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.675552, 29.043157]}, "properties": {"name": "德景园国际幼儿园", "address": "龙港路与滨湖路交叉口东南160米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.70672, 29.058302]}, "properties": {"name": "恒大姜莱幼儿园", "address": "荷花路与紫菱路交叉口南120米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.661594, 29.001739]}, "properties": {"name": "红云公立幼儿园", "address": "桃花源路", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.623893, 28.99196]}, "properties": {"name": "丹洲中心幼儿园", "address": "276乡道垢湖村附近", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.686327, 29.046808]}, "properties": {"name": "皂果幼儿园", "address": "穿紫河朝阳路877号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.696068, 29.004287]}, "properties": {"name": "北京博苑红太阳幼儿园", "address": "双潭路341号", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.690421, 29.057477]}, "properties": {"name": "圆点爱弥儿幼稚园(鸿升园)", "address": "鸿运巷108号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.73287, 29.02867]}, "properties": {"name": "春蕾幼儿园(青年路)", "address": "青年路1177号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.66189, 29.037513]}, "properties": {"name": "文博幼儿园(东汉街)", "address": "金城小区12栋2楼", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.682776, 29.036003]}, "properties": {"name": "美麟幼稚园", "address": "白马湖街道育才西路阳光孤儿院旁", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.719782, 29.020974]}, "properties": {"name": "东方英伦幼儿园", "address": "楠竹山高专路芙蓉学院对面", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.712158, 29.038576]}, "properties": {"name": "三闾幼儿园", "address": "东郊乡三闾村2-55", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.677257, 29.014675]}, "properties": {"name": "湘景·金色梯田幼儿园", "address": "隆阳路老卫校内", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.723217, 29.032995]}, "properties": {"name": "武陵区嘉智幼儿园", "address": "高坪头社区大楼", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.663535, 29.032732]}, "properties": {"name": "常德武陵区实验幼儿园", "address": "竹叶路与西郊一巷交叉口东北240米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.676756, 29.006692]}, "properties": {"name": "常德市鼎城区海博幼儿园", "address": "319线与善池路交叉口东180米", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.714652, 29.038147]}, "properties": {"name": "北方之子幼稚园", "address": "三闾路", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.686408, 29.0641]}, "properties": {"name": "水晶宫幼儿园", "address": "东风社区398号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.686168, 29.018088]}, "properties": {"name": "鼎城区博苑十里外滩幼儿园", "address": "大湖路滨江花苑南侧", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.654869, 29.061787]}, "properties": {"name": "常德市第一幼儿园西园", "address": "花林路102号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.687121, 29.064416]}, "properties": {"name": "新雅蓓幼儿园", "address": "武陖区火车站三星路", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669471, 29.010761]}, "properties": {"name": "紫薇国际幼儿园", "address": "德安路紫薇佳园二期小区内", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.677678, 29.032364]}, "properties": {"name": "湖南幼儿师范高等专科学校附属幼儿园", "address": "人民路2555号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.694126, 29.031716]}, "properties": {"name": "卫门口幼儿园", "address": "建设路1195号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.657155, 29.072151]}, "properties": {"name": "兴发幼儿园", "address": "常德大道辅路与竹根谭路之间", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.666266, 28.997911]}, "properties": {"name": "鼎卫豪苑幼儿园", "address": "金霞路与桃花源路交汇处", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.68449, 28.999558]}, "properties": {"name": "金江南幼稚园", "address": "武陵镇桥南", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.715478, 29.023783]}, "properties": {"name": "育才幼儿园(三闾路)", "address": "三闾路389号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.663417, 29.027319]}, "properties": {"name": "早橙幼儿园", "address": "高泗路与临江路交叉口西60米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.689162, 28.991722]}, "properties": {"name": "小天使幼儿园", "address": "郭家铺街道商贸城路桥南商贸城", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.754918, 29.041454]}, "properties": {"name": "武陵区东江幼儿园", "address": "269乡道附近", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.721467, 29.065749]}, "properties": {"name": "金泉世纪幼儿园", "address": "紫缘路与太阳大道交叉口东240米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.705034, 29.089817]}, "properties": {"name": "常德柳叶湖睿思公办幼儿园", "address": "柳叶湖街道万寿社区万寿馨福家园小区内", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.687777, 28.998575]}, "properties": {"name": "未来之星幼儿园(财富北路)", "address": "金霞路", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.662933, 29.040953]}, "properties": {"name": "熊家台幼儿园", "address": "仙源路与常澧路交叉口东北60米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.667768, 29.014584]}, "properties": {"name": "鼎城职工幼儿园", "address": "红云街道德安社区隆阳西路", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.665314, 29.044011]}, "properties": {"name": "育苗幼儿园(廖桥巷)", "address": "滨湖西路廖桥巷", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.641274, 29.038736]}, "properties": {"name": "常德市武陵区聚宝社区幼儿园", "address": "长庚街道聚宝社区11组", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.700141, 29.032102]}, "properties": {"name": "水榭花城幼儿园", "address": "公园路81号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.715861, 29.077861]}, "properties": {"name": "双桥公办幼儿园(蓓蕾幼教)", "address": "双桥名苑", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.676137, 29.001665]}, "properties": {"name": "爱儿思幼儿园", "address": "永安路与善池路交叉口东140米", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.657755, 29.024579]}, "properties": {"name": "滨江壹号幼儿园", "address": "中建滨江府绿泽苑东门东北70米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.697726, 29.057175]}, "properties": {"name": "紫兰幼儿园", "address": "朗州路芷兰居", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.686662, 29.037612]}, "properties": {"name": "D5区花蕾幼儿园", "address": "穿紫河街道新光社区朝阳D2区东门7栋", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.63541, 29.057666]}, "properties": {"name": "岩桥幸福幼稚园", "address": "河洑镇武陵区河伏乡镇府岩桥村部对面", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.675193, 29.010682]}, "properties": {"name": "新苗幼儿园(善池路)", "address": "武陵镇善池路118号", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669648, 29.073309]}, "properties": {"name": "城投新河苑幼儿园", "address": "常德大道3774号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.7117, 29.059297]}, "properties": {"name": "美麟幼稚园(朗州园)", "address": "紫缘路碧桂园朗州府", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.694091, 29.003457]}, "properties": {"name": "红太阳艺术幼儿园(建新路)", "address": "建新路", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.672522, 29.042431]}, "properties": {"name": "湖南文理学院西校区幼儿园", "address": "洞庭大道3150湖南文理学院西校区", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.67646, 29.064597]}, "properties": {"name": "君华御庭幼儿园", "address": "三星路632号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.731067, 29.068986]}, "properties": {"name": "柳叶湖旅游度假区复基幼儿园", "address": "环湖路18号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.693728, 29.002184]}, "properties": {"name": "小星星幼儿园(德源路店)", "address": "德源路380号", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.701435, 29.024748]}, "properties": {"name": "城南街道文化宫幼儿园", "address": "青年南路64号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.659563, 29.072081]}, "properties": {"name": "常德市鼎城区新时代幼儿园", "address": "兴发安置小区三期(南大门)", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.683467, 29.062365]}, "properties": {"name": "荷塘月色幼儿园", "address": "南坪街道南坪岗乡火车站荷塘月色小区", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.665593, 29.054513]}, "properties": {"name": "美麟幼稚园(芙蓉园)", "address": "芙蓉路1286号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.708038, 29.026178]}, "properties": {"name": "武陵区阳光幼儿园", "address": "阳光花城附近", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.714273, 29.039955]}, "properties": {"name": "艾乐翡翠湾幼儿园", "address": "老堤障路与刘家坪路交叉口西北40米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.666795, 29.011442]}, "properties": {"name": "世纪城堡幼儿园", "address": "鼎城路与红云路交汇处(新日世纪城东门门口)", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.685285, 28.989883]}, "properties": {"name": "育苗公立幼儿园", "address": "大湖路", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.713317, 29.049614]}, "properties": {"name": "香港艾乐(国际)七里桥幼儿园", "address": "乾园博士府南1门东120米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.702637, 29.041705]}, "properties": {"name": "金丹阳幼儿园", "address": "湘邮·紫金华庭西北1门旁", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.717631, 29.033553]}, "properties": {"name": "金和嘉苑国际幼稚园", "address": "三闾路705号", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.68413, 29.057019]}, "properties": {"name": "武陵区启萌幼儿园", "address": "沙港路与阳山大道交叉口东北340米", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669443, 29.014861]}, "properties": {"name": "博雅实验幼稚园", "address": "武陵镇德安路88号浙风名邸小区对面", "type": "幼儿园", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.697827, 29.061924]}, "properties": {"name": "常德市武陵区伟才幸福湾幼儿园", "address": "朗州北路华达.幸福湾小区", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.69125, 29.095694]}, "properties": {"name": "蓓蕾生态幼儿园(岩子堰园)", "address": "柳叶湖旅游渡假区火车站岩子堰安置小区", "type": "幼儿园", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670324, 29.043187]}, "properties": {"name": "湖南文理学院(南院)", "address": "滨湖路1708号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.673275, 29.045394]}, "properties": {"name": "湖南文理学院西校区体育学院", "address": "滨湖路1709号湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669166, 29.047706]}, "properties": {"name": "湖南文理学院西校区生命与环境科学学院", "address": "滨湖路1708号湖南文理学院西校区北院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.668986, 29.043649]}, "properties": {"name": "湖南文理学院西校区外国语学院", "address": "滨湖路1709号湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.63339, 29.024907]}, "properties": {"name": "常德科技职业技术学院南校区财经商贸系", "address": "高泗路602号常德科技职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669818, 29.041764]}, "properties": {"name": "湖南文理学院化学与材料工程学院", "address": "洞庭大道3150湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670205, 29.0432]}, "properties": {"name": "湖南文理学院西校区继续教育学院", "address": "洞庭大道3150湖南文理学院西校区", "type": "成人教育", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669152, 29.049181]}, "properties": {"name": "湖南文理学院西校区机械工程学院", "address": "滨湖路1708湖南文理学院西校区北院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669034, 29.044787]}, "properties": {"name": "湖南文理学院西校区音乐学院", "address": "滨湖路1709号湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669132, 29.048746]}, "properties": {"name": "湖南文理学院西校区土木建筑工程学院", "address": "滨湖路1708湖南文理学院西校区北院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.683166, 29.013526]}, "properties": {"name": "常德市鼎城区水电学校", "address": "隆阳路327号", "type": "学校", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.633542, 29.023639]}, "properties": {"name": "常德科技职业技术学院互联智造学院", "address": "高泗路602号常德科技职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.668944, 29.043194]}, "properties": {"name": "湖南文理学院西校区数理学院", "address": "长源路276号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.638404, 29.034863]}, "properties": {"name": "常德职业技术学院护理学院", "address": "芙蓉街道人民路4253号常德职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.673615, 29.050382]}, "properties": {"name": "湖南文理学院计算机与电气工程学院", "address": "龙港路417号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.66926, 29.047762]}, "properties": {"name": "湖南文理学院医学院", "address": "滨湖路1708号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.67023, 29.043202]}, "properties": {"name": "湖南文理学院西校区师范学院", "address": "滨湖路1709号湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.642783, 29.021215]}, "properties": {"name": "常德学院创新创业学院", "address": "常丹路与高泗路交叉口南200米", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.733817, 29.00002]}, "properties": {"name": "湖南常德海事学校", "address": "芦荻山乡(赵家婚新陂桥旁)", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.618133, 29.097413]}, "properties": {"name": "常德中山外校模科教学实训中心", "address": "中联大道175号", "type": "学校", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669974, 29.042593]}, "properties": {"name": "湖南文理学院教育科学学院", "address": "洞庭大道3146号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669028, 29.044709]}, "properties": {"name": "湖南文理学院美术与设计学院", "address": "滨湖路1708号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.635332, 29.023549]}, "properties": {"name": "常德科技职业技术学院南校区智联汽车学院", "address": "常德科技职业技术学院内", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.700987, 29.023195]}, "properties": {"name": "常德职业技术学院教育学院", "address": "人民路1266号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.671832, 29.050573]}, "properties": {"name": "湖南文理学院西校区地理科学与旅游学院", "address": "湖南文理学院内", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.641159, 29.034112]}, "properties": {"name": "常德职业技术学院-建筑工程系", "address": "人民路4253号常德职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670289, 29.043502]}, "properties": {"name": "湖南文理学院西校区经济与管理学院", "address": "白马湖街道逸夫路湖南文理学院西校区第二办公楼1楼", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.673163, 29.050274]}, "properties": {"name": "湖南文理学院国际学院", "address": "龙港路415号", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670258, 29.043199]}, "properties": {"name": "湖南文理学院西校区马克思主义学院", "address": "博学路湖南文理学院(西校区)", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669079, 29.046394]}, "properties": {"name": "湖南文理学院西校区法学院", "address": "滨湖路1709号湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669202, 29.04637]}, "properties": {"name": "湖南文理学院西校区文史学院", "address": "滨湖路1709号湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.670847, 29.041714]}, "properties": {"name": "湖南文理学院西校区化学与材料工程学院", "address": "滨湖路1709号湖南文理学院西校区", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.639943, 29.03413]}, "properties": {"name": "机电与信息工程系", "address": "常德职业技术学院第二实训楼3层", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "未找到"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.67242, 29.042692]}, "properties": {"name": "湖南文理学院-离退休工作处", "address": "博学路湖南文理学院(西校区)", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.63325, 29.029994]}, "properties": {"name": "常德科技职业技术学院北校区旅游管理系", "address": "高泗路602号常德科技职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.668704, 29.048103]}, "properties": {"name": "湖南文理学院西校区计算机科学与技术学院", "address": "滨湖路1708号湖南文理学院西校区北院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.639894, 29.034108]}, "properties": {"name": "现代教育技术中心", "address": "常德职业技术学院第二实训楼4层", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.668992, 29.047783]}, "properties": {"name": "湖南文理学院西校区电气工程系", "address": "滨湖路1708湖南文理学院西校区北院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.640458, 29.033915]}, "properties": {"name": "常德职业技术学院锐捷网络学院", "address": "厚德路常德职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.634327, 29.028829]}, "properties": {"name": "常德科技职业技术学院北校区艺术设计系", "address": "高泗路602号常德科技职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.639901, 29.034108]}, "properties": {"name": "国际教育部", "address": "常德职业技术学院第二实训楼2层", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.641824, 29.033499]}, "properties": {"name": "常德职业技术学院学生会", "address": "崇实路常德职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.632607, 29.029619]}, "properties": {"name": "常德科技职业技术学院北校区信息技术系", "address": "高泗路602号常德科技职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.643241, 29.021141]}, "properties": {"name": "常德技师学院东", "address": "常丹路与高泗路交叉口南220米", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.669139, 29.047186]}, "properties": {"name": "湖南文理学院思想政治理论课教学部", "address": "芙蓉路与渡缘路交叉口东300米", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.67924, 28.995219]}, "properties": {"name": "湖南应用技术学院创新创业学院", "address": "阳明大道辅路与金霞路交叉口西60米", "type": "高等院校", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.679878, 29.005516]}, "properties": {"name": "小鸿燕艺术学校(桥南校区)", "address": "博大·江山如画2期东门南140米", "type": "职业技术学校", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.706066, 29.024022]}, "properties": {"name": "常德市老年大学", "address": "体育路2号", "type": "成人教育", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.69558, 29.041913]}, "properties": {"name": "武陵区老干部(老年)大学", "address": "茉莉路68号", "type": "成人教育", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.68394, 29.00719]}, "properties": {"name": "鼎城区老年大学", "address": "体育馆", "type": "成人教育", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.668126, 28.989511]}, "properties": {"name": "红云学校", "address": "红云路与福广路交叉口东南180米", "type": "小学", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.640659, 29.032489]}, "properties": {"name": "常德职业技术学院第四教学楼", "address": "厚德路与博学路交叉口南60米", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.641133, 29.034449]}, "properties": {"name": "常德职业技术学院-第三教学楼", "address": "人民路4253号", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.6408, 29.036059]}, "properties": {"name": "常德职业技术学院办公楼", "address": "砺志路常德职业技术学院", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.727866, 29.032806]}, "properties": {"name": "常德职业技术学校", "address": "常德大道", "type": "职业技术学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.632144, 29.024591]}, "properties": {"name": "常德科技职业技术学院后勤服务楼", "address": "高泗路与金丹路交叉口西400米", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.71726, 29.037799]}, "properties": {"name": "辣妈时代职业培训学校", "address": "三闾路与竹园路交汇处三闾农贸市场2层", "type": "职业技术学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.674047, 29.006095]}, "properties": {"name": "常德蓝天职业技术学校", "address": "武陵镇桃花源路169号", "type": "职业技术学校", "adname": "鼎城区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.630686, 29.029295]}, "properties": {"name": "常德科技职业技术学院(北校区)焊接培训楼", "address": "雷坛岗路与金丹路交叉口西南500米", "type": "特殊教育学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.639957, 29.034064]}, "properties": {"name": "常德职业技术学院第二教学楼", "address": "人民路4253号", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.641313, 29.032568]}, "properties": {"name": "常德职业技术学院第二办公楼", "address": "芙蓉街道人民路4253号", "type": "学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.641824, 29.033515]}, "properties": {"name": "常德职业技术学院易班发展中心", "address": "崇实路常德职业技术学院", "type": "高等院校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.638947, 29.036708]}, "properties": {"name": "常德职业技术学院女寝4栋", "address": "人民路4253号常德职业技术学院", "type": "特殊教育学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.68197, 29.087028]}, "properties": {"name": "飞天电脑职业学校", "address": "德山街道金家坪村人口学校附近", "type": "职业技术学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [111.667174, 29.042388]}, "properties": {"name": "湖南网络工程职业学院常德分校", "address": "长澧巷与长升街交叉口北80米", "type": "职业技术学校", "adname": "武陵区", "source": "高德开放平台POI", "verify": "通过"}}]}
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671388,
+     29.048816
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院",
+    "address": "洞庭大道3150号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.641908,
+     29.035632
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院",
+    "address": "人民路4253号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.683173,
+     28.990176
+    ]
+   },
+   "properties": {
+    "name": "湖南应用技术学院(西校区)",
+    "address": "同德路",
+    "type": "高等院校",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.672593,
+     29.044863
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区",
+    "address": "滨湖路1709号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.720998,
+     29.025626
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院东校区",
+    "address": "高专路100号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.629054,
+     29.026903
+    ]
+   },
+   "properties": {
+    "name": "常德学院",
+    "address": "高泗路806号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671559,
+     29.050729
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区(北院)",
+    "address": "滨湖路1708号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.640299,
+     29.027003
+    ]
+   },
+   "properties": {
+    "name": "湖南幼儿师范高等专科学校",
+    "address": "高泗路600号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.63416,
+     29.028653
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院",
+    "address": "高泗路602号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.640451,
+     29.022301
+    ]
+   },
+   "properties": {
+    "name": "常德技师学院",
+    "address": "高泗路601号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.678364,
+     29.014628
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区第一中学",
+    "address": "鼎城路338号",
+    "type": "中学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.697361,
+     29.035254
+    ]
+   },
+   "properties": {
+    "name": "湖南省常德市第一中学",
+    "address": "朗州路263号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.701658,
+     29.055818
+    ]
+   },
+   "properties": {
+    "name": "常德芷兰实验学校",
+    "address": "柳叶大道2388号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.668392,
+     29.044714
+    ]
+   },
+   "properties": {
+    "name": "常德开放大学",
+    "address": "芙蓉路988号",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671938,
+     29.032811
+    ]
+   },
+   "properties": {
+    "name": "常德市第七中学",
+    "address": "人民路2777号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.672348,
+     29.008457
+    ]
+   },
+   "properties": {
+    "name": "淮阳中学",
+    "address": "桃花源路120号",
+    "type": "中学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.706379,
+     29.034072
+    ]
+   },
+   "properties": {
+    "name": "常德市第三中学",
+    "address": "光荣路138号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.708386,
+     29.01368
+    ]
+   },
+   "properties": {
+    "name": "湖南省常德市第六中学",
+    "address": "红旗路",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.676984,
+     29.037036
+    ]
+   },
+   "properties": {
+    "name": "湖南省常德市第五中学",
+    "address": "人民路2666号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.676748,
+     29.059012
+    ]
+   },
+   "properties": {
+    "name": "常德外国语学校",
+    "address": "龙港路638号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.697457,
+     29.045302
+    ]
+   },
+   "properties": {
+    "name": "常德市第十一中学",
+    "address": "朗州北路77号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.728639,
+     29.032412
+    ]
+   },
+   "properties": {
+    "name": "常德沅郡实验学校",
+    "address": "常德大道2058号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.725699,
+     29.093076
+    ]
+   },
+   "properties": {
+    "name": "常德市郡德学校",
+    "address": "万寿路双桥路口",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.721549,
+     29.033872
+    ]
+   },
+   "properties": {
+    "name": "常德长怡学校",
+    "address": "稻香路85号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.691705,
+     29.058045
+    ]
+   },
+   "properties": {
+    "name": "常德市常英学校",
+    "address": "芷兰街道柳菱社区沙港路289号(鸿升小区旁)",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.669097,
+     29.045568
+    ]
+   },
+   "properties": {
+    "name": "常德中山外语职业学校",
+    "address": "长源路173号",
+    "type": "职业技术学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.68933,
+     29.00886
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区阳明中学",
+    "address": "武陵镇花溪路325号",
+    "type": "中学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.666441,
+     28.99379
+    ]
+   },
+   "properties": {
+    "name": "善卷中学",
+    "address": "桃花源路",
+    "type": "中学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.730692,
+     29.06955
+    ]
+   },
+   "properties": {
+    "name": "常德市一中柳叶湖学校",
+    "address": "柳叶湖旅游度假区柳泉路913号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.674945,
+     29.017091
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区江南中学",
+    "address": "武陵镇临沅路521号",
+    "type": "中学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670222,
+     29.048177
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区第三教学楼",
+    "address": "滨湖路1708湖南文理学院西校区北院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.674717,
+     29.014716
+    ]
+   },
+   "properties": {
+    "name": "常德朗州高级中学",
+    "address": "鼎城路638号",
+    "type": "中学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.704181,
+     29.024365
+    ]
+   },
+   "properties": {
+    "name": "常德市第四中学",
+    "address": "城南建设东路117号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.659715,
+     29.042964
+    ]
+   },
+   "properties": {
+    "name": "常德市第十三中学",
+    "address": "长庚路679号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.639447,
+     29.036841
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院第一教学楼",
+    "address": "人民路4253号常德职业技术学院",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.714356,
+     29.028881
+    ]
+   },
+   "properties": {
+    "name": "中共常德市武陵区委党校",
+    "address": "红庙街653号",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.633778,
+     29.031148
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院北校区",
+    "address": "岩坪路与金丹路交叉口西北340米",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.7369,
+     29.068672
+    ]
+   },
+   "properties": {
+    "name": "柳叶湖旅游度假区复基小学",
+    "address": "柳叶湖旅游度假区柳泉路1198号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.705556,
+     29.048708
+    ]
+   },
+   "properties": {
+    "name": "紫桥小学",
+    "address": "紫桥路",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.716046,
+     29.027451
+    ]
+   },
+   "properties": {
+    "name": "常德嘉树学校",
+    "address": "三闾路457号",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.68939,
+     29.028859
+    ]
+   },
+   "properties": {
+    "name": "育英小学",
+    "address": "人民路1773号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.659072,
+     29.00978
+    ]
+   },
+   "properties": {
+    "name": "江南小学",
+    "address": "武陵镇花船庙村九组临沅路140号",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.68817,
+     29.057263
+    ]
+   },
+   "properties": {
+    "name": "常德市武陵区第五小学",
+    "address": "沙港路399号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.635182,
+     29.026467
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院南校区",
+    "address": "金丹路与高泗路交叉口西北280米",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.712917,
+     29.023814
+    ]
+   },
+   "properties": {
+    "name": "常德市体育运动学校",
+    "address": "高专路463号",
+    "type": "职业技术学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.679122,
+     29.03254
+    ]
+   },
+   "properties": {
+    "name": "湖南幼儿师范高等专科学校附属小学",
+    "address": "人民路2555号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.68782,
+     29.007269
+    ]
+   },
+   "properties": {
+    "name": "严家岗完小",
+    "address": "武陵镇向群巷331号",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.688555,
+     29.017105
+    ]
+   },
+   "properties": {
+    "name": "武陵小学",
+    "address": "光明巷6号",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.693906,
+     29.031617
+    ]
+   },
+   "properties": {
+    "name": "卫门口小学",
+    "address": "建设路1219号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.718275,
+     29.042146
+    ]
+   },
+   "properties": {
+    "name": "武陵区第六小学",
+    "address": "老堤障路与三闾路交叉口西北角",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.677487,
+     29.01629
+    ]
+   },
+   "properties": {
+    "name": "中共常德市鼎城区委党校",
+    "address": "隆阳路566号",
+    "type": "学校",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.716897,
+     29.00887
+    ]
+   },
+   "properties": {
+    "name": "常德市特殊教育学校",
+    "address": "皇经阁巷旺企路附近",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.686848,
+     29.071369
+    ]
+   },
+   "properties": {
+    "name": "武陵区东风小学",
+    "address": "武陵区火车站皂果路清坪树乡东风中心小学",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.653303,
+     29.047102
+    ]
+   },
+   "properties": {
+    "name": "金丹实验学校",
+    "address": "长庚街道滨湖路",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.699832,
+     29.034542
+    ]
+   },
+   "properties": {
+    "name": "北正街小学",
+    "address": "朗州路298号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.66704,
+     29.034982
+    ]
+   },
+   "properties": {
+    "name": "芙蓉路小学",
+    "address": "芙蓉路333号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.715761,
+     29.02629
+    ]
+   },
+   "properties": {
+    "name": "育才小学(暂停营业)",
+    "address": "三闾路",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.67249,
+     29.037215
+    ]
+   },
+   "properties": {
+    "name": "工农小学",
+    "address": "人民西路578号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.706595,
+     29.018657
+    ]
+   },
+   "properties": {
+    "name": "东升小学",
+    "address": "人民路836号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.695462,
+     29.035898
+    ]
+   },
+   "properties": {
+    "name": "常德市育才中学",
+    "address": "育才路127号",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.669009,
+     29.042898
+    ]
+   },
+   "properties": {
+    "name": "三岔路小学",
+    "address": "长源路83号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.693389,
+     29.009393
+    ]
+   },
+   "properties": {
+    "name": "鼎城区常沅完全小学",
+    "address": "花溪路231号",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.676584,
+     29.016362
+    ]
+   },
+   "properties": {
+    "name": "花船庙小学",
+    "address": "善池路与隆阳路交叉口东100米",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.7076,
+     29.059041
+    ]
+   },
+   "properties": {
+    "name": "北正街恒大华府小学",
+    "address": "恒大华府西门北320米",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.703269,
+     29.063463
+    ]
+   },
+   "properties": {
+    "name": "紫菱小学",
+    "address": "穿紫河街道新河路103号(柳都水语对面)",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.676662,
+     29.044052
+    ]
+   },
+   "properties": {
+    "name": "育英德景园小学",
+    "address": "德景园(龙港路东)",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.743562,
+     29.005657
+    ]
+   },
+   "properties": {
+    "name": "常德市第十七中学",
+    "address": "芦荻山乡",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.716187,
+     29.015794
+    ]
+   },
+   "properties": {
+    "name": "旭辉东升小学",
+    "address": "人民东路488号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.695797,
+     29.04482
+    ]
+   },
+   "properties": {
+    "name": "滨湖小学",
+    "address": "芙蓉东路168号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.669799,
+     29.017881
+    ]
+   },
+   "properties": {
+    "name": "江南小学分校",
+    "address": "武陵镇花船庙村九组临沅路140号",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.668719,
+     29.01687
+    ]
+   },
+   "properties": {
+    "name": "朗州小学",
+    "address": "临沅路",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.637608,
+     29.007006
+    ]
+   },
+   "properties": {
+    "name": "丹洲中心小学",
+    "address": "277乡道北50米",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.70561,
+     29.062496
+    ]
+   },
+   "properties": {
+    "name": "常德芷兰实验学校小学部",
+    "address": "紫菱路",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.707415,
+     29.028596
+    ]
+   },
+   "properties": {
+    "name": "武陵区胜利路小学",
+    "address": "胜利街与青年路交叉口南180米",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.690147,
+     29.065847
+    ]
+   },
+   "properties": {
+    "name": "武陵区朝阳小学",
+    "address": "新河路420号",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.644007,
+     29.064403
+    ]
+   },
+   "properties": {
+    "name": "青林小学",
+    "address": "青林1组",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.719691,
+     28.99721
+    ]
+   },
+   "properties": {
+    "name": "东源小学",
+    "address": "东郊乡双拥路申湘汽车旁",
+    "type": "小学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.689347,
+     29.008853
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区第九中学",
+    "address": "武陵镇花溪路325号",
+    "type": "中学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.755292,
+     29.09345
+    ]
+   },
+   "properties": {
+    "name": "白鹤镇中学",
+    "address": "白鹤镇万金障",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.643136,
+     29.003546
+    ]
+   },
+   "properties": {
+    "name": "常德市第十六中学",
+    "address": "丹州乡丹洲中学附近",
+    "type": "中学",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.704,
+     29.048634
+    ]
+   },
+   "properties": {
+    "name": "紫桥幼儿园",
+    "address": "紫桥北路",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.687732,
+     29.061989
+    ]
+   },
+   "properties": {
+    "name": "乐享·爱弥儿国际幼稚园",
+    "address": "紫菱路与东风路交汇处(交警四大队对面)",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.707366,
+     29.01955
+    ]
+   },
+   "properties": {
+    "name": "常德市第一幼儿园",
+    "address": "百胜巷32号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.664445,
+     29.050509
+    ]
+   },
+   "properties": {
+    "name": "艾兰德·伊顿幼儿园",
+    "address": "渡缘路与仙源路交叉口东北100米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.696217,
+     29.013766
+    ]
+   },
+   "properties": {
+    "name": "善卷幼儿园",
+    "address": "玉霞街道临江社区善德路",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.658539,
+     29.031616
+    ]
+   },
+   "properties": {
+    "name": "天源星城幼儿园",
+    "address": "天源星城小区西门",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.655223,
+     29.046387
+    ]
+   },
+   "properties": {
+    "name": "常德女子外语学校附属幼儿园",
+    "address": "滨湖西路2860号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.687317,
+     29.005599
+    ]
+   },
+   "properties": {
+    "name": "小红帽幼儿园(永安社区园)",
+    "address": "永安社区卫星池小区",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.704997,
+     29.023243
+    ]
+   },
+   "properties": {
+    "name": "武陵区中心幼儿园",
+    "address": "城门口路",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.669735,
+     29.056736
+    ]
+   },
+   "properties": {
+    "name": "特乐思幼儿园",
+    "address": "沙港路白马社区对面",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.686545,
+     29.008316
+    ]
+   },
+   "properties": {
+    "name": "智慧树幼儿园",
+    "address": "大湖路537号",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.682554,
+     29.00333
+    ]
+   },
+   "properties": {
+    "name": "纽伯瑞幼儿园",
+    "address": "阳明路与永安路交汇处",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.677456,
+     29.007592
+    ]
+   },
+   "properties": {
+    "name": "大地幼儿园",
+    "address": "建新路(博大·江山如画-南区西侧)",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.686068,
+     29.058407
+    ]
+   },
+   "properties": {
+    "name": "沙港社区明星幼儿园",
+    "address": "南坪街道沙港社区东风南路500号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.682552,
+     29.016087
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区实验幼儿园",
+    "address": "隆阳路360号",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.729942,
+     29.058781
+    ]
+   },
+   "properties": {
+    "name": "保利和乐稚美幼儿园(常德分园)",
+    "address": "柳溪路保利中央公园",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.676653,
+     29.044946
+    ]
+   },
+   "properties": {
+    "name": "德景园国际幼儿园",
+    "address": "龙港路与滨湖路交叉口东南160米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.707869,
+     29.060125
+    ]
+   },
+   "properties": {
+    "name": "恒大姜莱幼儿园",
+    "address": "荷花路与紫菱路交叉口南120米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.662529,
+     29.003411
+    ]
+   },
+   "properties": {
+    "name": "红云公立幼儿园",
+    "address": "桃花源路",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.624784,
+     28.993595
+    ]
+   },
+   "properties": {
+    "name": "丹洲中心幼儿园",
+    "address": "276乡道垢湖村附近",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.687441,
+     29.048606
+    ]
+   },
+   "properties": {
+    "name": "皂果幼儿园",
+    "address": "穿紫河朝阳路877号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.697014,
+     29.005972
+    ]
+   },
+   "properties": {
+    "name": "北京博苑红太阳幼儿园",
+    "address": "双潭路341号",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.691568,
+     29.059296
+    ]
+   },
+   "properties": {
+    "name": "圆点爱弥儿幼稚园(鸿升园)",
+    "address": "鸿运巷108号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.733919,
+     29.030429
+    ]
+   },
+   "properties": {
+    "name": "春蕾幼儿园(青年路)",
+    "address": "青年路1177号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.662971,
+     29.039286
+    ]
+   },
+   "properties": {
+    "name": "文博幼儿园(东汉街)",
+    "address": "金城小区12栋2楼",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.683852,
+     29.037776
+    ]
+   },
+   "properties": {
+    "name": "美麟幼稚园",
+    "address": "白马湖街道育才西路阳光孤儿院旁",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.720799,
+     29.022711
+    ]
+   },
+   "properties": {
+    "name": "东方英伦幼儿园",
+    "address": "楠竹山高专路芙蓉学院对面",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.713244,
+     29.040358
+    ]
+   },
+   "properties": {
+    "name": "三闾幼儿园",
+    "address": "东郊乡三闾村2-55",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.678247,
+     29.016388
+    ]
+   },
+   "properties": {
+    "name": "湘景·金色梯田幼儿园",
+    "address": "隆阳路老卫校内",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.724282,
+     29.034765
+    ]
+   },
+   "properties": {
+    "name": "武陵区嘉智幼儿园",
+    "address": "高坪头社区大楼",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.664598,
+     29.034493
+    ]
+   },
+   "properties": {
+    "name": "常德武陵区实验幼儿园",
+    "address": "竹叶路与西郊一巷交叉口东北240米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.677712,
+     29.008381
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区海博幼儿园",
+    "address": "319线与善池路交叉口东180米",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.715736,
+     29.039929
+    ]
+   },
+   "properties": {
+    "name": "北方之子幼稚园",
+    "address": "三闾路",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.687572,
+     29.065929
+    ]
+   },
+   "properties": {
+    "name": "水晶宫幼儿园",
+    "address": "东风社区398号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.687173,
+     29.019813
+    ]
+   },
+   "properties": {
+    "name": "鼎城区博苑十里外滩幼儿园",
+    "address": "大湖路滨江花苑南侧",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.656027,
+     29.063608
+    ]
+   },
+   "properties": {
+    "name": "常德市第一幼儿园西园",
+    "address": "花林路102号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.688286,
+     29.066246
+    ]
+   },
+   "properties": {
+    "name": "新雅蓓幼儿园",
+    "address": "武陖区火车站三星路",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670445,
+     29.012462
+    ]
+   },
+   "properties": {
+    "name": "紫薇国际幼儿园",
+    "address": "德安路紫薇佳园二期小区内",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.67874,
+     29.034127
+    ]
+   },
+   "properties": {
+    "name": "湖南幼儿师范高等专科学校附属幼儿园",
+    "address": "人民路2555号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.695186,
+     29.033479
+    ]
+   },
+   "properties": {
+    "name": "卫门口幼儿园",
+    "address": "建设路1195号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.658338,
+     29.073986
+    ]
+   },
+   "properties": {
+    "name": "兴发幼儿园",
+    "address": "常德大道辅路与竹根谭路之间",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.667184,
+     28.999572
+    ]
+   },
+   "properties": {
+    "name": "鼎卫豪苑幼儿园",
+    "address": "金霞路与桃花源路交汇处",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.685415,
+     29.001227
+    ]
+   },
+   "properties": {
+    "name": "金江南幼稚园",
+    "address": "武陵镇桥南",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.716507,
+     29.025527
+    ]
+   },
+   "properties": {
+    "name": "育才幼儿园(三闾路)",
+    "address": "三闾路389号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.664459,
+     29.029066
+    ]
+   },
+   "properties": {
+    "name": "早橙幼儿园",
+    "address": "高泗路与临江路交叉口西60米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.690053,
+     28.993367
+    ]
+   },
+   "properties": {
+    "name": "小天使幼儿园",
+    "address": "郭家铺街道商贸城路桥南商贸城",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.756015,
+     29.043247
+    ]
+   },
+   "properties": {
+    "name": "武陵区东江幼儿园",
+    "address": "269乡道附近",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.722636,
+     29.067584
+    ]
+   },
+   "properties": {
+    "name": "金泉世纪幼儿园",
+    "address": "紫缘路与太阳大道交叉口东240米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.706247,
+     29.091671
+    ]
+   },
+   "properties": {
+    "name": "常德柳叶湖睿思公办幼儿园",
+    "address": "柳叶湖街道万寿社区万寿馨福家园小区内",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.688698,
+     29.000241
+    ]
+   },
+   "properties": {
+    "name": "未来之星幼儿园(财富北路)",
+    "address": "金霞路",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.664026,
+     29.042735
+    ]
+   },
+   "properties": {
+    "name": "熊家台幼儿园",
+    "address": "仙源路与常澧路交叉口东北60米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.668758,
+     29.016296
+    ]
+   },
+   "properties": {
+    "name": "鼎城职工幼儿园",
+    "address": "红云街道德安社区隆阳西路",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.666418,
+     29.0458
+    ]
+   },
+   "properties": {
+    "name": "育苗幼儿园(廖桥巷)",
+    "address": "滨湖西路廖桥巷",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.642359,
+     29.040508
+    ]
+   },
+   "properties": {
+    "name": "常德市武陵区聚宝社区幼儿园",
+    "address": "长庚街道聚宝社区11组",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.701202,
+     29.033867
+    ]
+   },
+   "properties": {
+    "name": "水榭花城幼儿园",
+    "address": "公园路81号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.717056,
+     29.079709
+    ]
+   },
+   "properties": {
+    "name": "双桥公办幼儿园(蓓蕾幼教)",
+    "address": "双桥名苑",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.677071,
+     29.003339
+    ]
+   },
+   "properties": {
+    "name": "爱儿思幼儿园",
+    "address": "永安路与善池路交叉口东140米",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.658786,
+     29.026318
+    ]
+   },
+   "properties": {
+    "name": "滨江壹号幼儿园",
+    "address": "中建滨江府绿泽苑东门东北70米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.698872,
+     29.058995
+    ]
+   },
+   "properties": {
+    "name": "紫兰幼儿园",
+    "address": "朗州路芷兰居",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.687744,
+     29.039389
+    ]
+   },
+   "properties": {
+    "name": "D5区花蕾幼儿园",
+    "address": "穿紫河街道新光社区朝阳D2区东门7栋",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.636556,
+     29.059476
+    ]
+   },
+   "properties": {
+    "name": "岩桥幸福幼稚园",
+    "address": "河洑镇武陵区河伏乡镇府岩桥村部对面",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.676166,
+     29.012383
+    ]
+   },
+   "properties": {
+    "name": "新苗幼儿园(善池路)",
+    "address": "武陵镇善池路118号",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670833,
+     29.075147
+    ]
+   },
+   "properties": {
+    "name": "城投新河苑幼儿园",
+    "address": "常德大道3774号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.712852,
+     29.061122
+    ]
+   },
+   "properties": {
+    "name": "美麟幼稚园(朗州园)",
+    "address": "紫缘路碧桂园朗州府",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.695033,
+     29.005139
+    ]
+   },
+   "properties": {
+    "name": "红太阳艺术幼儿园(建新路)",
+    "address": "建新路",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.673621,
+     29.044217
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区幼儿园",
+    "address": "洞庭大道3150湖南文理学院西校区",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.677625,
+     29.066425
+    ]
+   },
+   "properties": {
+    "name": "君华御庭幼儿园",
+    "address": "三星路632号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.732244,
+     29.070827
+    ]
+   },
+   "properties": {
+    "name": "柳叶湖旅游度假区复基幼儿园",
+    "address": "环湖路18号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.694665,
+     29.003862
+    ]
+   },
+   "properties": {
+    "name": "小星星幼儿园(德源路店)",
+    "address": "德源路380号",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.702467,
+     29.026493
+    ]
+   },
+   "properties": {
+    "name": "城南街道文化宫幼儿园",
+    "address": "青年南路64号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.660746,
+     29.073916
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区新时代幼儿园",
+    "address": "兴发安置小区三期(南大门)",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.684627,
+     29.064191
+    ]
+   },
+   "properties": {
+    "name": "荷塘月色幼儿园",
+    "address": "南坪街道南坪岗乡火车站荷塘月色小区",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.666731,
+     29.056323
+    ]
+   },
+   "properties": {
+    "name": "美麟幼稚园(芙蓉园)",
+    "address": "芙蓉路1286号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.709076,
+     29.027928
+    ]
+   },
+   "properties": {
+    "name": "武陵区阳光幼儿园",
+    "address": "阳光花城附近",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.715364,
+     29.041741
+    ]
+   },
+   "properties": {
+    "name": "艾乐翡翠湾幼儿园",
+    "address": "老堤障路与刘家坪路交叉口西北40米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.667772,
+     29.013144
+    ]
+   },
+   "properties": {
+    "name": "世纪城堡幼儿园",
+    "address": "鼎城路与红云路交汇处(新日世纪城东门门口)",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.686168,
+     28.991522
+    ]
+   },
+   "properties": {
+    "name": "育苗公立幼儿园",
+    "address": "大湖路",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.71444,
+     29.051421
+    ]
+   },
+   "properties": {
+    "name": "香港艾乐(国际)七里桥幼儿园",
+    "address": "乾园博士府南1门东120米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.703734,
+     29.043494
+    ]
+   },
+   "properties": {
+    "name": "金丹阳幼儿园",
+    "address": "湘邮·紫金华庭西北1门旁",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.718698,
+     29.035324
+    ]
+   },
+   "properties": {
+    "name": "金和嘉苑国际幼稚园",
+    "address": "三闾路705号",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.685275,
+     29.058837
+    ]
+   },
+   "properties": {
+    "name": "武陵区启萌幼儿园",
+    "address": "沙港路与阳山大道交叉口东北340米",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670434,
+     29.016574
+    ]
+   },
+   "properties": {
+    "name": "博雅实验幼稚园",
+    "address": "武陵镇德安路88号浙风名邸小区对面",
+    "type": "幼儿园",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.698986,
+     29.063751
+    ]
+   },
+   "properties": {
+    "name": "常德市武陵区伟才幸福湾幼儿园",
+    "address": "朗州北路华达.幸福湾小区",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.692469,
+     29.097547
+    ]
+   },
+   "properties": {
+    "name": "蓓蕾生态幼儿园(岩子堰园)",
+    "address": "柳叶湖旅游渡假区火车站岩子堰安置小区",
+    "type": "幼儿园",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671425,
+     29.044975
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院(南院)",
+    "address": "滨湖路1708号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.674384,
+     29.047187
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区体育学院",
+    "address": "滨湖路1709号湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670282,
+     29.049503
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区生命与环境科学学院",
+    "address": "滨湖路1708号湖南文理学院西校区北院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670089,
+     29.045438
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区外国语学院",
+    "address": "滨湖路1709号湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.634422,
+     29.026642
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院南校区财经商贸系",
+    "address": "高泗路602号常德科技职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670914,
+     29.043548
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院化学与材料工程学院",
+    "address": "洞庭大道3150湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671306,
+     29.044988
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区继续教育学院",
+    "address": "洞庭大道3150湖南文理学院西校区",
+    "type": "成人教育",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670273,
+     29.050982
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区机械工程学院",
+    "address": "滨湖路1708湖南文理学院西校区北院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670141,
+     29.046578
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区音乐学院",
+    "address": "滨湖路1709号湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670252,
+     29.050546
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区土木建筑工程学院",
+    "address": "滨湖路1708湖南文理学院西校区北院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.684152,
+     29.015237
+    ]
+   },
+   "properties": {
+    "name": "常德市鼎城区水电学校",
+    "address": "隆阳路327号",
+    "type": "学校",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.634569,
+     29.02537
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院互联智造学院",
+    "address": "高泗路602号常德科技职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670045,
+     29.044982
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区数理学院",
+    "address": "长源路276号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.639475,
+     29.036625
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院护理学院",
+    "address": "芙蓉街道人民路4253号常德职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.67474,
+     29.052186
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院计算机与电气工程学院",
+    "address": "龙港路417号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670377,
+     29.04956
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院医学院",
+    "address": "滨湖路1708号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671331,
+     29.04499
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区师范学院",
+    "address": "滨湖路1709号湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.6438,
+     29.022941
+    ]
+   },
+   "properties": {
+    "name": "常德学院创新创业学院",
+    "address": "常丹路与高泗路交叉口南200米",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.734745,
+     29.001695
+    ]
+   },
+   "properties": {
+    "name": "湖南常德海事学校",
+    "address": "芦荻山乡(赵家婚新陂桥旁)",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.619352,
+     29.099254
+    ]
+   },
+   "properties": {
+    "name": "常德中山外校模科教学实训中心",
+    "address": "中联大道175号",
+    "type": "学校",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671073,
+     29.044379
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院教育科学学院",
+    "address": "洞庭大道3146号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670135,
+     29.0465
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院美术与设计学院",
+    "address": "滨湖路1708号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.636359,
+     29.025281
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院南校区智联汽车学院",
+    "address": "常德科技职业技术学院内",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.702013,
+     29.024936
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院教育学院",
+    "address": "人民路1266号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.672958,
+     29.052377
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区地理科学与旅游学院",
+    "address": "湖南文理学院内",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.642227,
+     29.035873
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院-建筑工程系",
+    "address": "人民路4253号常德职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671391,
+     29.045291
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区经济与管理学院",
+    "address": "白马湖街道逸夫路湖南文理学院西校区第二办公楼1楼",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.674288,
+     29.052077
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院国际学院",
+    "address": "龙港路415号",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671359,
+     29.044987
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区马克思主义学院",
+    "address": "博学路湖南文理学院(西校区)",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670191,
+     29.048189
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区法学院",
+    "address": "滨湖路1709号湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670314,
+     29.048165
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区文史学院",
+    "address": "滨湖路1709号湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.671943,
+     29.043499
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区化学与材料工程学院",
+    "address": "滨湖路1709号湖南文理学院西校区",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.641011,
+     29.035891
+    ]
+   },
+   "properties": {
+    "name": "机电与信息工程系",
+    "address": "常德职业技术学院第二实训楼3层",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "未找到"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.67352,
+     29.044479
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院-离退休工作处",
+    "address": "博学路湖南文理学院(西校区)",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.634302,
+     29.031743
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院北校区旅游管理系",
+    "address": "高泗路602号常德科技职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.669822,
+     29.049901
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区计算机科学与技术学院",
+    "address": "滨湖路1708号湖南文理学院西校区北院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.640962,
+     29.035869
+    ]
+   },
+   "properties": {
+    "name": "现代教育技术中心",
+    "address": "常德职业技术学院第二实训楼4层",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670109,
+     29.049581
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院西校区电气工程系",
+    "address": "滨湖路1708湖南文理学院西校区北院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.641525,
+     29.035675
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院锐捷网络学院",
+    "address": "厚德路常德职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.635375,
+     29.030575
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院北校区艺术设计系",
+    "address": "高泗路602号常德科技职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.640969,
+     29.035869
+    ]
+   },
+   "properties": {
+    "name": "国际教育部",
+    "address": "常德职业技术学院第二实训楼2层",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.64289,
+     29.035259
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院学生会",
+    "address": "崇实路常德职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.633658,
+     29.031367
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院北校区信息技术系",
+    "address": "高泗路602号常德科技职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.644258,
+     29.022867
+    ]
+   },
+   "properties": {
+    "name": "常德技师学院东",
+    "address": "常丹路与高泗路交叉口南220米",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.670254,
+     29.048982
+    ]
+   },
+   "properties": {
+    "name": "湖南文理学院思想政治理论课教学部",
+    "address": "芙蓉路与渡缘路交叉口东300米",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.680146,
+     28.996874
+    ]
+   },
+   "properties": {
+    "name": "湖南应用技术学院创新创业学院",
+    "address": "阳明大道辅路与金霞路交叉口西60米",
+    "type": "高等院校",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.680829,
+     29.007202
+    ]
+   },
+   "properties": {
+    "name": "小鸿燕艺术学校(桥南校区)",
+    "address": "博大·江山如画2期东门南140米",
+    "type": "职业技术学校",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.707096,
+     29.025766
+    ]
+   },
+   "properties": {
+    "name": "常德市老年大学",
+    "address": "体育路2号",
+    "type": "成人教育",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.696677,
+     29.043701
+    ]
+   },
+   "properties": {
+    "name": "武陵区老干部(老年)大学",
+    "address": "茉莉路68号",
+    "type": "成人教育",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.684898,
+     29.008882
+    ]
+   },
+   "properties": {
+    "name": "鼎城区老年大学",
+    "address": "体育馆",
+    "type": "成人教育",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.669007,
+     28.991147
+    ]
+   },
+   "properties": {
+    "name": "红云学校",
+    "address": "红云路与福广路交叉口东南180米",
+    "type": "小学",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.641721,
+     29.034246
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院第四教学楼",
+    "address": "厚德路与博学路交叉口南60米",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.642202,
+     29.036211
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院-第三教学楼",
+    "address": "人民路4253号",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.641875,
+     29.037825
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院办公楼",
+    "address": "砺志路常德职业技术学院",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.72893,
+     29.034576
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学校",
+    "address": "常德大道",
+    "type": "职业技术学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.633175,
+     29.026325
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院后勤服务楼",
+    "address": "高泗路与金丹路交叉口西400米",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.718343,
+     29.03958
+    ]
+   },
+   "properties": {
+    "name": "辣妈时代职业培训学校",
+    "address": "三闾路与竹园路交汇处三闾农贸市场2层",
+    "type": "职业技术学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.675001,
+     29.007782
+    ]
+   },
+   "properties": {
+    "name": "常德蓝天职业技术学校",
+    "address": "武陵镇桃花源路169号",
+    "type": "职业技术学校",
+    "adname": "鼎城区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.631735,
+     29.031041
+    ]
+   },
+   "properties": {
+    "name": "常德科技职业技术学院(北校区)焊接培训楼",
+    "address": "雷坛岗路与金丹路交叉口西南500米",
+    "type": "特殊教育学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.641025,
+     29.035825
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院第二教学楼",
+    "address": "人民路4253号",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.642375,
+     29.034325
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院第二办公楼",
+    "address": "芙蓉街道人民路4253号",
+    "type": "学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.64289,
+     29.035275
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院易班发展中心",
+    "address": "崇实路常德职业技术学院",
+    "type": "高等院校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.640025,
+     29.038475
+    ]
+   },
+   "properties": {
+    "name": "常德职业技术学院女寝4栋",
+    "address": "人民路4253号常德职业技术学院",
+    "type": "特殊教育学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.683179,
+     29.088878
+    ]
+   },
+   "properties": {
+    "name": "飞天电脑职业学校",
+    "address": "德山街道金家坪村人口学校附近",
+    "type": "职业技术学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.668273,
+     29.044173
+    ]
+   },
+   "properties": {
+    "name": "湖南网络工程职业学院常德分校",
+    "address": "长澧巷与长升街交叉口北80米",
+    "type": "职业技术学校",
+    "adname": "武陵区",
+    "source": "高德开放平台POI",
+    "verify": "通过"
+   }
+  }
+ ]
+}

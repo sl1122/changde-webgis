@@ -49,7 +49,7 @@
     // ---------------- 3. 地图（Leaflet + 多源开源底图，默认高德瓦片） ----------------
     var gcjMode = true; // 当前底图是否为高德 GCJ-02（默认高德，切换时同步数据坐标系）
     var map = L.map('map', {
-        center: gcjMode ? wgs2gcj([29.045, 111.69]) : [29.045, 111.69],
+        center: gcjMode ? [29.045, 111.69] : gcj2wgs([29.045, 111.69]),
         zoom: 13,
         zoomControl: false,
         minZoom: 9,
@@ -92,10 +92,25 @@
         dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * Math.PI);
         return [lat + dLat, lng + dLng];
     }
-    // GeoJSON [lng,lat] → Leaflet [lat,lng]，并按当前底图坐标系转换
+    // GeoJSON [lng,lat] → Leaflet [lat,lng]
+    // 数据坐标 = GCJ-02（高德原始采集，v36 时代坐标系）：高德底图零转换直用（完全对齐），
+    // 开源底图(WGS-84)时动态转换；切换底图时全部图层重绘（activateTile 内）
+    function gcj2wgs(ll) { // [lat,lng] GCJ-02 → WGS-84 [lat,lng]
+        var lat = ll[0], lng = ll[1];
+        var a = 6378245.0, ee = 0.00669342162296594323;
+        var dLat = transformLat(lng - 105.0, lat - 35.0);
+        var dLng = transformLng(lng - 105.0, lat - 35.0);
+        var radLat = lat / 180.0 * Math.PI;
+        var magic = Math.sin(radLat);
+        magic = 1 - ee * magic * magic;
+        var sqrtMagic = Math.sqrt(magic);
+        dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
+        dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * Math.PI);
+        return [lat * 2 - (lat + dLat), lng * 2 - (lng + dLng)];
+    }
     function toMapCoord(c) {
         var ll = [c[1], c[0]];
-        return gcjMode ? wgs2gcj(ll) : ll;
+        return gcjMode ? ll : gcj2wgs(ll);
     }
     var tile = null, tileIdx = 0, tileErr = 0, tileWatchdog = null;
     function activateTile(idx) {
@@ -154,7 +169,7 @@
     document.getElementById('btn-zoom-in').addEventListener('click', function () { map.zoomIn(); });
     document.getElementById('btn-zoom-out').addEventListener('click', function () { map.zoomOut(); });
 
-    var INIT_CENTER = [29.045, 111.69], INIT_ZOOM = 13;
+    var INIT_CENTER = [29.045, 111.69], INIT_ZOOM = 13; // GCJ-02 中心（高德底图直用）
 
     // ---------------- 4. 图层管理 ----------------
     var LAYER_CONFIG = {
@@ -517,7 +532,7 @@
 
     // ---------------- 9. 复位 / 全景适配 ----------------
     document.getElementById('btn-home').addEventListener('click', function () {
-        map.setView(gcjMode ? wgs2gcj(INIT_CENTER) : INIT_CENTER, INIT_ZOOM);
+        map.setView(gcjMode ? INIT_CENTER : gcj2wgs(INIT_CENTER), INIT_ZOOM);
     });
     document.getElementById('btn-locate').addEventListener('click', function () {
         fitDataView();
