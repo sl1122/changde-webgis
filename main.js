@@ -1120,7 +1120,34 @@
             wrap.appendChild(d);
         }
     }
-    function applyPack(packKey) {
+    // 材质包切换时同步地图图层颜色（POI 圆点/道路线随材质包与夜间模式换色）
+    function themeCSSVar(name) {
+        return getComputedStyle(document.body).getPropertyValue(name).trim() || '#888';
+    }
+    function repaintThemeColors() {
+        LAYER_CONFIG.school.color = themeCSSVar('--school');
+        LAYER_CONFIG.hospital.color = themeCSSVar('--hospital');
+        LAYER_CONFIG.scenic.color = themeCSSVar('--scenic');
+        LAYER_CONFIG.road.color = themeCSSVar('--road');
+        ['school', 'hospital', 'scenic'].forEach(function (key) {
+            ['clusters', 'plains'].forEach(function (bucket) {
+                var g = pointsLayer[bucket][key];
+                if (!g) return;
+                g.eachLayer(function (l) {
+                    if (l.setStyle) l.setStyle({ color: LAYER_CONFIG[key].color, fillColor: LAYER_CONFIG[key].color });
+                });
+            });
+        });
+        // 道路线：白描边层不动，主线换色（SVG path 在 theme-anim 下有 stroke 过渡，平滑换色不闪）
+        if (linesLayer) {
+            linesLayer.eachLayer(function (l) {
+                if (l.setStyle && l.options && l.options.color && l.options.color !== '#ffffff') {
+                    l.setStyle({ color: LAYER_CONFIG.road.color });
+                }
+            });
+        }
+    }
+    function applyPack(packKey, keepAutoSel) {
         var p = PACKS[packKey] || PACKS.peach;
         themeState.pack = packKey;
         // body 级主题类：整套 --plum/--rose/--rose-soft/--accent 联动，材质包切换彻底生效
@@ -1132,8 +1159,10 @@
         root.style.setProperty('--accent-dark', p.accentDark);
         root.style.setProperty('--accent-soft', p.accentSoft);
         document.querySelectorAll('.pack-item').forEach(function (b) {
-            b.classList.toggle('sel', b.getAttribute('data-pack') === packKey);
+            var hit = b.getAttribute('data-pack') === packKey;
+            b.classList.toggle('sel', hit || (keepAutoSel && b.getAttribute('data-pack') === 'auto'));
         });
+        repaintThemeColors();
         rebuildPetals();
         saveTheme();
     }
@@ -1225,9 +1254,32 @@
         if (setSat) setSat.addEventListener('input', function () { applyGlass(); if (!isMobileDevice) jellyPulse(); });
         settingsPanel.addEventListener('animationend', function () { settingsPanel.classList.remove('jelly'); });
         // 材质包切换
+        var autoCycleTimer = null;
+        var AUTO_CYCLE_MS = 6000;   // 综合包：每 6 秒丝滑轮播一次
+        var AUTO_ORDER = ['peach', 'osmanthus', 'leaf', 'rose'];
+        function stopAutoCycle() {
+            if (autoCycleTimer) { clearInterval(autoCycleTimer); autoCycleTimer = null; }
+            document.body.classList.remove('theme-anim');
+        }
         document.querySelectorAll('.pack-item').forEach(function (b) {
             b.addEventListener('click', function () {
                 var pk = b.getAttribute('data-pack');
+                if (pk === 'auto') {
+                    if (autoCycleTimer) { stopAutoCycle(); toast('综合轮播已关闭'); return; }
+                    autoCycleTimer = setInterval(function () {
+                        document.body.classList.add('theme-anim');
+                        var next = AUTO_ORDER[Math.floor(Math.random() * AUTO_ORDER.length)];
+                        applyPack(next, true);
+                        setTimeout(function () { document.body.classList.remove('theme-anim'); }, 850);
+                    }, AUTO_CYCLE_MS);
+                    var first = AUTO_ORDER[0];
+                    document.body.classList.add('theme-anim');
+                    applyPack(first, true);
+                    setTimeout(function () { document.body.classList.remove('theme-anim'); }, 850);
+                    toast('综合材质包已开启：每 ' + (AUTO_CYCLE_MS / 1000) + ' 秒自动丝滑轮播');
+                    return;
+                }
+                stopAutoCycle();
                 if (pk && PACKS[pk]) {
                     applyPack(pk);
                     toast('已切换「' + PACKS[pk].name + '」材质包（飘落与界面配色同步更新）');

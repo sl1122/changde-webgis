@@ -28,16 +28,17 @@
     --logo-color: #fff;
 }
 /* ===== 材质包主题（body 级变量覆盖，切换时整套 UI 配色联动） ===== */
-body.theme-peach { --plum: #d16b8f; --rose: #e8a3bd; --rose-soft: #fdf2f6; --accent: #c85d8b; --accent-soft: #fdf2f6; --header-grad: linear-gradient(135deg, rgba(197, 93, 124, .82), rgba(216, 140, 168, .78), rgba(232, 163, 189, .84)); --logo-color: #fff8fb; }
-body.theme-osmanthus { --plum: #b45309; --rose: #f59e0b; --rose-soft: #fef3c7; --accent: #b45309; --accent-soft: #fef3c7; --header-grad: linear-gradient(135deg, rgba(146, 90, 14, .82), rgba(196, 124, 24, .78), rgba(245, 159, 11, .84)); --logo-color: #fff7e0; }
-body.theme-leaf { --plum: #15803d; --rose: #22c55e; --rose-soft: #dcfce7; --accent: #15803d; --accent-soft: #dcfce7; --header-grad: linear-gradient(135deg, rgba(22, 101, 52, .82), rgba(34, 160, 84, .78), rgba(74, 222, 128, .84)); --logo-color: #f0fdf4; }
-body.theme-rose { --plum: #be185d; --rose: #f43f5e; --rose-soft: #fce7f3; --accent: #be185d; --accent-soft: #fce7f3; --header-grad: linear-gradient(135deg, rgba(157, 23, 77, .82), rgba(190, 24, 93, .78), rgba(244, 63, 94, .84)); --logo-color: #fff1f2; }
-/* 夜间模式：标题栏深蓝紫 + 全局暗色面板 */
+body.theme-peach { --plum: #d16b8f; --rose: #e8a3bd; --rose-soft: #fdf2f6; --accent: #c85d8b; --accent-soft: #fdf2f6; --header-grad: linear-gradient(135deg, rgba(197, 93, 124, .82), rgba(216, 140, 168, .78), rgba(232, 163, 189, .84)); --logo-color: #fff8fb; --school: #ec4899; --hospital: #e11d48; --scenic: #fb7185; --road: #d16b8f; }
+body.theme-osmanthus { --plum: #b45309; --rose: #f59e0b; --rose-soft: #fef3c7; --accent: #b45309; --accent-soft: #fef3c7; --header-grad: linear-gradient(135deg, rgba(146, 90, 14, .82), rgba(196, 124, 24, .78), rgba(245, 159, 11, .84)); --logo-color: #fff7e0; --school: #f59e0b; --hospital: #d97706; --scenic: #fbbf24; --road: #b45309; }
+body.theme-leaf { --plum: #15803d; --rose: #22c55e; --rose-soft: #dcfce7; --accent: #15803d; --accent-soft: #dcfce7; --header-grad: linear-gradient(135deg, rgba(22, 101, 52, .82), rgba(34, 160, 84, .78), rgba(74, 222, 128, .84)); --logo-color: #f0fdf4; --school: #22c55e; --hospital: #16a34a; --scenic: #4ade80; --road: #15803d; }
+body.theme-rose { --plum: #be185d; --rose: #f43f5e; --rose-soft: #fce7f3; --accent: #be185d; --accent-soft: #fce7f3; --header-grad: linear-gradient(135deg, rgba(157, 23, 77, .82), rgba(190, 24, 93, .78), rgba(244, 63, 94, .84)); --logo-color: #fff1f2; --school: #f43f5e; --hospital: #be185d; --scenic: #fb7185; --road: #e11d48; }
+/* 夜间模式：标题栏深蓝紫 + 全局暗色面板 + 符号切换亮霓虹色（深色地图上更醒目） */
 body.theme-night {
     --plum: #818cf8; --rose: #a5b4fc; --rose-soft: rgba(129, 140, 248, .14); --accent: #818cf8; --accent-soft: rgba(129, 140, 248, .14);
     --bg: #0b1020; --card: #131a30; --border: #26304d; --text: #e2e8f0; --text-2: #94a3b8;
     --header-grad: linear-gradient(135deg, rgba(30, 27, 75, .88), rgba(67, 56, 202, .82), rgba(99, 102, 241, .86));
     --logo-color: #e0e7ff;
+    --school: #60a5fa; --hospital: #f87171; --scenic: #34d399; --road: #fbbf24;
 }
 /* 夜间模式：地图瓦片整体反色变暗（只作用于瓦片层，POI/道路标记保持原色） */
 body.theme-night .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.96); }
@@ -49,6 +50,33 @@ body.theme-night #map .mark-panel,
 body.theme-night #map .legend-panel,
 body.theme-night .sidebar { background: rgba(19, 26, 48, calc(var(--glass-alpha) * .9)); color: var(--text); }
 body.theme-night .settings-panel .settings-title { border-bottom-color: #26304d; }
+/* 夜间模式：修复功能栏文字看不清（按钮白底浅字→深底浅字，输入框/面板同步深色） */
+body.theme-night .toolbar button { background: rgba(30, 41, 82, .92); color: #dbeafe; }
+body.theme-night .toolbar button:hover { background: rgba(129, 140, 248, .2); color: #e0e7ff; }
+body.theme-night .toolbar button.active,
+body.theme-night .toolbar .petal-btn.active { background: #6366f1; color: #fff; }
+body.theme-night .zoom-ctrl button { background: rgba(30, 41, 82, .92); color: #a5b4fc; }
+body.theme-night .zoom-ctrl button:hover { background: rgba(129, 140, 248, .2); color: #e0e7ff; }
+body.theme-night .legend-panel { background: rgba(19, 26, 48, .9); color: #dbeafe; }
+body.theme-night .legend-panel .legend-title { color: #e0e7ff; border-bottom-color: #26304d; }
+body.theme-night .layer-item:hover { background: rgba(129, 140, 248, .12); }
+body.theme-night .search-input, body.theme-night select, body.theme-night .mark-ops input {
+    background: rgba(15, 23, 42, .9); color: #e2e8f0; border-color: #334155;
+}
+body.theme-night .search-input::placeholder { color: #64748b; }
+body.theme-night .count { background: #1e293b; color: #cbd5e1; }
+body.theme-night .pack-item { background: rgba(15, 23, 42, .9); color: #cbd5e1; border-color: #334155; }
+body.theme-night .pack-item.sel { background: #6366f1; color: #fff; border-color: #818cf8; }
+body.theme-night .settings-panel .set-row label,
+body.theme-night .settings-panel .set-title { color: #e2e8f0; }
+body.theme-night .iw-card { background: rgba(19, 26, 48, .96); border-color: #334155; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+body.theme-night .iw-card .iw-title { color: #e2e8f0; border-bottom-color: #334155; }
+body.theme-night .iw-card .iw-row { color: #cbd5e1; }
+body.theme-night .iw-card .iw-label { color: #94a3b8; }
+/* 综合材质包：切换瞬间丝滑过渡（背景/文字/边框 0.7s 渐变，仅轮播窗口内生效，不干扰日常 hover 手感） */
+body.theme-anim, body.theme-anim * { transition: background-color .7s ease, color .7s ease, border-color .7s ease !important; }
+/* 地图 SVG 要素（POI 圆点/道路线）在轮播时同步平滑换色 */
+body.theme-anim .leaflet-overlay-pane path { transition: stroke .7s ease, fill .7s ease !important; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
