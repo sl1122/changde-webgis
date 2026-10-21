@@ -25,6 +25,11 @@
     --accent: #8e2a52;        /* 材质包强调色（默认桃花梅红，随桂花/绿叶/玫瑰切换） */
     --accent-soft: #fceef3;
 }
+/* ===== 材质包主题（body 级变量覆盖，切换时整套 UI 配色联动） ===== */
+body.theme-peach { --plum: #d16b8f; --rose: #e8a3bd; --rose-soft: #fdf2f6; --accent: #c85d8b; --accent-soft: #fdf2f6; }
+body.theme-osmanthus { --plum: #b45309; --rose: #f59e0b; --rose-soft: #fef3c7; --accent: #b45309; --accent-soft: #fef3c7; }
+body.theme-leaf { --plum: #15803d; --rose: #22c55e; --rose-soft: #dcfce7; --accent: #15803d; --accent-soft: #dcfce7; }
+body.theme-rose { --plum: #be185d; --rose: #f43f5e; --rose-soft: #fce7f3; --accent: #be185d; --accent-soft: #fce7f3; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
@@ -575,6 +580,12 @@ body {
     animation: petal-fall var(--dur, 12s) linear var(--delay, 0s) infinite;
     will-change: transform;
 }
+/* 桃花：粉瓣圆润（桃源主题默认） */
+.petal.peach {
+    border-radius: 150% 0 150% 0;
+    background: linear-gradient(135deg, #f9c8d9, #ee8fb4);
+    box-shadow: inset 0 0 4px rgba(214, 74, 120, .45);
+}
 /* 桂花：暖金小花（圆点+光晕） */
 .petal.osmanthus {
     border-radius: 50%;
@@ -984,10 +995,10 @@ body {
     cursor: pointer;
 }
 .set-toggle.on { background: var(--accent, var(--plum)); color: #fff; border-color: var(--accent, var(--plum)); }
-/* 材质包切换（桂花/绿叶/玫瑰） */
-.pack-switch { display: flex; gap: 7px; flex: 1; min-width: 0; }
+/* 材质包切换（桃花/桂花/绿叶/玫瑰） */
+.pack-switch { display: flex; flex-wrap: wrap; gap: 7px; flex: 1; min-width: 0; }
 .pack-item {
-    flex: 1; padding: 4px 6px; border-radius: 999px; font-size: 12px;
+    flex: 1 1 42%; padding: 4px 6px; border-radius: 999px; font-size: 12px;
     border: 1px solid var(--border); background: #fff; color: var(--text);
     cursor: pointer; text-align: center;
     transition: background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
@@ -1123,8 +1134,9 @@ body {
         transform-origin: center;
     }
     .settings-panel[hidden] { display: none; }
-    /* 手机端打开设置时背景遮罩 */
-    .settings-backdrop { display: block; }
+    /* 手机端打开设置时背景遮罩（仅 .show 时显示，hidden 时严格隐藏——防止默认显示盖住整个页面） */
+    .settings-backdrop { display: none; }
+    .settings-backdrop.show { display: block; }
     /* 低端机降玻璃：减少模糊/饱和开销，保证地图滑动流畅 */
     .sidebar, #map .toolbar, #map .legend-panel, #map .settings-panel,
     #map .measure-result, #map .map-toast, .page-header {

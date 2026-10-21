@@ -1072,11 +1072,12 @@
         p.hidden = !p.hidden;
     });
     var PACKS = {
+        peach: { name: '桃花', accent: '#c85d8b', accentDark: '#a9446f', accentSoft: '#fdf2f6', pclass: 'peach' },
         osmanthus: { name: '桂花', accent: '#b45309', accentDark: '#92400e', accentSoft: '#fef3c7', pclass: 'osmanthus' },
         leaf: { name: '绿叶', accent: '#15803d', accentDark: '#166534', accentSoft: '#dcfce7', pclass: 'leaf' },
         rose: { name: '玫瑰', accent: '#be185d', accentDark: '#9d174d', accentSoft: '#fce7f3', pclass: 'rose' }
     };
-    var themeState = { pack: 'osmanthus', rhythm: 5, on: false };
+    var themeState = { pack: 'peach', rhythm: 5, on: false };
     function loadTheme() {
         try {
             var t = JSON.parse(localStorage.getItem('cd_theme') || 'null');
@@ -1107,8 +1108,12 @@
         }
     }
     function applyPack(packKey) {
-        var p = PACKS[packKey] || PACKS.osmanthus;
+        var p = PACKS[packKey] || PACKS.peach;
         themeState.pack = packKey;
+        // body 级主题类：整套 --plum/--rose/--rose-soft/--accent 联动，材质包切换彻底生效
+        var cls = ['theme-peach', 'theme-osmanthus', 'theme-leaf', 'theme-rose'];
+        document.body.classList.remove.apply(document.body.classList, cls);
+        document.body.classList.add('theme-' + packKey);
         var root = document.documentElement;
         root.style.setProperty('--accent', p.accent);
         root.style.setProperty('--accent-dark', p.accentDark);
@@ -1246,10 +1251,10 @@
         document.getElementById('set-reset').addEventListener('click', function () {
             setBlur.value = 14; setAlpha.value = 85; if (setSat) setSat.value = 150;
             applyGlass();
-            applyPack('osmanthus');
+            applyPack('peach');
             if (setRhythm) { setRhythm.value = 5; setRhythm.dispatchEvent(new Event('input', { bubbles: true })); }
             if (!isMobileDevice) jellyPulse();
-            toast('已恢复默认（毛玻璃默认值 + 桂花材质包）');
+            toast('已恢复默认（毛玻璃默认值 + 桃花材质包）');
         });
         try {
             var g = JSON.parse(localStorage.getItem('cd_glass') || 'null');
