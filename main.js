@@ -46,28 +46,64 @@
         showMeasure._t = setTimeout(function () { el.hidden = true; }, 6000);
     }
 
-    // ---------------- 3. 地图（Leaflet + 多源开源底图） ----------------
+    // ---------------- 3. 地图（Leaflet + 多源开源底图，默认高德瓦片） ----------------
+    var gcjMode = true; // 当前底图是否为高德 GCJ-02（默认高德，切换时同步数据坐标系）
     var map = L.map('map', {
-        center: [29.045, 111.69],
+        center: gcjMode ? wgs2gcj([29.045, 111.69]) : [29.045, 111.69],
         zoom: 13,
         zoomControl: false,
         minZoom: 9,
         maxZoom: 19,
         attributionControl: true
     });
-    // 底图多源链：OSM 官方 → CartoDB Voyager → ArcGIS World Street（国内网络自动降级切换）
+    // 底图多源链：高德（GCJ-02，国内最快最稳）为主力 → OSM → CartoDB → ArcGIS（WGS-84）
+    // 数据坐标按当前底图坐标系动态转换（WGS-84 ↔ GCJ-02），保证任意底图下严格对齐
     var TILE_CHAIN = [
+        { url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', name: '高德', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
         { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
         { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', name: 'CartoDB', attr: '&copy; OpenStreetMap &copy; <a href="https://carto.com/">CARTO</a>' },
         { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', name: 'ArcGIS', attr: 'Tiles &copy; Esri &mdash; Source: Esri, TomTom' }
     ];
+    // 标准 WGS-84 → GCJ-02（高德）加密转换
+    function transformLat(x, y) {
+        var ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+        ret += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
+        ret += (20.0 * Math.sin(y * Math.PI) + 40.0 * Math.sin(y / 3.0 * Math.PI)) * 2.0 / 3.0;
+        ret += (160.0 * Math.sin(y / 12.0 * Math.PI) + 320 * Math.sin(y * Math.PI / 30.0)) * 2.0 / 3.0;
+        return ret;
+    }
+    function transformLng(x, y) {
+        var ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+        ret += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
+        ret += (20.0 * Math.sin(x * Math.PI) + 40.0 * Math.sin(x / 3.0 * Math.PI)) * 2.0 / 3.0;
+        ret += (150.0 * Math.sin(x / 12.0 * Math.PI) + 300.0 * Math.sin(x / 30.0 * Math.PI)) * 2.0 / 3.0;
+        return ret;
+    }
+    function wgs2gcj(ll) { // [lat, lng] → GCJ-02 [lat, lng]
+        var lat = ll[0], lng = ll[1];
+        var a = 6378245.0, ee = 0.00669342162296594323;
+        var dLat = transformLat(lng - 105.0, lat - 35.0);
+        var dLng = transformLng(lng - 105.0, lat - 35.0);
+        var radLat = lat / 180.0 * Math.PI;
+        var magic = Math.sin(radLat);
+        magic = 1 - ee * magic * magic;
+        var sqrtMagic = Math.sqrt(magic);
+        dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
+        dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * Math.PI);
+        return [lat + dLat, lng + dLng];
+    }
+    // GeoJSON [lng,lat] → Leaflet [lat,lng]，并按当前底图坐标系转换
+    function toMapCoord(c) {
+        var ll = [c[1], c[0]];
+        return gcjMode ? wgs2gcj(ll) : ll;
+    }
     var tile = null, tileIdx = 0, tileErr = 0, tileWatchdog = null;
     function activateTile(idx) {
         if (tile) map.removeLayer(tile);
         tileIdx = idx; tileErr = 0;
         var t = TILE_CHAIN[idx];
         tile = L.tileLayer(t.url, {
-            maxZoom: 20, subdomains: 'abc',
+            maxZoom: t.maxZoom || 20, subdomains: '1234',
             attribution: t.attr
         });
         tile.on('tileerror', function () {
@@ -78,7 +114,16 @@
             }
         });
         tile.addTo(map);
-        // 加载超时看门狗：9 秒后瓦片仍稀少或 4 秒内无增长则判定当前源过慢，自动降级（OSM 慢速挂起不报 error，必须靠这个兜底）
+        // 底图坐标系切换 → 全部数据与定位点重绘对齐
+        var wasGcj = gcjMode;
+        gcjMode = !!t.gcj;
+        if (wasGcj !== gcjMode) {
+            try { refreshAllLayers(); } catch (e) { }
+            if (geoLastBest) renderLoc(L.latLng(geoLastBest.lat, geoLastBest.lng), geoLastBest.acc, geoLastBest.src || '', 'gps', false);
+            if (typeof pointsLayer !== 'undefined' && pointsLayer &&
+                (pointsLayer.clusters.school || pointsLayer.plains.school)) map.setView(map.getCenter(), map.getZoom());
+        }
+        // 加载超时看门狗：9 秒后瓦片仍稀少或 4 秒内无增长则判定当前源过慢，自动降级
         function loadedCount() {
             var n = 0;
             try {
@@ -100,12 +145,8 @@
             }, 4000);
         }, 9000);
     }
-    // 启动探测：OSM 瓦片可达则优先，否则直接切换备用源
-    var probe = new Image();
-    probe.onload = function () { activateTile(0); };
-    probe.onerror = function () { activateTile(1); toast('OSM 底图不可达，已切换为 CartoDB 瓦片'); };
-    probe.src = 'https://tile.openstreetmap.org/0/0/0.png';
-    setTimeout(function () { if (tile == null) activateTile(1); }, 5000);
+    // 默认直接启用高德瓦片（国内加载最快），异常自动降级 OSM/CartoDB/ArcGIS
+    activateTile(0);
     L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 140 }).addTo(map);
     // 自定义放大缩小按钮
     document.getElementById('btn-zoom-in').addEventListener('click', function () { map.zoomIn(); });
@@ -163,7 +204,7 @@
             html: '<div class="poi-icon" style="background:' + c.color + '">' + (CAT_ICONS[key] || '') + '</div>',
             iconSize: [18, 18], iconAnchor: [9, 9]
         });
-        return L.marker([coords[1], coords[0]], { icon: icon })
+        return L.marker(toMapCoord(coords), { icon: icon })
             .bindTooltip(p.name, { direction: 'top', offset: [0, -10], className: 'poi-tip' })
             .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 });
     }
@@ -199,7 +240,7 @@
         feats.forEach(function (f) {
             var coords = f.geometry.coordinates;
             var p = f.properties;
-            g.addLayer(L.circleMarker([coords[1], coords[0]], {
+            g.addLayer(L.circleMarker(toMapCoord(coords), {
                 radius: 5, color: LAYER_CONFIG[key].color, weight: 1.5,
                 fillColor: LAYER_CONFIG[key].color, fillOpacity: 0.85
             }).bindTooltip(p.name, { direction: 'top', offset: [0, -8], className: 'poi-tip' })
@@ -211,7 +252,7 @@
     function buildLinesLayer() {
         var g = L.layerGroup();
         layerState.road.data.forEach(function (f) {
-            var coords = f.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
+            var coords = f.geometry.coordinates.map(function (c) { return toMapCoord(c); });
             if (coords.length < 2) return;
             // 双层线：极淡描边 + 琥珀主线（描边仅用于分离底色，不喧宾夺主）
             g.addLayer(L.polyline(coords, {
@@ -276,14 +317,14 @@
         if (key === 'road') {
             var n = 0;
             layerState[key].data.forEach(function (f) {
-                var any = f.geometry.coordinates.some(function (c) { return b.contains([c[1], c[0]]); });
+                var any = f.geometry.coordinates.some(function (c) { return b.contains(toMapCoord(c)); });
                 if (any) n++;
             });
             return n;
         }
         return layerState[key].data.filter(function (f) {
             var c = f.geometry.coordinates;
-            return b.contains([c[1], c[0]]);
+            return b.contains(toMapCoord(c));
         }).length;
     }
     function updateCounts() {
@@ -373,7 +414,7 @@
 
     function locateFeature(key, feat) {
         var coords = feat.geometry.coordinates;
-        var ll = [coords[1], coords[0]];
+        var ll = toMapCoord(coords);
         map.setView(ll, Math.max(map.getZoom(), 15));
         var target = null;
         var container = (clusterEnabled ? pointsLayer.clusters[key] : pointsLayer.plains[key]);
@@ -474,7 +515,7 @@
 
     // ---------------- 9. 复位 / 全景适配 ----------------
     document.getElementById('btn-home').addEventListener('click', function () {
-        map.setView(INIT_CENTER, INIT_ZOOM);
+        map.setView(gcjMode ? wgs2gcj(INIT_CENTER) : INIT_CENTER, INIT_ZOOM);
     });
     document.getElementById('btn-locate').addEventListener('click', function () {
         fitDataView();
@@ -487,9 +528,9 @@
             layerState[k].data.forEach(function (f) {
                 var coords = f.geometry.coordinates;
                 if (k === 'road') {
-                    coords.forEach(function (c) { bounds.extend([c[1], c[0]]); any = true; });
+                    coords.forEach(function (c) { bounds.extend(toMapCoord(c)); any = true; });
                 } else {
-                    bounds.extend([coords[1], coords[0]]); any = true;
+                    bounds.extend(toMapCoord(coords)); any = true;
                 }
             });
         });
@@ -517,6 +558,9 @@
             .catch(function () { cb(''); });
     }
     function renderLoc(ll, acc, srcText, level, isFresh) {
+        // 底图为高德(GCJ-02)时，定位坐标(WGS-84)转换后再显示；逆地理始终用 WGS-84
+        var wgsLL = ll;
+        if (gcjMode) ll = L.latLng(wgs2gcj([ll.lat, ll.lng]));
         if (geoMarker) map.removeLayer(geoMarker);
         if (geoCircle) map.removeLayer(geoCircle);
         var icon = L.divIcon({ className: 'geo-dot-wrap', html: '<div class="geo-dot"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
@@ -527,7 +571,7 @@
         map.setView(ll, Math.max(map.getZoom(), 16));
         var poor = (level === 'ip') ? '；IP 级定位（运营商节点，误差较大），建议到室外并授予"精确位置"权限' : '';
         if (isFresh) toast('已定位（' + srcText + '，精度约±' + Math.round(acc) + ' 米）' + poor);
-        reverseAddr(ll, function (addr) {
+        reverseAddr(wgsLL, function (addr) {
             if (addr && geoMarker) geoMarker.setTitle('我的位置（' + srcText + '，精度约±' + Math.round(acc) + ' 米）· ' + addr);
         });
     }
