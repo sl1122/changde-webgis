@@ -54,6 +54,8 @@ body.theme-night #map .legend-panel,
 body.theme-night .sidebar { background: rgba(19, 26, 48, calc(var(--glass-alpha) * .9)); color: var(--text); }
 body.theme-night .settings-panel .settings-title { border-bottom-color: #26304d; }
 /* 夜间模式：修复功能栏文字看不清（按钮白底浅字→深底浅字，输入框/面板同步深色） */
+body.theme-night .panel { background: rgba(19, 26, 48, .66); border-color: #26304d; }
+body.theme-night .panel-title { color: #a5b4fc; border-left-color: #818cf8; }
 body.theme-night .toolbar button { background: rgba(30, 41, 82, .92); color: #dbeafe; }
 body.theme-night .toolbar button:hover { background: rgba(129, 140, 248, .2); color: #e0e7ff; }
 body.theme-night .toolbar button.active,
@@ -77,7 +79,7 @@ body.theme-night .iw-card .iw-title { color: #e2e8f0; border-bottom-color: #3341
 body.theme-night .iw-card .iw-row { color: #cbd5e1; }
 body.theme-night .iw-card .iw-label { color: #94a3b8; }
 /* 材质包切换：常驻 0.5s 颜色过渡，切换时丝滑渐变（非瞬间跳变）；hover 单独保持快速响应 */
-.page-header, .sidebar, .layer-item, .pack-item, .toolbar button, .zoom-ctrl button,
+.page-header, .sidebar, .panel, .layer-item, .pack-item, .toolbar button, .zoom-ctrl button,
 .legend-panel, .legend-item, .count, .dot, .search-input, select,
 .settings-panel, .mark-ops input {
     transition: background-color .5s ease, color .5s ease, border-color .5s ease;
@@ -933,7 +935,7 @@ body {
 .mark-empty { font-size: 11.5px; color: var(--text-2); padding: 8px 4px; }
 .mark-btn.danger { background: linear-gradient(135deg, #dc2626, #f87171); }
 
-/* 聚合气泡：图层分类色（蓝/红/绿，与图例一致），小尺寸半透明减少遮挡 */
+/* 聚合气泡：图层分类色（蓝/红/绿，与图例一致），小尺寸半透明减少遮挡；颜色走 CSS 变量，随材质包/夜间联动 */
 .mc-wrap { background: transparent; border: none; }
 .mc-bubble {
     border-radius: 50%;
@@ -944,7 +946,15 @@ body {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, .45),
         0 3px 10px rgba(15, 23, 42, .28);
+    transition: background-color .5s ease;
 }
+.mc-bubble.mc-school { background: var(--school); }
+.mc-bubble.mc-hospital { background: var(--hospital); }
+.mc-bubble.mc-scenic { background: var(--scenic); }
+/* POI 圆点图标：颜色走 CSS 变量，随材质包/夜间联动 */
+.poi-icon.poi-school { background: var(--school); }
+.poi-icon.poi-hospital { background: var(--hospital); }
+.poi-icon.poi-scenic { background: var(--scenic); }
 
 /* 搜索结果 */
 .sr-item {

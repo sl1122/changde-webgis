@@ -257,7 +257,7 @@
         var c = LAYER_CONFIG[key];
         var icon = L.divIcon({
             className: 'poi-icon-wrap',
-            html: '<div class="poi-icon" style="background:' + c.color + '">' + (CAT_ICONS[key] || '') + '</div>',
+            html: '<div class="poi-icon poi-' + key + '">' + (CAT_ICONS[key] || '') + '</div>',
             iconSize: [18, 18], iconAnchor: [9, 9]
         });
         return L.marker(toMapCoord(coords), { icon: icon })
@@ -266,7 +266,6 @@
     }
 
     function makeCluster(key) {
-        var color = LAYER_CONFIG[key].color;
         return L.markerClusterGroup({
             maxClusterRadius: 60,
             showCoverageOnHover: false,
@@ -278,7 +277,7 @@
                 var size = n < 10 ? 32 : n < 40 ? 40 : 50;
                 var fs = n < 10 ? 12 : n < 40 ? 14 : 16;
                 return L.divIcon({
-                    html: '<div class="mc-bubble" style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;line-height:' + size + 'px;font-size:' + fs + 'px">' + n + '</div>',
+                    html: '<div class="mc-bubble mc-' + key + '" style="width:' + size + 'px;height:' + size + 'px;line-height:' + size + 'px;font-size:' + fs + 'px">' + n + '</div>',
                     className: 'mc-wrap',
                     iconSize: L.point(size, size)
                 });
@@ -1150,6 +1149,19 @@
             });
         }
     }
+    // 顶部 logo 图案随材质包（最左符号：桃花瓣/桂花十字花/叶形/玫瑰尖瓣/星形）
+    var LOGO_SHAPES = {
+        peach: '<ellipse cx="12" cy="7" rx="2.7" ry="3.8"/><ellipse cx="12" cy="7" rx="2.7" ry="3.8" transform="rotate(72 12 12)"/><ellipse cx="12" cy="7" rx="2.7" ry="3.8" transform="rotate(144 12 12)"/><ellipse cx="12" cy="7" rx="2.7" ry="3.8" transform="rotate(216 12 12)"/><ellipse cx="12" cy="7" rx="2.7" ry="3.8" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.7" fill="#fff" opacity=".8"/>',
+        osmanthus: '<ellipse cx="12" cy="5.5" rx="2.3" ry="3.4"/><ellipse cx="12" cy="18.5" rx="2.3" ry="3.4"/><ellipse cx="5.5" cy="12" rx="3.4" ry="2.3"/><ellipse cx="18.5" cy="12" rx="3.4" ry="2.3"/><circle cx="12" cy="12" r="1.6" fill="#fff" opacity=".85"/>',
+        leaf: '<path d="M12 2 C6.8 6.4 4.8 10.4 4.8 12 C4.8 16.8 8.6 22 12 22 C15.4 22 19.2 16.8 19.2 12 C19.2 10.4 17.2 6.4 12 2 Z"/><path d="M12 4.5 L12 20.5" stroke="#fff" stroke-width="1.1" opacity=".55" fill="none" stroke-linecap="round"/>',
+        rose: '<path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(72 12 12)"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(144 12 12)"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(216 12 12)"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.4" fill="#fff" opacity=".7"/>',
+        night: '<path d="M12 2 L14.6 8.4 L21.4 8.4 L15.9 12.6 L18.4 19 L12 15 L5.6 19 L8.1 12.6 L2.6 8.4 L9.4 8.4 Z"/>'
+    };
+    function applyLogoShape(packKey) {
+        var logo = document.querySelector('.blossom-logo');
+        if (!logo || !LOGO_SHAPES[packKey]) return;
+        logo.innerHTML = '<g fill="currentColor">' + LOGO_SHAPES[packKey] + '</g>';
+    }
     function applyPack(packKey, keepAutoSel) {
         var p = PACKS[packKey] || PACKS.peach;
         themeState.pack = packKey;
@@ -1162,9 +1174,11 @@
         root.style.setProperty('--accent-dark', p.accentDark);
         root.style.setProperty('--accent-soft', p.accentSoft);
         document.querySelectorAll('.pack-item').forEach(function (b) {
-            var hit = b.getAttribute('data-pack') === packKey;
-            b.classList.toggle('sel', hit || (keepAutoSel && b.getAttribute('data-pack') === 'auto'));
+            var isAuto = b.getAttribute('data-pack') === 'auto';
+            // 综合轮播中只亮「综合」按钮；手动选择时只亮当前包（避免同时亮多个）
+            b.classList.toggle('sel', keepAutoSel ? isAuto : (b.getAttribute('data-pack') === packKey));
         });
+        applyLogoShape(packKey);
         repaintThemeColors();
         rebuildPetals();
         saveTheme();
@@ -1263,6 +1277,10 @@
         function stopAutoCycle() {
             if (autoCycleTimer) { clearInterval(autoCycleTimer); autoCycleTimer = null; }
             document.body.classList.remove('theme-anim');
+            // 熄灭「综合」按钮，恢复当前实际材质包高亮（防止综合关闭后按钮残留点亮）
+            document.querySelectorAll('.pack-item').forEach(function (b) {
+                b.classList.toggle('sel', b.getAttribute('data-pack') === themeState.pack);
+            });
         }
         document.querySelectorAll('.pack-item').forEach(function (b) {
             b.addEventListener('click', function () {
