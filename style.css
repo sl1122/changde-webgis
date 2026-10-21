@@ -781,13 +781,15 @@ body {
 
 /* ===== 响应式：手机（≤768px）：侧边栏变抽屉 + 紧凑控件 ===== */
 @media (max-width: 768px) {
-    .menu-btn { display: flex; }
+    .menu-btn { display: flex; position: relative; z-index: 22; }
     .page-header { padding: 0 12px; gap: 10px; }
     .page-header h1 { font-size: 15px; letter-spacing: .5px; gap: 5px; }
     .page-header .author { font-size: 13px; }
     /* 顶部标题防丢失：固定高度 + 文字溢出省略，防止标题栏变形/侧边栏错位 */
     .page-header { height: var(--header-h); min-height: var(--header-h); overflow: hidden; }
     .page-header h1, .page-header .author { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .page-header h1 { flex: 1; min-width: 0; max-width: calc(100% - 58px); font-size: 12.5px; }
+    .page-header .author { font-size: 11px; }
     .blossom-logo { width: 16px; height: 16px; }
     .subtitle { display: none; }
 
@@ -841,8 +843,11 @@ body {
         white-space: nowrap;
         transform: scale(.9);
     }
-    .zoom-ctrl { right: 8px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
-    .zoom-ctrl button { width: 36px; height: 36px; }
+    .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+    .zoom-ctrl button { width: 38px; height: 38px; }
+    /* 比例尺居中显示在底部中间，打开图层抽屉时不被遮挡 */
+    #map .leaflet-bottom.leaflet-left { left: 0; right: 0; pointer-events: none; }
+    #map .leaflet-control-scale { float: none; display: block; width: max-content; margin: 0 auto; pointer-events: auto; }
     .legend-panel { left: 10px; bottom: 26px; padding: 9px 11px; min-width: 132px; }
     .legend-note { font-size: 10px; }
     /* 底部提示文字：允许换行，不再省略截断 */
