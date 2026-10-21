@@ -19,6 +19,7 @@
     /* 玻璃质感（设置面板可调，localStorage 持久化；在原配色基础上叠加：半透明+高光+内边框） */
     --glass-blur: 14px;
     --glass-alpha: .85;
+    --glass-sat: 1.5;
     --glass-sat: 165%;
 }
 
@@ -55,6 +56,8 @@ body {
     position: relative;
     z-index: 20;
     overflow: hidden;
+    /* 玻璃质感滑动渐变过渡（滑块调节时平滑过渡，不突变） */
+    transition: backdrop-filter .35s ease, background-color .35s ease;
 }
 /* 玻璃顶部高光（specular highlight） */
 .page-header::before {
@@ -863,6 +866,7 @@ body {
         inset 0 1px 0 rgba(255, 255, 255, .8),
         inset 0 0 0 .5px rgba(255, 255, 255, .6),
         0 10px 32px rgba(15, 23, 42, .16);
+    transition: backdrop-filter .35s ease, background-color .35s ease;
 }
 #map .legend-panel { background: rgba(255, 255, 255, calc(var(--glass-alpha) * .97)); }
 #map .measure-result { background: rgba(255, 255, 255, calc(var(--glass-alpha) * .94)); }
@@ -893,7 +897,18 @@ body {
     padding: 13px 15px;
     font-size: 13px;
     color: var(--text);
+    /* 滑动渐变过渡：调节滑块时玻璃质感平滑渐变，不突变 */
+    transition: backdrop-filter .35s ease, background-color .35s ease, border-color .35s ease;
+    transform-origin: top right;
 }
+/* 果冻感：滑块调节时面板弹性回弹 */
+@keyframes jelly-pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.03, 0.97); }
+    65% { transform: scale(0.985, 1.015); }
+    100% { transform: scale(1); }
+}
+.settings-panel.jelly { animation: jelly-pop .45s cubic-bezier(.34, 1.56, .64, 1); }
 .settings-title {
     display: flex; align-items: center; justify-content: space-between;
     font-weight: 700; font-size: 14px; color: var(--plum);

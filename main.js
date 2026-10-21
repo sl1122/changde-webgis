@@ -53,7 +53,7 @@
         zoom: 13,
         zoomControl: false,
         minZoom: 9,
-        maxZoom: 19,
+        maxZoom: 18,
         attributionControl: true
     });
     // 底图多源链：高德矢量/栅格（GCJ-02，国内最快最稳）→ OSM → CartoDB → ArcGIS（WGS-84）
@@ -733,25 +733,38 @@
     var btnSettings = document.getElementById('btn-settings');
     var setBlur = document.getElementById('set-blur');
     var setAlpha = document.getElementById('set-alpha');
+    var setSat = document.getElementById('set-sat');
     function applyGlass() {
-        var blur = setBlur.value, alpha = setAlpha.value;
+        var blur = setBlur.value, alpha = setAlpha.value, sat = setSat ? setSat.value : 150;
         document.documentElement.style.setProperty('--glass-blur', blur + 'px');
         document.documentElement.style.setProperty('--glass-alpha', (alpha / 100).toFixed(2));
+        document.documentElement.style.setProperty('--glass-sat', (sat / 100).toFixed(2));
         document.getElementById('set-blur-val').textContent = blur + 'px';
         document.getElementById('set-alpha-val').textContent = alpha + '%';
-        try { localStorage.setItem('cd_glass', JSON.stringify({ blur: blur, alpha: alpha })); } catch (e) { }
+        if (setSat && document.getElementById('set-sat-val')) document.getElementById('set-sat-val').textContent = sat + '%';
+        try { localStorage.setItem('cd_glass', JSON.stringify({ blur: blur, alpha: alpha, sat: sat })); } catch (e) { }
+    }
+    // 果冻感：调节滑块时设置面板弹性回弹
+    function jellyPulse() {
+        if (!settingsPanel) return;
+        settingsPanel.classList.remove('jelly');
+        void settingsPanel.offsetWidth;
+        settingsPanel.classList.add('jelly');
     }
     if (btnSettings && settingsPanel) {
         btnSettings.addEventListener('click', function () {
             settingsPanel.hidden = !settingsPanel.hidden;
             btnSettings.classList.toggle('active', !settingsPanel.hidden);
+            if (!settingsPanel.hidden) jellyPulse();
         });
         document.getElementById('settings-close').addEventListener('click', function () {
             settingsPanel.hidden = true;
             btnSettings.classList.remove('active');
         });
-        setBlur.addEventListener('input', applyGlass);
-        setAlpha.addEventListener('input', applyGlass);
+        setBlur.addEventListener('input', function () { applyGlass(); jellyPulse(); });
+        setAlpha.addEventListener('input', function () { applyGlass(); jellyPulse(); });
+        if (setSat) setSat.addEventListener('input', function () { applyGlass(); jellyPulse(); });
+        settingsPanel.addEventListener('animationend', function () { settingsPanel.classList.remove('jelly'); });
         document.getElementById('set-petal').addEventListener('click', function () {
             var before = document.getElementById('petal-wrap').classList.contains('on');
             togglePetals();
@@ -765,12 +778,13 @@
             toast(c.checked ? '聚合气泡已开启' : '聚合气泡已关闭');
         });
         document.getElementById('set-reset').addEventListener('click', function () {
-            setBlur.value = 14; setAlpha.value = 85;
+            setBlur.value = 14; setAlpha.value = 85; if (setSat) setSat.value = 150;
             applyGlass();
+            jellyPulse();
         });
         try {
             var g = JSON.parse(localStorage.getItem('cd_glass') || 'null');
-            if (g && g.blur !== undefined) { setBlur.value = g.blur; setAlpha.value = g.alpha; applyGlass(); }
+            if (g && g.blur !== undefined) { setBlur.value = g.blur; setAlpha.value = g.alpha; if (g.sat !== undefined && setSat) setSat.value = g.sat; applyGlass(); }
         } catch (e) { }
     }
 
