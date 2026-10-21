@@ -546,6 +546,10 @@
 
     // ---------------- 8. 测距 / 测面 ----------------
     var measure = { mode: null, pts: [], line: null, poly: null, dots: [], segs: [], total: 0 };
+    function hideMeasureCard() {
+        var mr = document.getElementById('measure-result');
+        if (mr) mr.hidden = true;
+    }
     function clearMeasure() {
         measure.pts = []; measure.total = 0;
         (measure.dots || []).forEach(function (m) { map.removeLayer(m); });
@@ -556,6 +560,7 @@
         document.getElementById('btn-distance').classList.remove('active');
         document.getElementById('btn-area').classList.remove('active');
         measure.mode = null;
+        hideMeasureCard();
     }
     map.on('click', function (e) {
         if (!measure.mode) return;
@@ -639,6 +644,11 @@
         document.getElementById('btn-distance').classList.remove('active');
         document.getElementById('btn-area').classList.remove('active');
         measureDoneBtn.hidden = true;
+    });
+    // 「关闭测量结果」×：隐藏卡片并退出测量
+    var measureCloseBtn = document.getElementById('measure-close');
+    if (measureCloseBtn) measureCloseBtn.addEventListener('click', function () {
+        clearMeasure();
     });
 
     // ---------------- 8.5 手动底图切换 ----------------
@@ -1459,7 +1469,8 @@
         { v: 'v66', t: '操作手感全面优化', pts: ['缩小限制放宽到全球（minZoom 9→3）', '桌面折叠改为平滑宽度动画，不再生硬', '缩放键防抖 320ms，手机端不再卡顿连跳', '菜单按钮 document 捕获级兜底，任何环境点击必触发', '手机端比例尺改绝对定位固定在底部中间，不再消失'] },
         { v: 'v67', t: '悬浮球工具栏 + 测量修复', pts: ['右侧工具栏改为果冻质感悬浮球，点击扇形展开 + 弹性动画', '按钮点击果冻回弹 + 高光扫过，夜间深色果冻适配', '测距/测面修复：双击结束不再多加点，手机端新增「完成测量」按钮', '标题栏层级提升（z-index 2000）防被遮挡', '菜单按钮新增 touchstart 兜底，真实手机触摸必触发', '比例尺移到左下角（不再被缩放键遮挡）'] },
         { v: 'v68', t: '右侧常驻功能区（不折叠）', pts: ['回退悬浮球折叠设计：右侧改为常驻竖排玻璃面板，10 个功能按钮一屏全显', '按钮为矩形横排（图标 + 文字），hover 高光扫过 + 点击果冻回弹', '桌面端 88px 宽面板，手机端自动收窄为图标窄条（不占地图）', '夜间模式深色玻璃面板适配'] },
-        { v: 'v69', t: 'Apple 式高透重构', pts: ['右侧功能区改为 56px 纯图标果冻胶囊面板（杜绝文字截断），按钮 44px 图标 20px', '按钮 hover / 触摸一次弹性跳跃（上移 7px 回弹）+ 按压果冻压缩，transform 硬件加速', '侧边栏玻璃拟态（毛玻璃 + 高光边缘 + 柔和阴影），折叠动画结束后防抖重绘地图', '菜单按钮热区扩至 48×48 与标题栏居中对齐', '比例尺重构为 Apple 玻璃组件（桌面 150px / 手机 100px，米公里自动切换）', '测量卡片改高透玻璃（白底深字 + 细描边），完成按钮柔和绿色，清除按钮中性灰', '全局低饱和玻璃语言：面板 / 缩放键统一高透圆角，夜间模式全套深色玻璃'] }
+        { v: 'v69', t: 'Apple 式高透重构', pts: ['右侧功能区改为 56px 纯图标果冻胶囊面板（杜绝文字截断），按钮 44px 图标 20px', '按钮 hover / 触摸一次弹性跳跃（上移 7px 回弹）+ 按压果冻压缩，transform 硬件加速', '侧边栏玻璃拟态（毛玻璃 + 高光边缘 + 柔和阴影），折叠动画结束后防抖重绘地图', '菜单按钮热区扩至 48×48 与标题栏居中对齐', '比例尺重构为 Apple 玻璃组件（桌面 150px / 手机 100px，米公里自动切换）', '测量卡片改高透玻璃（白底深字 + 细描边），完成按钮柔和绿色，清除按钮中性灰', '全局低饱和玻璃语言：面板 / 缩放键统一高透圆角，夜间模式全套深色玻璃'] },
+        { v: 'v70', t: '悬浮球 + 玻璃液体调节', pts: ['右侧功能区升级为 Apple 悬浮球：点击展开果冻列表，按钮依次弹性弹出；再点/点外收起；手机端保持常驻窄条', '悬浮球与放大缩小键分离：缩放键独立玻璃胶囊，移到悬浮球下方保持间距', '按钮 hover 上浮 9px 回弹 + 按鼠标靠近方向左右倾斜 2-5° + 液态光泽扫过 + 按压压缩', 'hover 显示玻璃 tooltip 文字标签（定位/复位/测距/测面等），离开消失', '侧边栏三个面板统一关闭按钮（圆形 ×，hover 放大旋转 + 压缩反馈），可逐一面板关闭并一键恢复', '测量结果卡片非常驻：清除/切换工具/关闭即自动隐藏，关闭按钮 ×', '设置新增 glassliquid 调节：液态光泽 / 阴影强度 / 反射高光滑杆，全面板实时预览', '测量完成保留双击 + 绿色完成按钮双触发'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1496,10 +1507,32 @@
         });
     }
 
-    // ---------------- 13.6 右侧功能区按钮：触屏果冻跳跃（touchstart 触发一次弹跳，松手恢复） ----------------
-    (function initFabTouch() {
-        var btns = document.querySelectorAll('.toolbar button');
-        Array.prototype.forEach.call(btns, function (b) {
+    // ---------------- 13.6 悬浮球功能区（桌面点击展开/收起果冻列表；手机端常驻窄条不触发） ----------------
+    (function initFab() {
+        var fab = document.querySelector('.toolbar');
+        if (!fab) return;
+        var btns = Array.prototype.slice.call(fab.querySelectorAll('button'));
+        var open = false;
+        function layout(doOpen) {
+            open = doOpen;
+            fab.classList.toggle('fab-open', doOpen);
+            var n = btns.length;
+            btns.forEach(function (b, i) {
+                b.style.transitionDelay = (doOpen ? i * 35 : (n - 1 - i) * 16) + 'ms';
+            });
+        }
+        fab.addEventListener('click', function (e) {
+            if (window.matchMedia && window.matchMedia('(max-width:768px)').matches) return; // 手机常驻
+            if (e.target.closest && e.target.closest('button')) return;
+            layout(!open);
+        });
+        // 点击悬浮球外部区域收起（捕获阶段）
+        document.addEventListener('click', function (e) {
+            if (window.matchMedia && window.matchMedia('(max-width:768px)').matches) return;
+            if (open && (!e.target.closest || !e.target.closest('.toolbar'))) layout(false);
+        }, true);
+        // 触屏果冻跳跃（touchstart 弹起，松手恢复）
+        btns.forEach(function (b) {
             if (b._fabTouch) return;
             b._fabTouch = true;
             b.addEventListener('touchstart', function () {
@@ -1508,8 +1541,73 @@
             ['touchend', 'touchcancel', 'touchleave'].forEach(function (t) {
                 b.addEventListener(t, function () {
                     b.classList.remove('fab-pop');
+                    b.classList.remove('tilt-l', 'tilt-r');
                 }, { passive: true });
             });
+            // 鼠标方向倾斜：从左侧靠近 → 左倾，右侧靠近 → 右倾
+            b.addEventListener('mouseenter', function (ev) {
+                var r = b.getBoundingClientRect();
+                var fromLeft = ev.clientX < r.left + r.width / 2;
+                b.classList.add(fromLeft ? 'tilt-l' : 'tilt-r');
+            });
+            b.addEventListener('mouseleave', function () {
+                b.classList.remove('tilt-l', 'tilt-r');
+            });
+        });
+    })();
+
+    // ---------------- 13.7 面板关闭（图层管理/地点搜索/数据说明）与恢复 ----------------
+    (function initPanelClose() {
+        var closes = document.querySelectorAll('.panel-close');
+        Array.prototype.forEach.call(closes, function (x) {
+            if (x._pc) return;
+            x._pc = true;
+            x.addEventListener('click', function () {
+                var panel = x.closest('.panel');
+                if (!panel || panel.classList.contains('panel-removing')) return;
+                panel.classList.add('panel-removing');
+                setTimeout(function () {
+                    panel.hidden = true;
+                    panel.classList.remove('panel-removing');
+                    var restore = document.getElementById('panel-restore');
+                    if (restore) restore.hidden = false;
+                }, 320);
+            });
+        });
+        var restore = document.getElementById('panel-restore');
+        if (restore) restore.addEventListener('click', function () {
+            document.querySelectorAll('.sidebar .panel').forEach(function (p) {
+                p.hidden = false;
+            });
+            restore.hidden = true;
+        });
+    })();
+
+    // ---------------- 13.8 glassliquid 调节（液态光泽/阴影强度/反射高光）实时预览 ----------------
+    (function initGlassLiquid() {
+        var docEl = document.documentElement;
+        var sets = [
+            { id: 'set-glow', css: '--glass-glow', norm: true, valId: 'set-glow-val' },
+            { id: 'set-shadow', css: '--glass-shadow', norm: true, valId: 'set-shadow-val' },
+            { id: 'set-sheen', css: '--glass-sheen', norm: true, valId: 'set-sheen-val' }
+        ];
+        function label(v) { return v <= 2 ? '弱' : v <= 4 ? '偏弱' : v === 5 ? '中' : v <= 7 ? '偏强' : '强'; }
+        sets.forEach(function (s) {
+            var el = document.getElementById(s.id), valEl = document.getElementById(s.valId);
+            if (!el) return;
+            // 恢复已保存值
+            try {
+                var saved = localStorage.getItem('cd_gl_' + s.id);
+                if (saved !== null) { el.value = saved; apply(); }
+            } catch (e) { /* ignore */ }
+            el.addEventListener('input', function () { apply(); });
+            function apply() {
+                var v = parseFloat(el.value);
+                docEl.style.setProperty(s.css, String((v / 10).toFixed(2)));
+                if (valEl) valEl.textContent = label(v);
+                try { localStorage.setItem('cd_gl_' + s.id, String(v)); } catch (e) { /* ignore */ }
+            }
+            apply();
         });
     })();
 

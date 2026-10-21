@@ -20,6 +20,9 @@
     --glass-blur: 14px;
     --glass-alpha: .85;
     --glass-sat: 1.5;
+    --glass-glow: .8;        /* glassliquid 液态光泽强度 0-1 */
+    --glass-shadow: 1;       /* glassliquid 阴影强度 0-1 */
+    --glass-sheen: .9;       /* glassliquid 反射高光 0-1 */
     --header-h: 48px;
     --glass-sat: 165%;
     --accent: #8e2a52;        /* 材质包强调色（默认桃花梅红，随桂花/绿叶/玫瑰切换） */
@@ -236,7 +239,77 @@ body {
     margin-bottom: 10px;
     padding-left: 8px;
     border-left: 3px solid var(--rose);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
+/* 面板统一关闭按钮：圆形胶囊、半透明白、hover 放大+光泽、active 压缩 */
+.panel-close, .measure-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    margin-right: -3px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .6);
+    color: var(--text-2);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .8),
+        0 1px 4px rgba(15, 23, 42, .12),
+        0 0 0 .5px rgba(255, 255, 255, .5);
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.panel-close:hover, .measure-close:hover {
+    transform: scale(1.18) rotate(90deg);
+    background: rgba(255, 255, 255, .95);
+    color: var(--plum);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .9),
+        0 3px 10px rgba(15, 23, 42, .16),
+        0 0 0 .5px rgba(255, 255, 255, .6);
+}
+.panel-close:active, .measure-close:active { transform: scale(.92); transition-duration: .1s; }
+body.theme-night .panel-close, body.theme-night .measure-close {
+    background: rgba(129, 140, 248, .18);
+    color: #a5b4fc;
+    box-shadow: inset 0 1px 0 rgba(148, 163, 212, .3), 0 1px 4px rgba(2, 6, 23, .3);
+}
+/* 面板收起动画（淡出+收起高度） */
+.panel-removing {
+    opacity: 0;
+    transform: translateX(-12px) scale(.97);
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    transition: opacity .28s ease, transform .28s ease, max-height .3s ease, padding .3s ease, margin .3s ease;
+    pointer-events: none;
+}
+/* 恢复全部面板按钮 */
+.panel-restore {
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .7);
+    color: var(--plum);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .1), inset 0 1px 0 rgba(255, 255, 255, .8);
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, box-shadow .2s ease;
+}
+.panel-restore:hover { transform: translateY(-2px) scale(1.04); background: rgba(255, 255, 255, .95); }
+.panel-restore:active { transform: scale(.96); transition-duration: .1s; }
 
 /* 图层列表 */
 .layer-item {
@@ -406,28 +479,62 @@ body {
     background: #e8e8e8;
     min-height: 60vh;   /* 兜底：异常环境下仍保证地图容器可见 */
 }
-/* ===== 右侧功能区（Apple 式高透果冻：56px 纯图标垂直胶囊面板，常驻不折叠） ===== */
+/* ===== 右侧功能区（桌面：Apple 式悬浮球/胶囊，点击展开果冻列表；手机：常驻图标窄条） ===== */
 .toolbar {
     position: absolute;
     top: 64px;
     right: 10px;
     z-index: 1500;
     display: flex;
-    flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 6px;
     width: 56px;
+    height: 56px;
     border-radius: 20px;
     background: rgba(255, 255, 255, .58);
     backdrop-filter: blur(18px) saturate(150%);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     box-shadow:
-        0 8px 28px rgba(15, 23, 42, .12),
-        inset 0 1px 0 rgba(255, 255, 255, .8),
-        inset 0 -1px 0 rgba(255, 255, 255, .35),
+        0 8px 28px rgba(15, 23, 42, calc(.12 * var(--glass-shadow))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(.8 * var(--glass-sheen))),
+        inset 0 -1px 0 rgba(255, 255, 255, calc(.35 * var(--glass-sheen))),
         0 0 0 .5px rgba(255, 255, 255, .55);
+    cursor: pointer;
+    transition: width .35s cubic-bezier(.34, 1.56, .64, 1), height .35s cubic-bezier(.34, 1.56, .64, 1),
+        border-radius .35s cubic-bezier(.34, 1.56, .64, 1), background .3s ease, box-shadow .3s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
 }
+/* 折叠态六点图标 */
+.toolbar::before {
+    content: '';
+    width: 22px;
+    height: 22px;
+    background: var(--plum);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='5' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.4' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='5' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.4' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s ease;
+}
+.toolbar:hover { transform: translateY(-4px) scale(1.04); background: rgba(255, 255, 255, .66); }
+.toolbar:active { transform: scale(.97); transition-duration: .12s; }
+/* 展开：120px 竖列果冻列表 */
+.toolbar.fab-open {
+    width: 120px;
+    height: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 8px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .66);
+    box-shadow:
+        0 16px 40px rgba(15, 23, 42, calc(.2 * var(--glass-shadow))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(.85 * var(--glass-sheen))),
+        0 0 0 .5px rgba(255, 255, 255, .55);
+    cursor: default;
+}
+.toolbar.fab-open::before { transform: rotate(180deg) scale(.6); opacity: .35; }
 .toolbar button {
     width: 44px;
     height: 44px;
@@ -441,53 +548,93 @@ body {
     background: rgba(255, 255, 255, .62);
     color: var(--text);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .85),
-        0 2px 8px rgba(15, 23, 42, .08),
+        inset 0 1px 0 rgba(255, 255, 255, calc(.85 * var(--glass-sheen))),
+        0 2px 8px rgba(15, 23, 42, calc(.08 * var(--glass-shadow))),
         0 0 0 .5px rgba(255, 255, 255, .4);
     cursor: pointer;
-    position: relative;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px) scale(.9);
+    pointer-events: none;
     overflow: hidden;
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, color .2s ease, box-shadow .2s ease;
-    transform: translateZ(0);
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), opacity .28s ease, visibility 0s linear .3s,
+        background-color .2s ease, color .2s ease, box-shadow .2s ease;
     will-change: transform;
 }
+.toolbar.fab-open button {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), opacity .28s ease, visibility 0s,
+        background-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
 .toolbar button svg { width: 20px; height: 20px; flex-shrink: 0; pointer-events: none; transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
-/* 纯图标模式：隐藏文字，杜绝窄面板文字截断 */
 .toolbar button span { display: none; }
-/* 高光扫过 */
+/* 高光扫过（液态玻璃流动感，强度受 glassliquid 液态光泽调节） */
 .toolbar button::after {
     content: '';
     position: absolute;
     top: 0; left: -80%;
     width: 60%;
     height: 100%;
-    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .65), transparent);
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .7), transparent);
     transform: skewX(-18deg);
-    transition: left .5s ease;
+    transition: left .4s ease;
     pointer-events: none;
+    opacity: calc(.45 + .55 * var(--glass-glow));
 }
-/* hover / 触摸：一次弹性跳跃（上移 7px + 回弹，不循环） */
+/* 桌面 tooltip：hover 显示右侧玻璃文字标签 */
+.toolbar button::before {
+    content: attr(data-tip);
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%) translateX(6px);
+    background: rgba(255, 255, 255, .85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--plum);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 4px 9px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .14), inset 0 1px 0 rgba(255, 255, 255, .8);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .22s cubic-bezier(.34, 1.56, .64, 1);
+}
+.toolbar.fab-open button:hover::before { opacity: 1; transform: translateY(-50%) translateX(0); }
+/* hover / 触摸：果冻跳跃（上浮 9px 回弹）+ 方向倾斜 */
 .toolbar button:hover,
 .toolbar button.fab-pop {
-    background: rgba(255, 255, 255, .92);
+    background: rgba(255, 255, 255, .95);
     color: var(--plum);
-    transform: translateY(-7px);
-    box-shadow: 0 10px 22px rgba(15, 23, 42, .16), inset 0 1px 0 rgba(255, 255, 255, .9);
+    transform: translateY(-9px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, calc(.18 * var(--glass-shadow))), inset 0 1px 0 rgba(255, 255, 255, .9);
 }
+.toolbar button.tilt-l { transform: translateY(-9px) rotate(-4deg); }
+.toolbar button.tilt-r { transform: translateY(-9px) rotate(4deg); }
 .toolbar button:hover svg,
 .toolbar button.fab-pop svg { transform: scale(1.12); }
-/* 按压：果冻压缩 */
+.toolbar button.tilt-l svg, .toolbar button.tilt-r svg { transform: scale(1.12); }
+/* 按压：果冻压缩 + 下沉 */
 .toolbar button:active {
-    transform: translateY(-2px) scale(.97);
+    transform: translateY(1px) scale(.96);
     transition-duration: .1s;
-    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .12);
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, calc(.14 * var(--glass-shadow)));
 }
 .toolbar button:active svg { transform: scale(.9); transition-duration: .1s; }
 .toolbar button:disabled { opacity: .5; cursor: wait; }
 .toolbar button.active {
     background: var(--accent, var(--plum));
     color: #fff;
-    box-shadow: 0 6px 16px rgba(142, 42, 82, .35), inset 0 1px 0 rgba(255, 255, 255, .35);
+    box-shadow: 0 6px 16px rgba(142, 42, 82, calc(.35 * var(--glass-shadow))), inset 0 1px 0 rgba(255, 255, 255, .35);
 }
 .toolbar button.active:hover,
 .toolbar button.active.fab-pop { background: var(--accent, var(--plum)); color: #fff; }
@@ -497,11 +644,11 @@ body {
 .toolbar button#btn-clear.fab-pop { color: #5b6474; background: rgba(226, 232, 240, .85); }
 .toolbar .petal-btn.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 6px 16px rgba(142, 42, 82, .35); }
 
-/* 自定义缩放按钮（更好用，Apple 玻璃质感） */
+/* 自定义缩放按钮（更好用，Apple 玻璃质感；桌面位于悬浮球下方，手机右下） */
 .zoom-ctrl {
     position: absolute;
     right: 10px;
-    bottom: 74px;
+    top: 132px;
     z-index: 20;
     display: flex;
     flex-direction: column;
@@ -908,16 +1055,26 @@ body.theme-night .measure-result {
     .sidebar.open { transform: translateX(0); }
     .sidebar-backdrop.show { display: block; }
 
-    /* 右侧功能区（手机端）：46px 纯图标胶囊列，不折叠 */
+    /* 右侧功能区（手机端）：46px 常驻图标窄条（不折叠，触屏直接可见可点） */
     .toolbar {
         top: calc(var(--header-h) + 8px);
         right: 6px;
         width: 46px;
+        height: auto;
+        flex-direction: column;
+        justify-content: flex-start;
         padding: 6px;
         gap: 6px;
         border-radius: 18px;
+        cursor: default;
     }
+    .toolbar::before { display: none; }
     .toolbar button {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        pointer-events: auto;
         width: 100%;
         height: 42px;
         padding: 0;
@@ -927,6 +1084,7 @@ body.theme-night .measure-result {
     }
     .toolbar button svg { width: 19px; height: 19px; }
     .toolbar button span { display: none; }
+    .toolbar.fab-open { width: 46px; padding: 6px; gap: 6px; }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .zoom-ctrl button { width: 38px; height: 38px; }
     /* 比例尺放左下角（不遮挡缩放键），默认 Leaflet 位置微调 */
@@ -1169,13 +1327,19 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
         inset -1px 0 0 rgba(255, 255, 255, .45),
         2px 0 18px rgba(124, 36, 80, .10);
 }
-/* 夜间主题：右侧功能区深色玻璃面板 */
+/* 夜间主题：悬浮球 + 展开面板深色玻璃 */
 body.theme-night .toolbar {
-    background: rgba(15, 23, 42, .94);
+    background: rgba(15, 23, 42, .9);
     box-shadow:
         0 12px 32px rgba(2, 6, 23, .5),
         inset 0 1px 0 rgba(148, 163, 212, .3);
 }
+body.theme-night .toolbar::before { background: #a5b4fc; }
+body.theme-night .toolbar.fab-open {
+    background: rgba(15, 23, 42, .96);
+    box-shadow: 0 16px 40px rgba(2, 6, 23, .6), inset 0 1px 0 rgba(148, 163, 212, .3);
+}
+body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); color: #dbeafe; box-shadow: 0 3px 10px rgba(2, 6, 23, .4), inset 0 1px 0 rgba(148, 163, 212, .3); }
 #map .legend-panel, #map .settings-panel, #map .measure-result, #map .map-toast {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
