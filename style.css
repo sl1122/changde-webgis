@@ -207,8 +207,14 @@ body {
 .sidebar {
     width: 286px;
     min-width: 286px;
-    background: var(--card);
-    border-right: 1px solid var(--border);
+    background: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border-right: 1px solid rgba(255, 255, 255, .6);
+    box-shadow:
+        8px 0 30px rgba(15, 23, 42, .06),
+        inset 0 1px 0 rgba(255, 255, 255, .7),
+        inset -1px 0 0 rgba(255, 255, 255, .4);
     padding: 14px;
     overflow-y: auto;
     display: flex;
@@ -217,11 +223,11 @@ body {
     transition: width .35s cubic-bezier(.4, 0, .2, 1), min-width .35s cubic-bezier(.4, 0, .2, 1), padding .35s cubic-bezier(.4, 0, .2, 1), opacity .22s ease;
 }
 .panel {
-    background: #fdfbfc;
-    border: 1px solid #f0dce4;
+    background: rgba(255, 255, 255, .55);
+    border: 1px solid rgba(240, 220, 228, .8);
     border-radius: var(--radius);
     padding: 12px;
-    box-shadow: 0 2px 8px rgba(142, 42, 82, .05);
+    box-shadow: 0 2px 8px rgba(142, 42, 82, .05), inset 0 1px 0 rgba(255, 255, 255, .6);
 }
 .panel-title {
     font-size: 13px;
@@ -400,7 +406,7 @@ body {
     background: #e8e8e8;
     min-height: 60vh;   /* 兜底：异常环境下仍保证地图容器可见 */
 }
-/* ===== 右侧功能区（常驻竖排玻璃面板，不折叠） ===== */
+/* ===== 右侧功能区（Apple 式高透果冻：56px 纯图标垂直胶囊面板，常驻不折叠） ===== */
 .toolbar {
     position: absolute;
     top: 64px;
@@ -408,38 +414,46 @@ body {
     z-index: 1500;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px;
-    width: 88px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, .92);
-    backdrop-filter: blur(10px) saturate(140%);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    width: 56px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .58);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
     box-shadow:
-        0 12px 32px rgba(15, 23, 42, .16),
-        inset 0 1px 0 rgba(255, 255, 255, .9);
+        0 8px 28px rgba(15, 23, 42, .12),
+        inset 0 1px 0 rgba(255, 255, 255, .8),
+        inset 0 -1px 0 rgba(255, 255, 255, .35),
+        0 0 0 .5px rgba(255, 255, 255, .55);
 }
 .toolbar button {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-    width: 100%;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     margin: 0;
-    padding: 0 10px;
+    padding: 0;
     border: none;
-    border-radius: 10px;
-    background: #f6f7fb;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, .62);
     color: var(--text);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .85),
+        0 2px 8px rgba(15, 23, 42, .08),
+        0 0 0 .5px rgba(255, 255, 255, .4);
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    transition: background-color .2s ease, color .2s ease, box-shadow .2s ease, transform .25s cubic-bezier(.34, 1.56, .64, 1);
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    transform: translateZ(0);
+    will-change: transform;
 }
-.toolbar button svg { width: 16px; height: 16px; flex-shrink: 0; pointer-events: none; transition: transform .2s cubic-bezier(.34, 1.56, .64, 1); }
-.toolbar button span { font-size: 12px; line-height: 1; white-space: nowrap; pointer-events: none; }
+.toolbar button svg { width: 20px; height: 20px; flex-shrink: 0; pointer-events: none; transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
+/* 纯图标模式：隐藏文字，杜绝窄面板文字截断 */
+.toolbar button span { display: none; }
 /* 高光扫过 */
 .toolbar button::after {
     content: '';
@@ -447,28 +461,43 @@ body {
     top: 0; left: -80%;
     width: 60%;
     height: 100%;
-    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .6), transparent);
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .65), transparent);
     transform: skewX(-18deg);
     transition: left .5s ease;
     pointer-events: none;
 }
-.toolbar button:hover::after { left: 130%; }
-.toolbar button:hover {
-    background: var(--rose-soft);
+/* hover / 触摸：一次弹性跳跃（上移 7px + 回弹，不循环） */
+.toolbar button:hover,
+.toolbar button.fab-pop {
+    background: rgba(255, 255, 255, .92);
     color: var(--plum);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, .12), inset 0 1px 0 rgba(255, 255, 255, .6);
+    transform: translateY(-7px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .16), inset 0 1px 0 rgba(255, 255, 255, .9);
 }
-.toolbar button:hover svg { transform: scale(1.15); }
+.toolbar button:hover svg,
+.toolbar button.fab-pop svg { transform: scale(1.12); }
+/* 按压：果冻压缩 */
 .toolbar button:active {
-    background: var(--rose-soft);
-    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .14);
+    transform: translateY(-2px) scale(.97);
+    transition-duration: .1s;
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .12);
 }
-.toolbar button:active svg { transform: scale(.85); transition-duration: .12s; }
-.toolbar button:disabled { opacity: .55; cursor: wait; }
-.toolbar button.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 4px 12px rgba(142, 42, 82, .4); }
-.toolbar .petal-btn.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 4px 12px rgba(142, 42, 82, .4); }
+.toolbar button:active svg { transform: scale(.9); transition-duration: .1s; }
+.toolbar button:disabled { opacity: .5; cursor: wait; }
+.toolbar button.active {
+    background: var(--accent, var(--plum));
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(142, 42, 82, .35), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+.toolbar button.active:hover,
+.toolbar button.active.fab-pop { background: var(--accent, var(--plum)); color: #fff; }
+/* 清除测量按钮：中性灰色 */
+.toolbar button#btn-clear { color: #7c8494; }
+.toolbar button#btn-clear:hover,
+.toolbar button#btn-clear.fab-pop { color: #5b6474; background: rgba(226, 232, 240, .85); }
+.toolbar .petal-btn.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 6px 16px rgba(142, 42, 82, .35); }
 
-/* 自定义缩放按钮（更好用） */
+/* 自定义缩放按钮（更好用，Apple 玻璃质感） */
 .zoom-ctrl {
     position: absolute;
     right: 10px;
@@ -476,11 +505,16 @@ body {
     z-index: 20;
     display: flex;
     flex-direction: column;
-    background: var(--card);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, .68);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, .16);
-    border: 1px solid var(--border);
+    box-shadow:
+        0 6px 20px rgba(15, 23, 42, .12),
+        inset 0 1px 0 rgba(255, 255, 255, .85),
+        0 0 0 .5px rgba(255, 255, 255, .5);
+    border: 1px solid rgba(255, 255, 255, .6);
 }
 .zoom-ctrl button {
     width: 42px;
@@ -509,15 +543,46 @@ body {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 20;
-    background: rgba(124, 36, 80, .92);
-    color: #fff;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, .78);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    color: #333;
     font-size: 13px;
-    padding: 8px 18px;
-    border-radius: 999px;
-    box-shadow: var(--shadow);
+    padding: 7px 12px;
+    border-radius: 13px;
+    box-shadow:
+        0 6px 22px rgba(15, 23, 42, .14),
+        inset 0 1px 0 rgba(255, 255, 255, .9),
+        0 0 0 .5px rgba(255, 255, 255, .55);
+    border: 1px solid rgba(255, 255, 255, .65);
     max-width: 80%;
     text-align: center;
+}
+/* 完成测量按钮：柔和绿色主色，高透玻璃 */
+#measure-done {
+    border: none;
+    border-radius: 999px;
+    background: #34c759;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(52, 199, 89, .35), inset 0 1px 0 rgba(255, 255, 255, .4);
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease, background-color .2s ease;
+}
+#measure-done:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 5px 14px rgba(52, 199, 89, .4), inset 0 1px 0 rgba(255, 255, 255, .4); }
+#measure-done:active { transform: scale(.96); transition-duration: .1s; }
+body.theme-night .measure-result {
+    background: rgba(15, 23, 42, .82);
+    color: #e2e8f0;
+    box-shadow: 0 6px 22px rgba(2, 6, 23, .45), inset 0 1px 0 rgba(148, 163, 212, .3);
+    border-color: rgba(148, 163, 212, .25);
 }
 
 /* 地图操作提示（定位 / 复位反馈） */
@@ -752,22 +817,26 @@ body {
 }
 #petal-wrap:not(.on) .petal { display: none; }
 
-/* ===== 汉堡菜单按钮（全端显示；桌面端点击折叠/展开侧边栏，手机端打开抽屉） ===== */
+/* ===== 汉堡菜单按钮（全端显示；桌面端点击折叠/展开侧边栏，手机端打开抽屉；48px 触控热区） ===== */
 .menu-btn {
     display: flex;
-    width: 34px;
-    height: 34px;
+    width: 48px;
+    height: 48px;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, .16);
+    background: rgba(255, 255, 255, .18);
     color: #fff;
     border: none;
-    border-radius: 9px;
+    border-radius: 14px;
     cursor: pointer;
     flex-shrink: 0;
     position: relative;
     z-index: 2001;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 1px 4px rgba(15, 23, 42, .12);
     transition: background .15s, transform .3s cubic-bezier(.34, 1.56, .64, 1);
+    touch-action: manipulation;
 }
 .menu-btn:hover { background: rgba(255, 255, 255, .28); transform: rotate(6deg) scale(1.06); }
 .menu-btn:active { transform: scale(.94); transition-duration: .12s; }
@@ -839,23 +908,24 @@ body {
     .sidebar.open { transform: translateX(0); }
     .sidebar-backdrop.show { display: block; }
 
-    /* 右侧功能区（手机端）：窄条图标列，不折叠 */
+    /* 右侧功能区（手机端）：46px 纯图标胶囊列，不折叠 */
     .toolbar {
         top: calc(var(--header-h) + 8px);
         right: 6px;
         width: 46px;
         padding: 6px;
-        gap: 5px;
+        gap: 6px;
+        border-radius: 18px;
     }
     .toolbar button {
         width: 100%;
-        height: 38px;
+        height: 42px;
         padding: 0;
         justify-content: center;
         gap: 0;
-        border-radius: 10px;
+        border-radius: 12px;
     }
-    .toolbar button svg { width: 16px; height: 16px; }
+    .toolbar button svg { width: 19px; height: 19px; }
     .toolbar button span { display: none; }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .zoom-ctrl button { width: 38px; height: 38px; }
@@ -866,7 +936,9 @@ body {
         float: left;
         margin: 0 0 8px 8px;
         pointer-events: auto;
+        padding: 5px 9px 4px;
     }
+    #map .leaflet-control-scale-line { max-width: 100px; font-size: 10px; }
     .legend-panel { left: 10px; bottom: 26px; padding: 9px 11px; min-width: 132px; }
     .legend-note { font-size: 10px; }
     /* 底部提示文字：允许换行，不再省略截断 */
@@ -923,10 +995,37 @@ body {
 #map .legend-panel { z-index: 1200; }
 .leaflet-container { font-family: inherit; background: #e8e8e8; }
 .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,.75); }
-.leaflet-container .leaflet-control-scale-line {
-    font-size: 10px; background: rgba(255,255,255,.85);
-    border: 1px solid rgba(124,36,80,.35); border-top: none; color: var(--text);
+#map .leaflet-control-scale {
+    position: static;
+    float: left;
+    margin: 0 0 10px 10px;
+    pointer-events: auto;
+    background: rgba(255, 255, 255, .62);
+    border-radius: 10px;
+    padding: 6px 11px 5px;
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    box-shadow:
+        0 4px 14px rgba(15, 23, 42, .1),
+        inset 0 1px 0 rgba(255, 255, 255, .85),
+        0 0 0 .5px rgba(255, 255, 255, .5);
 }
+.leaflet-container .leaflet-control-scale-line {
+    font-size: 11px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(124, 36, 80, .7);
+    color: var(--text);
+    line-height: 1.1;
+    padding: 0 2px 4px;
+    max-width: 150px;
+    white-space: nowrap;
+}
+body.theme-night #map .leaflet-control-scale {
+    background: rgba(15, 23, 42, .6);
+    box-shadow: 0 4px 14px rgba(2, 6, 23, .4), inset 0 1px 0 rgba(148, 163, 212, .3);
+}
+body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(165, 180, 252, .8); color: #cbd5e1; }
 
 /* 点位小圆点（divIcon） */
 .poi-dot-wrap { background: transparent; border: none; }

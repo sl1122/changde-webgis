@@ -1242,6 +1242,14 @@
     var menuBtn = document.getElementById('btn-menu');
     // 全端强制显示菜单按钮（桌面折叠侧边栏 / 手机打开抽屉）
     if (menuBtn) menuBtn.style.display = 'flex';
+    // 折叠动画结束后防抖重绘地图（连续折叠/展开只触发一次）
+    var sizeDebounce = null;
+    function resizeMapDebounced() {
+        clearTimeout(sizeDebounce);
+        sizeDebounce = setTimeout(function () {
+            if (typeof map !== 'undefined' && map) map.invalidateSize();
+        }, 430);
+    }
     function toggleDrawer() {
         var isPhone = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
         if (isPhone) {
@@ -1250,7 +1258,7 @@
         } else if (sidebarEl) {
             // 桌面端：折叠 / 展开侧边栏（等 width 动画结束再 invalidateSize，避免地图顿跳）
             sidebarEl.classList.toggle('hidden');
-            if (typeof map !== 'undefined' && map) setTimeout(function () { map.invalidateSize(); }, 420);
+            resizeMapDebounced();
         }
     }
     if (menuBtn) {
@@ -1450,7 +1458,8 @@
         { v: 'v65', t: '全端菜单按钮', pts: ['所有屏幕显示汉堡菜单按钮', '桌面端点击折叠 / 展开侧边栏，地图自动占满'] },
         { v: 'v66', t: '操作手感全面优化', pts: ['缩小限制放宽到全球（minZoom 9→3）', '桌面折叠改为平滑宽度动画，不再生硬', '缩放键防抖 320ms，手机端不再卡顿连跳', '菜单按钮 document 捕获级兜底，任何环境点击必触发', '手机端比例尺改绝对定位固定在底部中间，不再消失'] },
         { v: 'v67', t: '悬浮球工具栏 + 测量修复', pts: ['右侧工具栏改为果冻质感悬浮球，点击扇形展开 + 弹性动画', '按钮点击果冻回弹 + 高光扫过，夜间深色果冻适配', '测距/测面修复：双击结束不再多加点，手机端新增「完成测量」按钮', '标题栏层级提升（z-index 2000）防被遮挡', '菜单按钮新增 touchstart 兜底，真实手机触摸必触发', '比例尺移到左下角（不再被缩放键遮挡）'] },
-        { v: 'v68', t: '右侧常驻功能区（不折叠）', pts: ['回退悬浮球折叠设计：右侧改为常驻竖排玻璃面板，10 个功能按钮一屏全显', '按钮为矩形横排（图标 + 文字），hover 高光扫过 + 点击果冻回弹', '桌面端 88px 宽面板，手机端自动收窄为图标窄条（不占地图）', '夜间模式深色玻璃面板适配'] }
+        { v: 'v68', t: '右侧常驻功能区（不折叠）', pts: ['回退悬浮球折叠设计：右侧改为常驻竖排玻璃面板，10 个功能按钮一屏全显', '按钮为矩形横排（图标 + 文字），hover 高光扫过 + 点击果冻回弹', '桌面端 88px 宽面板，手机端自动收窄为图标窄条（不占地图）', '夜间模式深色玻璃面板适配'] },
+        { v: 'v69', t: 'Apple 式高透重构', pts: ['右侧功能区改为 56px 纯图标果冻胶囊面板（杜绝文字截断），按钮 44px 图标 20px', '按钮 hover / 触摸一次弹性跳跃（上移 7px 回弹）+ 按压果冻压缩，transform 硬件加速', '侧边栏玻璃拟态（毛玻璃 + 高光边缘 + 柔和阴影），折叠动画结束后防抖重绘地图', '菜单按钮热区扩至 48×48 与标题栏居中对齐', '比例尺重构为 Apple 玻璃组件（桌面 150px / 手机 100px，米公里自动切换）', '测量卡片改高透玻璃（白底深字 + 细描边），完成按钮柔和绿色，清除按钮中性灰', '全局低饱和玻璃语言：面板 / 缩放键统一高透圆角，夜间模式全套深色玻璃'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1486,6 +1495,23 @@
             if (e.key === 'Escape' && clBackdrop && !clBackdrop.hidden && clBackdrop.classList.contains('show')) closeChangelog();
         });
     }
+
+    // ---------------- 13.6 右侧功能区按钮：触屏果冻跳跃（touchstart 触发一次弹跳，松手恢复） ----------------
+    (function initFabTouch() {
+        var btns = document.querySelectorAll('.toolbar button');
+        Array.prototype.forEach.call(btns, function (b) {
+            if (b._fabTouch) return;
+            b._fabTouch = true;
+            b.addEventListener('touchstart', function () {
+                b.classList.add('fab-pop');
+            }, { passive: true });
+            ['touchend', 'touchcancel', 'touchleave'].forEach(function (t) {
+                b.addEventListener(t, function () {
+                    b.classList.remove('fab-pop');
+                }, { passive: true });
+            });
+        });
+    })();
 
     // ---------------- 14. 启动 ----------------
     loadTheme();
