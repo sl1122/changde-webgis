@@ -20,9 +20,8 @@
     --glass-blur: 14px;
     --glass-alpha: .85;
     --glass-sat: 1.5;
-    --glass-glow: .8;        /* glassliquid 液态光泽强度 0-1 */
-    --glass-shadow: 1;       /* glassliquid 阴影强度 0-1 */
-    --glass-sheen: .9;       /* glassliquid 反射高光 0-1 */
+    --glass-shadow: 1;       /* glassliquid 阴影柔和度 0-1 */
+    --glass-sheen: .9;       /* glassliquid 边框高光强度 0-1 */
     --header-h: 48px;
     --glass-sat: 165%;
     --accent: #8e2a52;        /* 材质包强调色（默认桃花梅红，随桂花/绿叶/玫瑰切换） */
@@ -502,11 +501,23 @@ body.theme-night .panel-close, body.theme-night .measure-close {
         0 0 0 .5px rgba(255, 255, 255, .55);
     cursor: pointer;
     transition: width .35s cubic-bezier(.34, 1.56, .64, 1), height .35s cubic-bezier(.34, 1.56, .64, 1),
-        border-radius .35s cubic-bezier(.34, 1.56, .64, 1), background .3s ease, box-shadow .3s ease;
+        border-radius .35s cubic-bezier(.34, 1.56, .64, 1), background .3s ease, box-shadow .3s ease,
+        top .38s cubic-bezier(.34, 1.56, .64, 1), left .38s cubic-bezier(.34, 1.56, .64, 1);
     user-select: none;
     -webkit-user-select: none;
-    touch-action: manipulation;
+    touch-action: none;
 }
+/* 拖拽中：禁用过渡 + 降低不透明度，避免拉扯感 */
+.toolbar.fab-dragging {
+    transition: none;
+    opacity: .82;
+    transform: scale(1.06);
+    cursor: grabbing;
+}
+/* 锚点位置（吸附后由 JS 写入，CSS 仅提供默认兜底） */
+.toolbar[data-anchor="left"] { left: 10px; right: auto; }
+.toolbar[data-anchor="top"] { top: 10px; bottom: auto; }
+.toolbar[data-anchor="bottom"] { bottom: 10px; top: auto; }
 /* 折叠态六点图标 */
 .toolbar::before {
     content: '';
@@ -535,6 +546,20 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     cursor: default;
 }
 .toolbar.fab-open::before { transform: rotate(180deg) scale(.6); opacity: .35; }
+/* 停靠上/下边缘：横向展开功能列表（智能自适应方向，避让缩放控件与地图核心区） */
+.toolbar[data-anchor="top"].fab-open,
+.toolbar[data-anchor="bottom"].fab-open {
+    flex-direction: row;
+    justify-content: flex-start;
+    width: auto;
+    height: 56px;
+    padding: 6px;
+}
+.toolbar[data-anchor="top"].fab-open button,
+.toolbar[data-anchor="bottom"].fab-open button { width: 44px; }
+/* 面板内收起按钮（主动关闭路径） */
+.toolbar .fab-collapse { color: var(--text-2); }
+.toolbar.fab-open .fab-collapse { opacity: 1; }
 .toolbar button {
     width: 44px;
     height: 44px;
@@ -575,7 +600,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 }
 .toolbar button svg { width: 20px; height: 20px; flex-shrink: 0; pointer-events: none; transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
 .toolbar button span { display: none; }
-/* 高光扫过（液态玻璃流动感，强度受 glassliquid 液态光泽调节） */
+/* 高光扫过（液态玻璃流动感，强度受 glassliquid 边框高光强度调节） */
 .toolbar button::after {
     content: '';
     position: absolute;
@@ -586,7 +611,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     transform: skewX(-18deg);
     transition: left .4s ease;
     pointer-events: none;
-    opacity: calc(.45 + .55 * var(--glass-glow));
+    opacity: calc(.45 + .55 * var(--glass-sheen));
 }
 /* 桌面 tooltip：hover 显示右侧玻璃文字标签 */
 .toolbar button::before {
@@ -610,16 +635,16 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     transition: opacity .18s ease, transform .22s cubic-bezier(.34, 1.56, .64, 1);
 }
 .toolbar.fab-open button:hover::before { opacity: 1; transform: translateY(-50%) translateX(0); }
-/* hover / 触摸：果冻跳跃（上浮 9px 回弹）+ 方向倾斜 */
+/* hover / 触摸：果冻跳跃（上浮 8px 回弹）+ 方向倾斜（react-tilt-button 方向逻辑） */
 .toolbar button:hover,
 .toolbar button.fab-pop {
     background: rgba(255, 255, 255, .95);
     color: var(--plum);
-    transform: translateY(-9px);
+    transform: translateY(-8px);
     box-shadow: 0 12px 24px rgba(15, 23, 42, calc(.18 * var(--glass-shadow))), inset 0 1px 0 rgba(255, 255, 255, .9);
 }
-.toolbar button.tilt-l { transform: translateY(-9px) rotate(-4deg); }
-.toolbar button.tilt-r { transform: translateY(-9px) rotate(4deg); }
+.toolbar button.tilt-l { transform: translateY(-8px) rotate(-4deg); }
+.toolbar button.tilt-r { transform: translateY(-8px) rotate(4deg); }
 .toolbar button:hover svg,
 .toolbar button.fab-pop svg { transform: scale(1.12); }
 .toolbar button.tilt-l svg, .toolbar button.tilt-r svg { transform: scale(1.12); }
@@ -1067,6 +1092,8 @@ body.theme-night .measure-result {
         gap: 6px;
         border-radius: 18px;
         cursor: default;
+        transition: width .3s cubic-bezier(.34, 1.56, .64, 1), height .3s cubic-bezier(.34, 1.56, .64, 1),
+            top .3s cubic-bezier(.34, 1.56, .64, 1), left .3s cubic-bezier(.34, 1.56, .64, 1);
     }
     .toolbar::before { display: none; }
     .toolbar button {
@@ -1085,6 +1112,32 @@ body.theme-night .measure-result {
     .toolbar button svg { width: 19px; height: 19px; }
     .toolbar button span { display: none; }
     .toolbar.fab-open { width: 46px; padding: 6px; gap: 6px; }
+    /* 手机端展开详情：点击窄条空白区切换为 116px 宽条，图标旁显示精简文字标签 */
+    .toolbar.fab-open {
+        width: 116px;
+        align-items: stretch;
+    }
+    .toolbar.fab-open button {
+        width: 100%;
+        height: 40px;
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 0 10px;
+    }
+    .toolbar.fab-open button span {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1;
+    }
+    .toolbar.fab-open .fab-collapse { justify-content: center; padding: 0; }
+    /* 移动端动效降幅：弹性上浮 4px、按压压缩 0.97（渐进增强：移动端适度降低弹性幅度） */
+    .toolbar button:hover,
+    .toolbar button.fab-pop { transform: translateY(-4px); }
+    .toolbar button.tilt-l { transform: translateY(-4px) rotate(-3deg); }
+    .toolbar button.tilt-r { transform: translateY(-4px) rotate(3deg); }
+    .toolbar button:active { transform: translateY(0) scale(.97); }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .zoom-ctrl button { width: 38px; height: 38px; }
     /* 比例尺放左下角（不遮挡缩放键），默认 Leaflet 位置微调 */
@@ -1327,6 +1380,24 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
         inset -1px 0 0 rgba(255, 255, 255, .45),
         2px 0 18px rgba(124, 36, 80, .10);
 }
+/* ===== 全 UI 液态玻璃统一层（参考 glasskit：磨砂基底 + 顶部内高光 + 细描边 + 柔和外阴影，参数全由全局变量管控） ===== */
+#map .panel, #map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel,
+#map .measure-result, #map .map-toast, .scale, .cl-card, .toolbar button::before {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, calc(.7 * var(--glass-sheen))),
+        0 4px 24px rgba(15, 23, 42, calc(.12 * var(--glass-shadow))),
+        0 0 0 .5px rgba(255, 255, 255, .45);
+}
+.set-note { font-size: 11px; color: var(--text-2); line-height: 1.5; margin-top: 4px; padding-left: 2px; }
+
+/* 液态折射增强（参考 liquid-glass SVG 位移滤镜；桌面默认开、移动端自动关，仅作用于侧边栏与设置面板）
+   性能说明：filter 只在覆盖 DOM 上启用，不触及地图容器/瓦片/聚合层 */
+body.refraction .sidebar,
+body.refraction .settings-panel {
+    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='16' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+}
+body.refraction .settings-panel { filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq2' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='16' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E"); }
+
 /* 夜间主题：悬浮球 + 展开面板深色玻璃 */
 body.theme-night .toolbar {
     background: rgba(15, 23, 42, .9);
