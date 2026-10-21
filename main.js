@@ -1,832 +1,493 @@
-/* ===== 常德市城市公共服务WebGIS系统 - 主逻辑（高德地图 JS API 2.0） ===== */
+/* ============================================================
+ * 常德市城市公共服务 WebGIS 系统 - main.js（v39 全开源版）
+ * 引擎：Leaflet 1.9 + OpenStreetMap 瓦片 + leaflet.markercluster
+ * 坐标系：WGS-84（数据已由 GCJ-02 反变换，浏览器定位零转换直接叠加）
+ * 不含任何高德成分：无高德底图 / 无高德组件 / 无高德 API 缓存
+ * ============================================================ */
 (function () {
     'use strict';
 
-    // ---------- 配置 ----------
-    var MAP_CENTER = [111.6938, 29.0303];   // 常德市中心
-    var MAP_ZOOM = 12;
+    // ---------------- 1. 数据加载（服务器 fetch 优先，内嵌 geo-data 兜底） ----------------
+    var GEO_KEYS = ['school', 'hospital', 'scenic', 'road'];
+    var DATA = {};
+    var EMBED = null;
+    try { EMBED = JSON.parse(document.getElementById('geo-data').textContent); } catch (e) { EMBED = null; }
 
+    function fetchOrEmbed(key) {
+        return fetch('data/' + key + '.geojson')
+            .then(function (r) { return r.json(); })
+            .then(function (d) { DATA[key] = d; })
+            .catch(function () { if (EMBED && EMBED[key]) DATA[key] = EMBED[key]; });
+    }
+
+    // ---------------- 2. 工具函数 ----------------
+    function havMeters(lat1, lng1, lat2, lng2) {
+        var R = 6371000, p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180;
+        var dp = (lat2 - lat1) * Math.PI / 180, dl = (lng2 - lng1) * Math.PI / 180;
+        var h = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+        return 2 * R * Math.asin(Math.sqrt(h));
+    }
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function toast(msg, isErr) {
+        var el = document.getElementById('map-toast');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = 'map-toast' + (isErr ? ' err' : '');
+        el.hidden = false;
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function () { el.hidden = true; }, isErr ? 7000 : 4000);
+    }
+    function showMeasure(msg) {
+        var el = document.getElementById('measure-result');
+        if (!el) return;
+        el.textContent = msg;
+        el.hidden = false;
+        clearTimeout(showMeasure._t);
+        showMeasure._t = setTimeout(function () { el.hidden = true; }, 6000);
+    }
+
+    // ---------------- 3. 地图（Leaflet + OSM） ----------------
+    var map = L.map('map', {
+        center: [29.045, 111.69],
+        zoom: 13,
+        zoomControl: false,
+        minZoom: 9,
+        maxZoom: 19,
+        attributionControl: true
+    });
+    // 主瓦片：OSM 官方；加载失败自动切换备用源（CartoDB Voyager）
+    var OSM_URLS = [
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+    ];
+    var tile = L.tileLayer(OSM_URLS[0], {
+        maxZoom: 19,
+        subdomains: 'abc',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+    }).addTo(map);
+    var tileIdx = 0;
+    tile.on('tileerror', function () {
+        if (tileIdx < OSM_URLS.length - 1) {
+            tileIdx++;
+            map.removeLayer(tile);
+            tile = L.tileLayer(OSM_URLS[tileIdx], { maxZoom: 19, subdomains: 'abc', attribution: tile.options.attribution });
+            tile.on('tileerror', arguments.callee);
+            tile.addTo(map);
+        }
+    });
+    L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 140 }).addTo(map);
+    // 自定义放大缩小按钮
+    document.getElementById('btn-zoom-in').addEventListener('click', function () { map.zoomIn(); });
+    document.getElementById('btn-zoom-out').addEventListener('click', function () { map.zoomOut(); });
+
+    var INIT_CENTER = [29.045, 111.69], INIT_ZOOM = 13;
+
+    // ---------------- 4. 图层管理 ----------------
     var LAYER_CONFIG = {
-        school:   { file: 'data/school.geojson',   color: '#2563eb', label: '学校', geom: 'point' },
-        hospital: { file: 'data/hospital.geojson', color: '#dc2626', label: '医院', geom: 'point' },
-        scenic:   { file: 'data/scenic.geojson',   color: '#059669', label: '景点', geom: 'point' },
-        road:     { file: 'data/road.geojson',     color: '#d97706', label: '道路', geom: 'line' }
+        school: { name: '学校', color: '#2563eb', radius: 7 },
+        hospital: { name: '医院', color: '#dc2626', radius: 7 },
+        scenic: { name: '景点', color: '#059669', radius: 7 },
+        road: { name: '道路', color: '#d97706' }
     };
+    var layerState = {
+        school: { visible: true, data: [] },
+        hospital: { visible: true, data: [] },
+        scenic: { visible: true, data: [] },
+        road: { visible: true, data: [] }
+    };
+    // Leaflet 图层对象：pointsLayer[cluster|plain], linesLayer
+    var pointsLayer = { cluster: null, plain: null };
+    var linesLayer = null;
+    var clusterEnabled = true;
 
-    // ---------- 地图初始化 ----------
-    var map = new AMap.Map('map', {
-        viewMode: '2D',
-        center: MAP_CENTER,
-        zoom: MAP_ZOOM,
-        resizeEnable: true,
-        rotateEnable: false,
-        pitchEnable: false
+    function pointPopupHtml(key, p) {
+        var c = LAYER_CONFIG[key];
+        var rows = [
+            ['名称', p.name], ['类别', p.type || '-'], ['区域', p.adname || '-'],
+            ['地址', p.address || '-'], ['来源', p.source || '-']
+        ].map(function (r) {
+            return '<div class="pw-row"><span class="pw-k">' + r[0] + '</span><span class="pw-v">' + esc(r[1]) + '</span></div>';
+        }).join('');
+        return '<div class="pw-box"><div class="pw-t" style="border-left-color:' + c.color + '">' + esc(p.name) + '</div>' + rows + '</div>';
+    }
+    function roadPopupHtml(p) {
+        return '<div class="pw-box"><div class="pw-t" style="border-left-color:#d97706">' + esc(p.name) + '</div>' +
+            '<div class="pw-row"><span class="pw-k">类别</span><span class="pw-v">' + esc(p.type || '主干道') + '</span></div>' +
+            '<div class="pw-row"><span class="pw-k">长度</span><span class="pw-v">' + (p.len_km != null ? p.len_km + ' 公里' : '-') + '</span></div>' +
+            '</div>';
+    }
+
+    function makePointMarker(key, feat) {
+        var p = feat.properties;
+        var coords = feat.geometry.coordinates;
+        var c = LAYER_CONFIG[key];
+        var icon = L.divIcon({
+            className: 'poi-dot-wrap',
+            html: '<div class="poi-dot" style="background:' + c.color + '"></div>',
+            iconSize: [12, 12], iconAnchor: [6, 6]
+        });
+        return L.marker([coords[1], coords[0]], { icon: icon })
+            .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 });
+    }
+
+    function buildPointLayers(key, useCluster) {
+        var feats = layerState[key].data;
+        if (useCluster) {
+            var cg = L.markerClusterGroup({
+                maxClusterRadius: 60,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                spiderfyOnMaxZoom: true,
+                disableClusteringAtZoom: 18
+            });
+            feats.forEach(function (f) { cg.addLayer(makePointMarker(key, f)); });
+            return cg;
+        }
+        var g = L.layerGroup();
+        feats.forEach(function (f) {
+            var coords = f.geometry.coordinates;
+            g.addLayer(L.circleMarker([coords[1], coords[0]], {
+                radius: 5, color: LAYER_CONFIG[key].color, weight: 1.5,
+                fillColor: LAYER_CONFIG[key].color, fillOpacity: 0.85
+            }).bindPopup(pointPopupHtml(key, f.properties), { autoPan: true, maxWidth: 280 }));
+        });
+        return g;
+    }
+
+    function buildLinesLayer() {
+        var g = L.layerGroup();
+        layerState.road.data.forEach(function (f) {
+            var coords = f.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
+            if (coords.length < 2) return;
+            var line = L.polyline(coords, {
+                color: LAYER_CONFIG.road.color, weight: 4.5, opacity: 0.95,
+                lineJoin: 'round', lineCap: 'round'
+            }).bindPopup(roadPopupHtml(f.properties), { autoPan: true, maxWidth: 280 });
+            // 悬停高亮
+            line.on('mouseover', function () { line.setStyle({ weight: 7, opacity: 1 }); });
+            line.on('mouseout', function () { line.setStyle({ weight: 4.5, opacity: 0.95 }); });
+            g.addLayer(line);
+            // 路名标签（中点）
+            if (!f.properties.no_name) {
+                var mid = coords[Math.floor(coords.length / 2)];
+                var tag = L.tooltip({
+                    permanent: true, direction: 'center', className: 'road-tag', opacity: 1
+                }).setContent(f.properties.name).setLatLng(mid);
+                g.addLayer(tag);
+            }
+        });
+        return g;
+    }
+
+    function refreshLayer(key) {
+        var vis = layerState[key].visible;
+        if (key === 'road') {
+            if (linesLayer) { map.removeLayer(linesLayer); linesLayer = null; }
+            if (vis) { linesLayer = buildLinesLayer(); map.addLayer(linesLayer); }
+            return;
+        }
+        if (pointsLayer.cluster) { map.removeLayer(pointsLayer.cluster); pointsLayer.cluster = null; }
+        if (pointsLayer.plain) { map.removeLayer(pointsLayer.plain); pointsLayer.plain = null; }
+        if (!vis) return;
+        if (clusterEnabled) {
+            pointsLayer.cluster = buildPointLayers(key, true);
+            map.addLayer(pointsLayer.cluster);
+        } else {
+            pointsLayer.plain = buildPointLayers(key, false);
+            map.addLayer(pointsLayer.plain);
+        }
+    }
+    function refreshAllLayers() {
+        GEO_KEYS.forEach(refreshLayer);
+        updateCounts();
+    }
+
+    // 聚合总开关
+    document.getElementById('chk-cluster').addEventListener('change', function () {
+        clusterEnabled = this.checked;
+        ['school', 'hospital', 'scenic'].forEach(refreshLayer);
+        updateCounts();
     });
 
-    map.addControl(new AMap.Scale({ position: 'LB' }));
-    map.addControl(new AMap.MapType({ showTraffic: false, showRoad: true, position: 'RB', offset: new AMap.Pixel(10, 12) }));
-    // 缩放改用自定义大按钮（右下角），未启用默认 ToolBar
-
-    // ---------- 工具 ----------
-    function esc(s) {
-        return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-        });
-    }
-
-    function pinIcon(color) {
-        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="40" viewBox="0 0 34 40">' +
-            '<path fill="' + color + '" stroke="#ffffff" stroke-width="1.5" d="M17 2C9.8 2 4 7.8 4 15c0 9.8 13 23 13 23s13-13.2 13-23C30 7.8 24.2 2 17 2z"/>' +
-            '<circle cx="17" cy="15" r="6.5" fill="#ffffff"/></svg>';
-        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-    }
-
-    var layerState = {};   // key -> {clusterer|markers, features, data}
-    var clusterEnabled = true;   // 聚合气泡总开关
-    var infoWindow = new AMap.InfoWindow({ offset: new AMap.Pixel(0, -34), autoMove: true });
-
-    function buildInfoHTML(layer, feat) {
-        var p = feat.properties || {};
-        var region = p.region;
-        if (!region) {
-            var parts = [];
-            if (p.pname) parts.push(p.pname);
-            if (p.adname && parts.indexOf(p.adname) < 0) parts.push(p.adname);
-            region = parts.join('·') || p.cityname || '';
-        }
-        var typeTag = '<span class="iw-type" style="background:' + layer.color + '">' + esc(layer.label) + '</span>';
-        var rows = '';
-        if (p.name)      rows += '<div class="iw-row"><span class="iw-label">名称：</span>' + esc(p.name) + '</div>';
-        if (region)      rows += '<div class="iw-row"><span class="iw-label">区域：</span>' + esc(region) + '</div>';
-        if (p.address)   rows += '<div class="iw-row"><span class="iw-label">地址：</span>' + esc(p.address) + '</div>';
-        if (p.type)      rows += '<div class="iw-row"><span class="iw-label">类别：</span>' + esc(p.type) + '</div>';
-        if (p.level)     rows += '<div class="iw-row"><span class="iw-label">等级：</span>' + esc(p.level) + '</div>';
-        if (p.length_km) rows += '<div class="iw-row"><span class="iw-label">长度：</span>' + esc(p.length_km) + ' 公里</div>';
-        if (p.nodes)     rows += '<div class="iw-row"><span class="iw-label">节点数：</span>' + esc(p.nodes) + '</div>';
-        if (p.source)    rows += '<div class="iw-row"><span class="iw-label">来源：</span>' + esc(p.source) + '</div>';
-        return '<div class="iw-card"><div class="iw-title">' + typeTag + esc(p.name || layer.label) + '</div>' + rows + '</div>';
-    }
-
-    function openInfo(layer, feat, lnglat) {
-        infoWindow.setContent(buildInfoHTML(layer, feat));
-        infoWindow.open(map, lnglat);
-    }
-
-    // ---------- 实时计数（当前视野内可见数量） ----------
-    function countInView(key) {
-        var st = layerState[key];
-        if (!st || !st.features) return 0;
-        var box = map.getBounds();
-        if (!box) return st.features.length;
-        var sw = box.getSouthWest(), ne = box.getNorthEast();
-        var padLng = (ne.lng - sw.lng) * 0.08;
-        var padLat = (ne.lat - sw.lat) * 0.08;
-        var minX = sw.lng - padLng, maxX = ne.lng + padLng;
-        var minY = sw.lat - padLat, maxY = ne.lat + padLat;
-        var n = 0;
-        if (LAYER_CONFIG[key].geom === 'line') {
-            st.features.forEach(function (f) {
-                var coords = (f.geometry && f.geometry.coordinates) || [];
-                for (var i = 0; i < coords.length; i++) {
-                    var c = coords[i];
-                    if (c && c.length >= 2 && c[0] >= minX && c[0] <= maxX && c[1] >= minY && c[1] <= maxY) { n++; break; }
-                }
+    // ---------------- 5. 视野实时计数 ----------------
+    function visibleCount(key) {
+        if (!layerState[key].visible) return 0;
+        var b = map.getBounds();
+        if (key === 'road') {
+            var n = 0;
+            layerState[key].data.forEach(function (f) {
+                var any = f.geometry.coordinates.some(function (c) { return b.contains([c[1], c[0]]); });
+                if (any) n++;
             });
-        } else {
-            st.features.forEach(function (f) {
-                var c = (f.geometry && f.geometry.coordinates) || [];
-                if (c.length >= 2 && c[0] >= minX && c[0] <= maxX && c[1] >= minY && c[1] <= maxY) n++;
-            });
+            return n;
         }
-        return n;
+        return layerState[key].data.filter(function (f) {
+            var c = f.geometry.coordinates;
+            return b.contains([c[1], c[0]]);
+        }).length;
     }
-
     function updateCounts() {
-        Object.keys(LAYER_CONFIG).forEach(function (key) {
-            var el = document.getElementById('cnt-' + key);
-            var box = document.getElementById('chk-' + key);
-            if (box && !box.checked) {
-                el.textContent = '0';
-                el.classList.add('off');
-                return;
-            }
-            el.classList.remove('off');
-            el.textContent = countInView(key);
+        GEO_KEYS.forEach(function (k) {
+            var el = document.getElementById('cnt-' + k);
+            if (el) el.textContent = visibleCount(k);
         });
     }
     map.on('moveend', updateCounts);
     map.on('zoomend', updateCounts);
 
-    // ---------- 地图操作提示 ----------
-    var toastTimer = null;
-    function showToast(msg, isErr) {
-        var el = document.getElementById('map-toast');
-        if (!el) return;
-        el.textContent = msg;
-        el.classList.toggle('error', !!isErr);
-        el.hidden = false;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () { el.hidden = true; }, 3500);
-    }
-
-    // ---------- 自定义缩放按钮 ----------
-    document.getElementById('btn-zoom-in').addEventListener('click', function () { map.zoomIn(); });
-    document.getElementById('btn-zoom-out').addEventListener('click', function () { map.zoomOut(); });
-
-    // ---------- 复位：返回初始视图（功能9 地图导航） ----------
-    document.getElementById('btn-home').addEventListener('click', function () {
-        map.setZoomAndCenter(MAP_ZOOM, MAP_CENTER);
-        infoWindow.close();
-        showToast('已复位到初始视图');
-    });
-
-    // ---------- 图例开关（功能9） ----------
-    var legendPanel = document.getElementById('legend-panel');
-    document.getElementById('btn-legend').addEventListener('click', function () {
-        legendPanel.hidden = !legendPanel.hidden;
-        this.classList.toggle('active', !legendPanel.hidden);
-    });
-
-    // ---------- 桃花花瓣飘落（可开关） ----------
-    function initPetals() {
-        var wrap = document.getElementById('petal-wrap');
-        if (!wrap) return;
-        var isM = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
-        var petals = isM ? 8 : 18;   // 移动端减少花瓣数量，降低渲染压力
-        for (var i = 0; i < petals; i++) {
-            var p = document.createElement('div');
-            p.className = 'petal';
-            var dur = 9 + Math.random() * 8;
-            var size = 9 + Math.random() * 7;
-            var rot = Math.random() * 360;
-            var hue = Math.random() > 0.5 ? 'rgba(244,144,177,.85)' : 'rgba(250,184,203,.9)';
-            p.style.cssText =
-                'left:' + (Math.random() * 100).toFixed(1) + '%;' +
-                'width:' + size.toFixed(1) + 'px;height:' + (size * 0.72).toFixed(1) + 'px;' +
-                '--dur:' + dur.toFixed(1) + 's;' +
-                '--delay:-' + (Math.random() * 18).toFixed(1) + 's;' +
-                '--sway:' + (30 + Math.random() * 50).toFixed(0) + 'px;' +
-                '--rot:' + rot.toFixed(0) + 'deg;' +
-                '--hue:' + hue + ';';
-            wrap.appendChild(p);
-        }
-    }
-    document.getElementById('btn-petal').addEventListener('click', function () {
-        var wrap = document.getElementById('petal-wrap');
-        var on = wrap.classList.toggle('on');
-        this.classList.toggle('active', on);
-        this.title = on ? '关闭桃花花瓣飘落' : '开启桃花花瓣飘落';
-    });
-
-    // ---------- 图层加载 ----------
-    // 读取内嵌数据（双击 index.html 直接打开时，file:// 下 fetch 不可用，走此兜底）
-    function tryEmbedded(key) {
-        try {
-            var el = document.getElementById('geo-data');
-            if (!el) return null;
-            var all = JSON.parse(el.textContent);
-            return all && all[key] ? all[key] : null;
-        } catch (e) { return null; }
-    }
-
-    function loadLayer(key) {
-        var cfg = LAYER_CONFIG[key];
-        var tip = document.createElement('div');
-        tip.className = 'loading-tip';
-        tip.textContent = '正在加载' + cfg.label + '图层…';
-        document.getElementById('map').appendChild(tip);
-
-        // file://（双击打开）场景：fetch 本地文件会被浏览器拦截，直接使用内嵌数据，避免报错
-        if (location.protocol === 'file:') {
-            var embeddedNow = tryEmbedded(key);
-            if (embeddedNow && embeddedNow.features) {
-                tip.remove();
-                var featuresF = embeddedNow.features.filter(function (f) { return f.geometry; });
-                layerState[key] = { features: featuresF };
-                if (cfg.geom === 'line') renderRoads(key, featuresF);
-                else renderPoints(key, featuresF);
-                updateCounts();
-                buildSearchIndex();
-                return;
-            }
-        }
-
-        fetch(cfg.file + (cfg.file.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now())
-            .then(function (r) {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
-            })
-            .then(function (geojson) {
-                tip.remove();
-                var features = (geojson.features || []).filter(function (f) { return f.geometry; });
-                layerState[key] = { features: features };
-                if (cfg.geom === 'line') renderRoads(key, features);
-                else renderPoints(key, features);
-                updateCounts();
-                buildSearchIndex();   // 图层加载完成后重建搜索索引（避免大文件晚于地图complete）
-            })
-            .catch(function (err) {
-                // 网络文件加载失败时，尝试内嵌数据（file:// 直接打开场景）
-                var embedded = tryEmbedded(key);
-                if (embedded && embedded.features) {
-                    tip.remove();
-                    var features2 = embedded.features.filter(function (f) { return f.geometry; });
-                    layerState[key] = { features: features2 };
-                    if (cfg.geom === 'line') renderRoads(key, features2);
-                    else renderPoints(key, features2);
-                    updateCounts();
-                    buildSearchIndex();
-                    return;
-                }
-                tip.remove();
-                var el = document.getElementById('cnt-' + key);
-                el.textContent = '!';
-                var errTip = document.createElement('div');
-                errTip.className = 'loading-tip';
-                errTip.textContent = cfg.label + '图层加载失败：' + err.message + '（请用本地服务器访问，如 python -m http.server 8000）';
-                document.getElementById('map').appendChild(errTip);
-                setTimeout(function () { errTip.remove(); }, 8000);
-                console.warn(cfg.label + ' 加载失败', err);
-            });
-    }
-
-    function renderPoints(key, features) {
-        var cfg = LAYER_CONFIG[key];
-        // 2.0 点聚合：数据项必须含 lnglat 字段（AMap.MarkerCluster）
-        var data = features.map(function (feat) {
-            var c = feat.geometry.coordinates;
-            var p = feat.properties || {};
-            var region = [];
-            if (p.pname) region.push(p.pname);
-            if (p.adname && p.adname !== p.pname) region.push(p.adname);
-            return {
-                lnglat: [c[0], c[1]],
-                name: p.name || '',
-                address: p.address || '',
-                region: region.join('·') || (p.cityname || ''),
-                type: p.type || '',
-                source: '高德POI'
-            };
-        }).filter(function (d) { return d.lnglat && d.lnglat.length >= 2; });
-        layerState[key].data = data;
-        // 保留一份纯净副本供"单个小圆点"模式使用（AMap.MarkerCluster 可能改写数据项，不能复用同一份）
-        layerState[key].points = data.map(function (it) {
-            return {
-                lnglat: [it.lnglat[0], it.lnglat[1]],
-                name: it.name, address: it.address,
-                region: it.region, type: it.type, source: it.source
-            };
-        });
-        applyPointRender(key);
-    }
-
-    function buildCluster(key) {
-        var cfg = LAYER_CONFIG[key];
-        var st = layerState[key];
-        if (!st || !st.data || st.clusterer) return;
-        var data = st.data;
-        // 位置索引：渲染回调只有 marker，通过坐标反查数据
-        var posIndex = {};
-        data.forEach(function (d) {
-            var k = Math.round(d.lnglat[0] * 1e6) / 1e6 + ',' + Math.round(d.lnglat[1] * 1e6) / 1e6;
-            posIndex[k] = d;
-        });
-
-        var cluster = new AMap.MarkerCluster(map, data, {
-            gridSize: 70,
-            maxZoom: 16,
-            averageCenter: true,
-            clusterByZoomChange: true,
-            renderClusterMarker: function (context) {
-                try {
-                    var n = context.count;
-                    // 更小更通透的聚合圆球：尺寸上限 34px、半透明、轻阴影，减少对底图的遮挡
-                    var size = Math.min(34, 18 + Math.round(Math.sqrt(n) * 2.2));
-                    var div = document.createElement('div');
-                    div.className = 'cluster-bubble';
-                    div.style.cssText = 'background:' + cfg.color + ';opacity:.88;color:#fff;width:' + size + 'px;height:' + size + 'px;border-radius:50%;line-height:' + (size - 2) + 'px;text-align:center;font-weight:700;font-size:' + (n >= 100 ? 10 : 11) + 'px;border:1.5px solid rgba(255,255,255,.75);box-shadow:0 1px 5px rgba(0,0,0,.20);cursor:pointer;';
-                    div.textContent = n;
-                    context.marker.setOffset(new AMap.Pixel(-size / 2, -size / 2));
-                    context.marker.setContent(div);
-                } catch (e) { /* 自定义样式失败则回退默认样式 */ }
-            },
-            renderMarker: function (context) {
-                try {
-                    var m = context.marker;
-                    var pos = m.getPosition();
-                    var k = Math.round(pos.lng * 1e6) / 1e6 + ',' + Math.round(pos.lat * 1e6) / 1e6;
-                    var item = posIndex[k];
-                    if (!item) {
-                        // 坐标可能有微小偏差导致反查失败：宽松匹配最近点，避免点击只显示图层名（如"学校"）
-                        var bi = -1, bd = 1e-4, bd2 = 0;
-                        for (var i2 = 0; i2 < data.length; i2++) {
-                            var dd = data[i2];
-                            var dx = dd.lnglat[0] - pos.lng, dy = dd.lnglat[1] - pos.lat;
-                            var ax = dx < 0 ? -dx : dx, ay = dy < 0 ? -dy : dy;
-                            if (ax < bd && ay < bd) {
-                                var d2 = ax * ax + ay * ay;
-                                if (bi < 0 || d2 < bd2) { bi = i2; bd2 = d2; }
-                            }
-                        }
-                        item = bi >= 0 ? data[bi] : {};
-                    }
-                    var div = document.createElement('div');
-                    div.className = 'point-pin';
-                    // 深放大时用更小圆点，减少与底图POI文字重叠
-                    var z = map.getZoom() || 12;
-                    var px = z >= 17 ? 10 : 12;
-                    div.style.cssText = 'width:' + px + 'px;height:' + px + 'px;border-radius:50%;background:' + cfg.color + ';border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer;';
-                    m.setOffset(new AMap.Pixel(-px / 2, -px / 2));
-                    m.setContent(div);
-                    if (!m._hwBound) {
-                        m._hwBound = true;
-                        // 聚合框架会复用标记对象：点击时必须按"当前坐标"实时反查数据，
-                        // 不能使用渲染时闭包捕获的旧 pos/item（否则会显示错点/只显示图层名）
-                        m.on('click', function () {
-                            var cur = m.getPosition();
-                            var ck = Math.round(cur.lng * 1e6) / 1e6 + ',' + Math.round(cur.lat * 1e6) / 1e6;
-                            var it = posIndex[ck];
-                            if (!it) {
-                                var bi2 = -1, bd2b = 1e-4, bd22 = 0;
-                                for (var i3 = 0; i3 < data.length; i3++) {
-                                    var dd2 = data[i3];
-                                    var dx2 = dd2.lnglat[0] - cur.lng, dy2 = dd2.lnglat[1] - cur.lat;
-                                    var ax2 = dx2 < 0 ? -dx2 : dx2, ay2 = dy2 < 0 ? -dy2 : dy2;
-                                    if (ax2 < bd2b && ay2 < bd2b) {
-                                        var d22 = ax2 * ax2 + ay2 * ay2;
-                                        if (bi2 < 0 || d22 < bd22) { bi2 = i3; bd22 = d22; }
-                                    }
-                                }
-                                it = bi2 >= 0 ? data[bi2] : {};
-                            }
-                            map.setZoomAndCenter(Math.max(map.getZoom(), 15), cur);
-                            openInfo(cfg, {
-                                properties: { name: it.name, address: it.address, region: it.region, type: it.type || cfg.label, source: it.source }
-                            }, cur);
-                        });
-                    }
-                } catch (e) { /* 忽略单个标记渲染异常 */ }
-            }
-        });
-        cluster.on('click', function () {
-            if (map.getZoom() < 17) map.zoomIn();
-        });
-        st.clusterer = cluster;
-    }
-
-    // 无聚合模式：单个小圆点（总开关关闭时使用），大幅减少对底图的遮挡
-    function buildPlainMarkers(key) {
-        var cfg = LAYER_CONFIG[key];
-        var st = layerState[key];
-        if (!st || !st.points || st.markers) return;
-        var markers = [];
-        st.points.forEach(function (item) {
-            if (!item.lnglat || !isFinite(item.lnglat[0]) || !isFinite(item.lnglat[1])) return;
-            try {
-                var m = new AMap.Marker({
-                    position: new AMap.LngLat(item.lnglat[0], item.lnglat[1]),
-                    offset: new AMap.Pixel(-3, -3),
-                    zIndex: 50,
-                    title: item.name
-                });
-                var div = document.createElement('div');
-                div.style.cssText = 'width:6px;height:6px;border-radius:50%;background:' + cfg.color + ';opacity:.9;border:1px solid rgba(255,255,255,.95);box-shadow:0 0 3px rgba(0,0,0,.25);cursor:pointer;';
-                m.setContent(div);
-                m.on('click', function () {
-                    map.setZoomAndCenter(Math.max(map.getZoom(), 15), m.getPosition());
-                    openInfo(cfg, {
-                        properties: { name: item.name, address: item.address, region: item.region, type: item.type || cfg.label, source: item.source }
-                    }, m.getPosition());
-                });
-                markers.push(m);
-            } catch (e) { /* 跳过单个异常点 */ }
-        });
-        st.markers = markers;
-        markers.forEach(function (m) { try { m.setMap(map); } catch (e) { /* 忽略 */ } });
-    }
-
-    // 按聚合开关状态渲染点图层
-    function applyPointRender(key) {
-        teardownPoints(key);
-        if (clusterEnabled) buildCluster(key);
-        else buildPlainMarkers(key);
-    }
-
-    function teardownPoints(key) {
-        var st = layerState[key];
-        if (!st) return;
-        // 2.0 聚类器 setMap(null) 摘除后内部可能抛 "LngLat(NaN,NaN)" 兼容性异常，
-        // 逐项 try/catch 隔离，确保多图层切换时不被单个异常中断
-        try { if (st.clusterer) st.clusterer.setMap(null); } catch (e) { /* 忽略聚类器摘除异常 */ }
-        st.clusterer = null;
-        if (st.markers) {
-            st.markers.forEach(function (m) { try { m.setMap(null); } catch (e) { /* 忽略 */ } });
-            st.markers = null;
-        }
-    }
-
-    // 主干道名单（前端分级：粗线+描边，次干道细线）
-    var MAIN_ROADS = ['武陵大道', '洞庭大道', '柳叶大道', '常德大道', '桃花源路', '阳山大道', '朗州路', '滨湖路'];
-    function isMainRoad(name) { return MAIN_ROADS.indexOf(name) >= 0; }
-
-    function renderRoads(key, features) {
-        var cfg = LAYER_CONFIG[key];
-        var polylines = [];
-        features.forEach(function (feat) {
-            var coords = feat.geometry.coordinates || [];
-            if (!coords.length) return;
-            var name = (feat.properties && feat.properties.name) || '';
-            var isMain = isMainRoad(name);
-            var wBase = isMain ? 7 : 4.5;      // 上层主线宽
-            var wCase = isMain ? 10 : 7;       // 下层描边宽
-            var path = coords.map(function (c) { return new AMap.LngLat(c[0], c[1]); });
-            // 双层描边：深色 casing（路网底衬）+ 主题色主线（层次分明，像正式路网图）
-            var casing = new AMap.Polyline({
-                path: path,
-                strokeColor: '#7c2450',
-                strokeWeight: wCase,
-                strokeOpacity: 0.18,
-                strokeStyle: 'solid',
-                lineJoin: 'round',
-                lineCap: 'round',
-                zIndex: 58
-            });
-            var line = new AMap.Polyline({
-                path: path,
-                strokeColor: cfg.color,
-                strokeWeight: wBase,
-                strokeOpacity: 0.9,
-                strokeStyle: 'solid',
-                lineJoin: 'round',
-                lineCap: 'round',
-                zIndex: 60
-            });
-            polylines.push(casing, line);
-            if (name) {
-                // 点击线 → 弹出详情
-                line.on('click', function (e) { openInfo(cfg, feat, e.lnglat); });
-                // 悬停高亮（主线加亮，描边加深）
-                line.on('mouseover', function () {
-                    line.setOptions({ strokeOpacity: 1, strokeWeight: wBase + 1 });
-                    casing.setOptions({ strokeOpacity: 0.32 });
-                });
-                line.on('mouseout', function () {
-                    line.setOptions({ strokeOpacity: 0.9, strokeWeight: wBase });
-                    casing.setOptions({ strokeOpacity: 0.18 });
-                });
-                // 路名标签：取线中部坐标，白底主题字
-                var mid = coords[Math.floor(coords.length / 2)];
-                if (mid) {
-                    var label = new AMap.Marker({
-                        position: new AMap.LngLat(mid[0], mid[1]),
-                        content: '<div class="road-label">' + name + '</div>',
-                        offset: new AMap.Pixel(-32, -10),
-                        zIndex: 62,
-                        title: name
-                    });
-                    label.on('click', function () { openInfo(cfg, feat); });
-                    polylines.push(label);
-                }
-            }
-        });
-        layerState[key].polylines = polylines;
-        polylines.forEach(function (l) { l.setMap(map); });
-    }
-
-    // ---------- 图层显隐联动 ----------
-    function setLayerVisible(key, visible) {
-        var st = layerState[key];
-        if (!st) return;
-        if (visible) {
-            // 开启：按聚合开关状态渲染（重建聚类器或单个点位，避免复用损坏）
-            applyPointRender(key);
-            if (st.polylines) st.polylines.forEach(function (l) { l.setMap(map); });
-        } else {
-            // 关闭：摘除并销毁，下次开启时重建
-            teardownPoints(key);
-            if (st.polylines) st.polylines.forEach(function (l) { l.setMap(null); });
-        }
-    }
-
-    // 聚合气泡总开关：关闭后所有点图层改显单个小圆点，不再显示数字圆球
-    var clusterSwitchTimer = null;
-    document.getElementById('chk-cluster').addEventListener('change', function () {
-        clusterEnabled = this.checked;
-        var keys = [];
-        Object.keys(LAYER_CONFIG).forEach(function (key) {
-            if (LAYER_CONFIG[key].geom !== 'point') return;
-            var box = document.getElementById('chk-' + key);
-            if (box && box.checked) keys.push(key);
-        });
-        // 逐图层串行切换（间隔 350ms + 独立 try/catch），避免聚类器快速拆建相互干扰
-        clearTimeout(clusterSwitchTimer);
-        keys.forEach(function (key, i) {
-            clusterSwitchTimer = setTimeout(function () {
-                try { applyPointRender(key); }
-                catch (e) { console.warn('聚合切换异常：' + key, e); }
-            }, i * 350);
-        });
-    });
-
-    document.querySelectorAll('.layer-item input[type="checkbox"]').forEach(function (box) {
-        if (box.id === 'chk-cluster') return;
-        box.addEventListener('change', function () {
-            setLayerVisible(box.closest('.layer-item').dataset.layer, box.checked);
+    // ---------------- 6. 图层勾选 / 全选 / 隐藏 ----------------
+    function bindLayerCheck(k) {
+        document.getElementById('chk-' + k).addEventListener('change', function () {
+            layerState[k].visible = this.checked;
+            refreshLayer(k);
             updateCounts();
         });
-    });
-
+    }
+    GEO_KEYS.forEach(bindLayerCheck);
     document.getElementById('btn-all').addEventListener('click', function () {
-        document.querySelectorAll('.layer-item input[type="checkbox"]').forEach(function (b) { b.checked = true; setLayerVisible(b.closest('.layer-item').dataset.layer, true); });
-        updateCounts();
+        GEO_KEYS.forEach(function (k) { document.getElementById('chk-' + k).checked = true; layerState[k].visible = true; });
+        document.getElementById('chk-cluster').checked = true; clusterEnabled = true;
+        refreshAllLayers();
     });
     document.getElementById('btn-none').addEventListener('click', function () {
-        document.querySelectorAll('.layer-item input[type="checkbox"]').forEach(function (b) { b.checked = false; setLayerVisible(b.closest('.layer-item').dataset.layer, false); });
-        updateCounts();
+        GEO_KEYS.forEach(function (k) { document.getElementById('chk-' + k).checked = false; layerState[k].visible = false; });
+        refreshAllLayers();
     });
 
-    // ---------- 搜索 ----------
-    var searchIndex = [];
+    // ---------------- 7. 搜索与类型筛选 ----------------
+    var searchIdx = [];
     function buildSearchIndex() {
-        searchIndex = [];
-        Object.keys(LAYER_CONFIG).forEach(function (key) {
-            var st = layerState[key];
-            if (!st || !st.features) return;
-            st.features.forEach(function (feat) {
-                var p = feat.properties || {};
-                if (!p.name) return;
-                var kws = [p.name].concat(p.aliases || []);
-                kws.forEach(function (kw) {
-                    searchIndex.push({ key: key, feat: feat, name: String(kw).toLowerCase() });
-                });
+        searchIdx = [];
+        GEO_KEYS.forEach(function (k) {
+            layerState[k].data.forEach(function (f) {
+                searchIdx.push({ key: k, name: f.properties.name || '', feat: f });
             });
         });
     }
-
-    var searchResult = document.getElementById('search-result');
+    var searchResultEl = document.getElementById('search-result');
+    var searchInput = document.getElementById('search-input');
     var searchType = document.getElementById('search-type');
-
     function runSearch() {
-        var kw = document.getElementById('search-input').value.trim().toLowerCase();
-        var type = searchType ? searchType.value : '';
-        searchResult.innerHTML = '';
-        if (!kw) return;
-        var hits = searchIndex.filter(function (it) {
+        var q = (searchInput.value || '').trim();
+        var type = searchType.value;
+        var hits = searchIdx.filter(function (it) {
             if (type && it.key !== type) return false;
-            return it.name.indexOf(kw) >= 0;
-        }).slice(0, 6);
+            return it.name.toLowerCase().indexOf(q.toLowerCase()) >= 0;
+        }).slice(0, 30);
+        if (!q) { searchResultEl.innerHTML = ''; searchResultEl.hidden = true; return; }
         if (!hits.length) {
-            searchResult.innerHTML = '<div class="search-empty">未找到匹配地点</div>';
+            searchResultEl.innerHTML = '<div class="sr-none">未找到匹配地点</div>';
+            searchResultEl.hidden = false;
             return;
         }
-        hits.forEach(function (it) {
-            var cfg = LAYER_CONFIG[it.key];
-            var div = document.createElement('div');
-            div.className = 'search-item';
-            div.innerHTML = '<span class="tag" style="background:' + cfg.color + '">' + esc(cfg.label) + '</span>' + esc(it.feat.properties.name);
-            div.addEventListener('click', function () {
-                // 若该图层处于隐藏，自动打开
-                var box = document.getElementById('chk-' + it.key);
-                if (box && !box.checked) { box.checked = true; setLayerVisible(it.key, true); }
-                var c = it.feat.geometry.coordinates || [];
-                var lnglat;
-                if (Array.isArray(c[0]) && Array.isArray(c[0][0])) {
-                    // MultiLineString：取第一条线中点
-                    var line0 = c[0];
-                    var mid = line0[Math.floor(line0.length / 2)];
-                    lnglat = new AMap.LngLat(mid[0], mid[1]);
-                } else if (Array.isArray(c[0])) {
-                    // LineString：取线中点
-                    var mid2 = c[Math.floor(c.length / 2)];
-                    lnglat = new AMap.LngLat(mid2[0], mid2[1]);
-                } else {
-                    // Point
-                    lnglat = new AMap.LngLat(c[0], c[1]);
+        searchResultEl.innerHTML = hits.map(function (it, i) {
+            return '<div class="sr-item" data-i="' + i + '"><span class="sr-name">' + esc(it.name) + '</span><span class="sr-type" style="color:' + LAYER_CONFIG[it.key].color + '">' + LAYER_CONFIG[it.key].name + '</span></div>';
+        }).join('');
+        searchResultEl.hidden = false;
+        Array.prototype.forEach.call(searchResultEl.querySelectorAll('.sr-item'), function (el) {
+            el.addEventListener('click', function () {
+                var it = hits[+el.getAttribute('data-i')];
+                if (!it) return;
+                if (!layerState[it.key].visible) {
+                    document.getElementById('chk-' + it.key).checked = true;
+                    layerState[it.key].visible = true;
+                    refreshLayer(it.key);
                 }
-                map.setZoomAndCenter(15, lnglat);
-                openInfo(cfg, it.feat, lnglat);
+                locateFeature(it.key, it.feat);
+                closeDrawer();
             });
-            searchResult.appendChild(div);
         });
     }
-    document.getElementById('search-input').addEventListener('input', runSearch);
-    if (searchType) searchType.addEventListener('change', runSearch);
+    searchInput.addEventListener('input', runSearch);
+    searchType.addEventListener('change', runSearch);
 
-    // ---------- 工具栏 ----------
-    var mouseTool = new AMap.MouseTool(map);
-    var measureResult = document.getElementById('measure-result');
-    var drawnOverlays = [];
+    function locateFeature(key, feat) {
+        var coords = feat.geometry.coordinates;
+        var ll = [coords[1], coords[0]];
+        map.setView(ll, Math.max(map.getZoom(), 15));
+        var target = null;
+        var container = pointsLayer.cluster || pointsLayer.plain;
+        if (container) {
+            container.eachLayer(function (ly) {
+                if (!target && ly.getLatLng && ly.getLatLng().lat === ll[0] && ly.getLatLng().lng === ll[1]) target = ly;
+            });
+        }
+        if (target && target.openPopup) target.openPopup();
+        else if (key === 'road' && linesLayer) {
+            linesLayer.eachLayer(function (ly) {
+                if (!target && ly.getLatLng && ly.getLatLng().lat === ll[0] && ly.getLatLng().lng === ll[1]) target = ly;
+            });
+            if (!target) {
+                linesLayer.eachLayer(function (ly) { if (!target && ly.getLatLng) target = ly; });
+            }
+            if (target && target.openPopup) target.openPopup();
+        }
+    }
 
+    // ---------------- 8. 测距 / 测面 ----------------
+    var measure = { mode: null, pts: [], line: null, poly: null, dots: [], segs: [], total: 0 };
     function clearMeasure() {
-        mouseTool.close(true);   // 关闭并移除鼠标工具绘制的覆盖物
-        drawnOverlays = [];
-        measureResult.hidden = true;
-        // 仅熄灭测量按钮，不影响花瓣 / 图例开关高亮
-        document.querySelectorAll('.toolbar button').forEach(function (b) {
-            if (b.id === 'btn-legend' || b.classList.contains('petal-btn')) return;
-            b.classList.remove('active');
-        });
+        measure.pts = []; measure.total = 0;
+        (measure.dots || []).forEach(function (m) { map.removeLayer(m); });
+        (measure.segs || []).forEach(function (l) { map.removeLayer(l); });
+        if (measure.line) map.removeLayer(measure.line);
+        if (measure.poly) map.removeLayer(measure.poly);
+        measure.dots = []; measure.segs = []; measure.line = null; measure.poly = null;
+        document.getElementById('btn-distance').classList.remove('active');
+        document.getElementById('btn-area').classList.remove('active');
+        measure.mode = null;
     }
+    map.on('click', function (e) {
+        if (!measure.mode) return;
+        var ll = [e.latlng.lat, e.latlng.lng];
+        measure.pts.push(ll);
+        var dot = L.circleMarker(ll, { radius: 4, color: '#2563eb', weight: 1.5, fillColor: '#2563eb', fillOpacity: 0.9 });
+        measure.dots.push(dot); map.addLayer(dot);
+        if (measure.mode === 'dist') {
+            if (measure.pts.length >= 2) {
+                var n = measure.pts.length;
+                var seg = L.polyline([measure.pts[n - 2], measure.pts[n - 1]], { color: '#2563eb', weight: 2.5, dashArray: '6 6' });
+                measure.segs.push(seg); map.addLayer(seg);
+                measure.total += havMeters(measure.pts[n - 2][0], measure.pts[n - 2][1], measure.pts[n - 1][0], measure.pts[n - 1][1]);
+            }
+            showMeasure('距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）');
+        } else {
+            if (measure.pts.length >= 2) {
+                if (measure.line) map.removeLayer(measure.line);
+                measure.line = L.polyline(measure.pts, { color: '#059669', weight: 2.5, dashArray: '6 6' });
+                map.addLayer(measure.line);
+            }
+            showMeasure('已添加 ' + measure.pts.length + ' 个顶点（双击闭合求面积）');
+        }
+    });
+    map.on('dblclick', function (e) {
+        if (!measure.mode) return;
+        e.originalEvent.preventDefault();
+        if (measure.mode === 'dist') {
+            showMeasure('总距离：' + (measure.total / 1000).toFixed(3) + ' 公里');
+        } else if (measure.pts.length >= 3) {
+            if (measure.line) map.removeLayer(measure.line);
+            measure.poly = L.polygon(measure.pts, { color: '#059669', weight: 2, fillColor: '#059669', fillOpacity: 0.15 });
+            map.addLayer(measure.poly);
+            var area = polygonAreaM2(measure.pts);
+            showMeasure('面积：' + (area / 1000000).toFixed(3) + ' 平方公里');
+        }
+        measure.mode = null;
+        document.getElementById('btn-distance').classList.remove('active');
+        document.getElementById('btn-area').classList.remove('active');
+    });
+    function polygonAreaM2(pts) {
+        var R = 6371000, n = pts.length, area = 0;
+        for (var i = 0; i < n; i++) {
+            var p1 = pts[i], p2 = pts[(i + 1) % n];
+            var lng1 = p1[1] * Math.PI / 180, lng2 = p2[1] * Math.PI / 180;
+            var lat1 = p1[0] * Math.PI / 180, lat2 = p2[0] * Math.PI / 180;
+            area += (lng2 - lng1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+        }
+        return Math.abs(area * R * R / 2);
+    }
+    document.getElementById('btn-distance').addEventListener('click', function () {
+        if (measure.mode) { clearMeasure(); return; }
+        clearMeasure();
+        measure.mode = 'dist';
+        this.classList.add('active');
+        showMeasure('单击地图添加测量点，双击结束并显示总距离');
+    });
+    document.getElementById('btn-area').addEventListener('click', function () {
+        if (measure.mode) { clearMeasure(); return; }
+        clearMeasure();
+        measure.mode = 'area';
+        this.classList.add('active');
+        showMeasure('单击地图添加顶点，双击闭合计算面积');
+    });
+    document.getElementById('btn-clear').addEventListener('click', clearMeasure);
 
-    function showMeasure(text) {
-        measureResult.textContent = text;
-        measureResult.hidden = false;
-    }
-
-    // 定位：适配全部数据范围（武陵区 + 鼎城区全景）
-    function fitDataView() {
-        var minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-        var any = false;
-        Object.keys(LAYER_CONFIG).forEach(function (key) {
-            var st = layerState[key];
-            if (!st || !st.features) return;
-            st.features.forEach(function (f) {
-                var g = f.geometry;
-                if (!g || !g.coordinates) return;
-                var pts = [];
-                if (g.type === 'Point') { pts.push(g.coordinates); }
-                else if (g.type === 'LineString') { pts = g.coordinates; }
-                else if (g.type === 'MultiLineString') {
-                    g.coordinates.forEach(function (l) { pts = pts.concat(l); });
-                }
-                pts.forEach(function (p) {
-                    if (p && p.length >= 2) {
-                        minLng = Math.min(minLng, p[0]); maxLng = Math.max(maxLng, p[0]);
-                        minLat = Math.min(minLat, p[1]); maxLat = Math.max(maxLat, p[1]);
-                        any = true;
-                    }
-                });
-            });
-        });
-        if (!any) return;
-        if (minLng === maxLng) { minLng -= 0.004; maxLng += 0.004; }
-        if (minLat === maxLat) { minLat -= 0.004; maxLat += 0.004; }
-        map.setBounds(new AMap.Bounds([minLng, minLat], [maxLng, maxLat]), false, [70, 70, 40, 70]);
-    }
+    // ---------------- 9. 复位 / 全景适配 ----------------
+    document.getElementById('btn-home').addEventListener('click', function () {
+        map.setView(INIT_CENTER, INIT_ZOOM);
+    });
     document.getElementById('btn-locate').addEventListener('click', function () {
         fitDataView();
-        showToast('已定位到常德市区全景（武陵区 + 鼎城区）');
+        toast('已定位到常德市区全景（武陵区 + 鼎城区）');
     });
-
-    // ---------- WGS-84 → GCJ-02 坐标转换（开源 coordtransform 算法） ----------
-    // 浏览器 GPS 返回 WGS-84（国际坐标），高德底图为 GCJ-02（火星坐标），必须转换才能对齐
-    var _a = 6378245.0, _ee = 0.00669342162296594323;
-    function outOfChina(lng, lat) { return !(lng > 73.66 && lng < 135.05 && lat > 3.86 && lat < 53.55); }
-    function _tLat(x, y) {
-        var ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
-        ret += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
-        ret += (20.0 * Math.sin(y * Math.PI) + 40.0 * Math.sin(y / 3.0 * Math.PI)) * 2.0 / 3.0;
-        ret += (160.0 * Math.sin(y / 12.0 * Math.PI) + 320 * Math.sin(y * Math.PI / 30.0)) * 2.0 / 3.0;
-        return ret;
-    }
-    function _tLng(x, y) {
-        var ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
-        ret += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
-        ret += (20.0 * Math.sin(x * Math.PI) + 40.0 * Math.sin(x / 3.0 * Math.PI)) * 2.0 / 3.0;
-        ret += (150.0 * Math.sin(x / 12.0 * Math.PI) + 300.0 * Math.sin(x / 30.0 * Math.PI)) * 2.0 / 3.0;
-        return ret;
-    }
-    function wgs84togcj02(lng, lat) {
-        if (outOfChina(lng, lat)) return [lng, lat];
-        var dLat = _tLat(lat - 35.0, lng - 105.0);
-        var dLng = _tLng(lat - 35.0, lng - 105.0);
-        var radLat = lat / 180.0 * Math.PI;
-        var magic = Math.sin(radLat);
-        magic = 1 - _ee * magic * magic;
-        var sqrtMagic = Math.sqrt(magic);
-        dLat = (dLat * 180.0) / ((_a * (1 - _ee)) / (magic * sqrtMagic) * Math.PI);
-        dLng = (dLng * 180.0) / (_a / sqrtMagic * Math.cos(radLat) * Math.PI);
-        return [lng + dLng, lat + dLat];
-    }
-
-    // ---------- 我的位置：开源定位栈（v38，OpenStreetMap 系方案） ----------
-    // 引擎：原生 navigator.geolocation 持续追踪（GPS / WiFi·基站，WGS-84→GCJ-02）
-    //       + 国外开源 IP 定位降级（ipapi.co，WGS-84）
-    //       + OSM Nominatim 逆地理地址（失败降级高德 regeo）
-    // 不再使用高德 AMap.Geolocation 组件：其内部 IP 兜底常返回运营商节点固定点，
-    // 与"每次定位都是同一个点"的反馈一致。开源栈让定位来源与精度完全透明可查。
-    var geoMarker = null, geoCircle = null;
-    var geoWatchId = null, geoLastBest = null, geoLastAddrAt = 0;
-
-    function makeGeoCircle(center, radius) {
-        return new AMap.Circle({
-            center: center,
-            radius: radius || 15,
-            strokeColor: '#1677ff', strokeOpacity: 0.4, strokeWeight: 1,
-            fillColor: '#1677ff', fillOpacity: 0.12, zIndex: 70
-        });
-    }
-    // 自动定位结果附近最近的地标（学校/医院/景点），用于提示辅助判断
-    function nearestLandmark(lnglat) {
-        var best = null, bestD = 1200;
-        ['school', 'hospital', 'scenic'].forEach(function (k) {
-            var arr = (layerState[k] && layerState[k].data) || [];
-            arr.forEach(function (it) {
-                if (!it.lnglat || !isFinite(it.lnglat[0]) || !isFinite(it.lnglat[1])) return;
-                var dLng = (it.lnglat[0] - lnglat.lng) * 85000;
-                var dLat = (it.lnglat[1] - lnglat.lat) * 110000;
-                var d = Math.sqrt(dLng * dLng + dLat * dLat);
-                if (d < bestD) { bestD = d; best = it.name; }
+    function fitDataView() {
+        var bounds = L.latLngBounds([]);
+        var any = false;
+        GEO_KEYS.forEach(function (k) {
+            layerState[k].data.forEach(function (f) {
+                var coords = f.geometry.coordinates;
+                if (k === 'road') {
+                    coords.forEach(function (c) { bounds.extend([c[1], c[0]]); any = true; });
+                } else {
+                    bounds.extend([coords[1], coords[0]]); any = true;
+                }
             });
         });
-        return best ? { name: best, dist: Math.round(bestD) } : null;
+        if (any) map.fitBounds(bounds, { padding: [70, 70, 40, 70], maxZoom: 14 });
     }
 
-    // 蓝色定位点：纯定位追踪标记（不可拖动，不支持手动移动）
-    function makeGeoMarker(lnglat, title) {
-        return new AMap.Marker({
-            position: lnglat,
-            content: '<div class="geo-marker"></div>',
-            offset: new AMap.Pixel(-8, -8),
-            zIndex: 80,
-            title: title
-        });
-    }
+    // ---------------- 10. 我的位置：全开源定位（v39） ----------------
+    // 引擎：原生 navigator.geolocation 持续追踪（WGS-84 直接叠加，零坐标转换）
+    //      + 国外开源 IP 定位降级（ipapi.co）+ OSM Nominatim 逆地理地址
+    var geoMarker = null, geoCircle = null, geoWatchId = null, geoLastBest = null, geoLastAddrAt = 0, geoRenderedOnce = false;
 
-    // GCJ-02 → WGS-84（近似反变换，2 次迭代；供 OSM Nominatim 使用，底图仍为高德 GCJ-02）
-    function gcj02towgs84(lng, lat) {
-        if (outOfChina(lng, lat)) return [lng, lat];
-        var g = wgs84togcj02(lng, lat);
-        return [lng * 2 - g[0], lat * 2 - g[1]];
-    }
-
-    // 精度分级：<=100m 卫星/GPS，<=500m WiFi·基站，更粗 IP 网络
     function locLevelText(acc) {
         if (acc <= 100) return { level: 'gps', src: '卫星/GPS' };
         if (acc <= 500) return { level: 'network', src: 'WiFi·基站' };
         return { level: 'ip', src: 'IP 网络' };
     }
-
-    // 逆地理地址：OSM Nominatim 开源优先，失败降级高德 regeo；3s 节流
-    function reverseAddr(lnglat, cb) {
+    function reverseAddr(ll, cb) {
         if (Date.now() - geoLastAddrAt < 3000) return;
         geoLastAddrAt = Date.now();
-        var wgs = gcj02towgs84(lnglat.lng, lnglat.lat);
-        var fallback = function () {
-            fetch('https://restapi.amap.com/v3/geocode/regeo?location=' + lnglat.lng + ',' + lnglat.lat + '&key=2585b6886cfa60e5e7dd7001b92e8ab0&radius=300')
-                .then(function (r) { return r.json(); })
-                .then(function (d) { if (d && d.regeocode) cb(d.regeocode.formatted_address); })
-                .catch(function () { cb(''); });
-        };
-        fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + wgs[1] + '&lon=' + wgs[0] + '&zoom=16&accept-language=zh-CN')
+        fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + ll.lat + '&lon=' + ll.lng + '&zoom=16&accept-language=zh-CN')
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d && d.display_name) cb('OSM · ' + String(d.display_name).split(',').slice(0, 3).join(','));
-                else fallback();
             })
-            .catch(fallback);
+            .catch(function () { cb(''); });
     }
-
-    // 渲染定位点 + 精度圆 + 逆地理地址（isFresh=true 时弹 toast）
-    function renderLoc(lnglat, acc, srcText, level, isFresh) {
-        if (geoMarker) geoMarker.setMap(null);
-        if (geoCircle) geoCircle.setMap(null);
-        geoMarker = makeGeoMarker(lnglat, '我的位置（' + srcText + '，精度约±' + Math.round(acc) + ' 米）');
-        geoMarker.setMap(map);
-        geoCircle = makeGeoCircle(lnglat, Math.max(acc, 20));
-        geoCircle.setMap(map);
-        map.setZoomAndCenter(16, lnglat);
-        var lm = nearestLandmark(lnglat);
-        var lmText = lm ? '；附近地标：' + lm.name + '（约' + lm.dist + ' 米）' : '';
+    function renderLoc(ll, acc, srcText, level, isFresh) {
+        if (geoMarker) map.removeLayer(geoMarker);
+        if (geoCircle) map.removeLayer(geoCircle);
+        var icon = L.divIcon({ className: 'geo-dot-wrap', html: '<div class="geo-dot"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+        geoMarker = L.marker(ll, { icon: icon, zIndexOffset: 1000, title: '我的位置（' + srcText + '，精度约±' + Math.round(acc) + ' 米）' });
+        map.addLayer(geoMarker);
+        geoCircle = L.circle(ll, { radius: Math.max(acc, 20), color: '#1677ff', weight: 1, opacity: 0.4, fillColor: '#1677ff', fillOpacity: 0.12 });
+        map.addLayer(geoCircle);
+        map.setView(ll, Math.max(map.getZoom(), 16));
         var poor = (level === 'ip') ? '；IP 级定位（运营商节点，误差较大），建议到室外并授予"精确位置"权限' : '';
-        if (isFresh) showToast('已定位（' + srcText + '，精度约±' + Math.round(acc) + ' 米）' + lmText + poor);
-        reverseAddr(lnglat, function (addr) {
+        if (isFresh) toast('已定位（' + srcText + '，精度约±' + Math.round(acc) + ' 米）' + poor);
+        reverseAddr(ll, function (addr) {
             if (addr && geoMarker) geoMarker.setTitle('我的位置（' + srcText + '，精度约±' + Math.round(acc) + ' 米）· ' + addr);
         });
     }
-
-    // 点击"我的位置"：开始/重启开源定位追踪（持续 watch，GPS 到位自动收敛）
     function doAutoLocate(btn) {
-        // 国产/系统浏览器定位能力受限检测：提前提醒换 Chrome
         try {
             var ua = navigator.userAgent || '';
             if (/MiuiBrowser|UCBrowser|Quark|baiduboxapp|Coolpad|DingTalk|MicroMessenger/i.test(ua)) {
-                showToast('检测到系统/国产浏览器，定位能力受限。建议用手机 Chrome 打开本页后重试', true);
+                toast('检测到系统/国产浏览器，定位能力受限。建议用手机 Chrome 打开本页后重试', true);
             }
         } catch (e) { /* 忽略 */ }
-        showToast('正在定位（开源引擎：GPS / WiFi·基站）…');
-        var gotNative = false, settled = false, t0 = Date.now();
-        var frames = [];            // GCJ-02 样本 {lng,lat,acc,t}
-        var ipDone = false;
+        toast('正在定位（开源引擎：GPS / WiFi·基站）…');
+        var gotNative = false, settled = false, ipDone = false;
+        var frames = [];
+        var t0 = Date.now();
 
         function renderBest(isFresh) {
             var best = null;
-            for (var i = 0; i < frames.length; i++) {
-                var f = frames[i];
-                if (!best || f.acc < best.acc) best = f;
-            }
+            for (var i = 0; i < frames.length; i++) if (!best || frames[i].acc < best.acc) best = frames[i];
             if (!best) return;
             var s = locLevelText(best.acc);
-            // 固定点检测：连续3帧完全同坐标且精度粗 → IP 固定点特征
             var n = frames.length;
             var fixed = n >= 3 &&
-                frames[n-1].lng === frames[n-2].lng && frames[n-2].lng === frames[n-3].lng &&
-                frames[n-1].lat === frames[n-2].lat && frames[n-2].lat === frames[n-3].lat &&
+                frames[n - 1].lng === frames[n - 2].lng && frames[n - 2].lng === frames[n - 3].lng &&
+                frames[n - 1].lat === frames[n - 2].lat && frames[n - 2].lat === frames[n - 3].lat &&
                 best.acc > 200;
             if (fixed) { s.level = 'ip'; s.src = 'IP 固定点'; }
-            renderLoc(new AMap.LngLat(best.lng, best.lat), best.acc, s.src, s.level, isFresh);
+            var fresh = !geoRenderedOnce;
+            geoRenderedOnce = true;
+            renderLoc(L.latLng(best.lat, best.lng), best.acc, s.src, s.level, fresh);
         }
-
         function startNative() {
             if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
             if (!navigator.geolocation) { ipLocate(); return; }
@@ -834,10 +495,8 @@
                 function (pos) {
                     gotNative = true;
                     var acc = pos.coords.accuracy || 9999;
-                    var g = wgs84togcj02(pos.coords.longitude, pos.coords.latitude);
-                    frames.push({ lng: g[0], lat: g[1], acc: acc, t: Date.now() });
+                    frames.push({ lng: pos.coords.longitude, lat: pos.coords.latitude, acc: acc, t: Date.now() });
                     if (frames.length > 40) frames.splice(0, frames.length - 40);
-                    // 持续追踪：位置/精度更新即重绘，好结果不被差结果覆盖
                     var best = null;
                     for (var i = 0; i < frames.length; i++) if (!best || frames[i].acc < best.acc) best = frames[i];
                     if (!best) return;
@@ -847,84 +506,60 @@
                     }
                     if (Date.now() - t0 > 12000 && !settled) { settled = true; btn.disabled = false; }
                 },
-                function () {
-                    if (!gotNative && !ipDone) ipLocate();
-                },
+                function () { if (!gotNative && !ipDone) ipLocate(); },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
-            // native 8s 无结果 → 国外开源 IP 定位降级
-            setTimeout(function () {
-                if (!gotNative && !ipDone && !settled) ipLocate();
-            }, 8000);
+            setTimeout(function () { if (!gotNative && !ipDone && !settled) ipLocate(); }, 8000);
         }
-
         function ipLocate() {
             if (ipDone || settled) return;
             ipDone = true;
-            // 国外开源 IP 定位：ipapi.co（https + CORS，返回 WGS-84）
             fetch('https://ipapi.co/json/')
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
                     if (d && typeof d.latitude === 'number' && typeof d.longitude === 'number') {
-                        var g = wgs84togcj02(d.longitude, d.latitude);
-                        frames.push({ lng: g[0], lat: g[1], acc: 3000, t: Date.now() });
-                        if (!geoLastBest || geoLastBest.acc > 3000) {
-                            geoLastBest = { acc: 3000 };
-                            renderBest(true);
-                        }
+                        frames.push({ lng: d.longitude, lat: d.latitude, acc: 3000, t: Date.now() });
+                        if (!geoLastBest || geoLastBest.acc > 3000) { geoLastBest = { acc: 3000 }; renderBest(true); }
                         if (!settled) { settled = true; btn.disabled = false; }
                     } else { throw new Error('bad payload'); }
                 })
                 .catch(function () {
                     if (!settled) {
                         settled = true; btn.disabled = false;
-                        showToast('定位失败：浏览器未授予精确位置权限，且开源 IP 定位不可达。请在浏览器地址栏旁点击"位置"图标授权后重试', true);
+                        toast('定位失败：浏览器未授予精确位置权限，且开源 IP 定位不可达。请在浏览器地址栏旁点击"位置"图标授权后重试', true);
                     }
                 });
         }
-
         startNative();
     }
+    document.getElementById('btn-geoloc').addEventListener('click', function () { doAutoLocate(this); });
 
-
-    document.getElementById('btn-geoloc').addEventListener('click', function () {
-        // 单击 = 立即重新定位（纯定位追踪：每次点击都重新定位并显示最新结果，无手动移动干扰）
-        doAutoLocate(this);
+    // ---------------- 11. 图例 / 花瓣 ----------------
+    document.getElementById('btn-legend').addEventListener('click', function () {
+        var p = document.getElementById('legend-panel');
+        p.hidden = !p.hidden;
     });
-    document.getElementById('btn-distance').addEventListener('click', function () {
-        // 再次点击：取消测量
-        if (this.classList.contains('active')) { clearMeasure(); return; }
-        clearMeasure();
-        this.classList.add('active');
-        // 2.0 的 MouseTool 测距方法为 rule（distance 已移除），自带逐段距离显示
-        mouseTool.rule({ strokeColor: '#2563eb', strokeWeight: 3, cursor: 'pointer' });
-        showMeasure('单击地图添加测量点，双击或右键结束测量');
-    });
-    document.getElementById('btn-area').addEventListener('click', function () {
-        // 再次点击：取消测量
-        if (this.classList.contains('active')) { clearMeasure(); return; }
-        clearMeasure();
-        this.classList.add('active');
-        mouseTool.measureArea({ strokeColor: '#059669', strokeWeight: 3, fillColor: '#059669', fillOpacity: 0.15, cursor: 'pointer' });
-        showMeasure('在地图上依次单击顶点围合面积，双击或右键结束');
-    });
-    document.getElementById('btn-clear').addEventListener('click', clearMeasure);
-
-    mouseTool.on('draw', function (e) {
-        var o = e.obj;
-        if (!o) return;
-        if (typeof o.getLength === 'function') {
-            var len = o.getLength();
-            showMeasure('距离：' + (len / 1000).toFixed(3) + ' 公里');
-        } else if (typeof o.getArea === 'function') {
-            var area = o.getArea();
-            showMeasure('面积：' + (area / 1000000).toFixed(3) + ' 平方公里');
+    function initPetals() {
+        var wrap = document.getElementById('petal-wrap');
+        if (!wrap) return;
+        for (var i = 0; i < 26; i++) {
+            var d = document.createElement('i');
+            d.className = 'petal';
+            var l = Math.random() * 100, s = 0.55 + Math.random() * 0.75;
+            var dur = 7 + Math.random() * 7, delay = Math.random() * 12;
+            var sway = 30 + Math.random() * 60, rot = Math.random() * 360;
+            var w = 8 + Math.random() * 8, h = 8 + Math.random() * 8;
+            d.style.cssText = 'left:' + l + '%;--dur:' + dur + 's;--delay:-' + delay + 's;--sway:' + sway + 'px;--rot:' + rot + 'deg;width:' + w + 'px;height:' + h + 'px;transform:scale(' + s + ');';
+            wrap.appendChild(d);
         }
-        drawnOverlays.push(o);
+    }
+    document.getElementById('btn-petal').addEventListener('click', function () {
+        var w = document.getElementById('petal-wrap');
+        var on = w.classList.toggle('on');
+        this.classList.toggle('active', on);
     });
-    mouseTool.on('drawend', function () { /* 结果由 draw 事件持续更新 */ });
 
-    // ---------- 移动端：侧边栏抽屉开关（手机/平板） ----------
+    // ---------------- 12. 移动端抽屉 ----------------
     var sidebarEl = document.querySelector('.sidebar');
     var backdropEl = document.getElementById('sidebar-backdrop');
     function closeDrawer() {
@@ -932,29 +567,32 @@
         if (backdropEl) backdropEl.classList.remove('show');
     }
     var menuBtn = document.getElementById('btn-menu');
-    if (menuBtn) {
-        menuBtn.addEventListener('click', function () {
-            var open = sidebarEl ? sidebarEl.classList.toggle('open') : false;
-            if (backdropEl) backdropEl.classList.toggle('show', open);
-        });
-    }
+    if (menuBtn) menuBtn.addEventListener('click', function () {
+        var open = sidebarEl ? sidebarEl.classList.toggle('open') : false;
+        if (backdropEl) backdropEl.classList.toggle('show', open);
+    });
     if (backdropEl) backdropEl.addEventListener('click', closeDrawer);
     var layerListEl = document.getElementById('layer-list');
-    var searchResultEl = document.getElementById('search-result');
     if (layerListEl) layerListEl.addEventListener('click', closeDrawer);
     if (searchResultEl) searchResultEl.addEventListener('click', closeDrawer);
 
-    // ---------- 启动 ----------
+    // ---------------- 13. 启动 ----------------
     initPetals();
     var isMobileDevice = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
-    if (!isMobileDevice) {   // 移动端默认关闭花瓣特效：地图滑动更流畅（可点"花瓣"按钮手动开启）
+    if (!isMobileDevice) {
         document.getElementById('petal-wrap').classList.add('on');
         document.getElementById('btn-petal').classList.add('active');
     }
-    Object.keys(LAYER_CONFIG).forEach(loadLayer);
-    map.on('complete', function () {
+    var loaders = GEO_KEYS.map(function (k) {
+        return fetchOrEmbed(k).then(function () {
+            layerState[k].data = (DATA[k] && DATA[k].features) || [];
+        });
+    });
+    Promise.all(loaders).then(function () {
         buildSearchIndex();
-        updateCounts();
-        console.log('常德市城市公共服务WebGIS系统初始化完成');
+        refreshAllLayers();
+        fitDataView();
+        map.invalidateSize();
+        console.log('常德市城市公共服务WebGIS系统（Leaflet + OpenStreetMap）初始化完成');
     });
 })();

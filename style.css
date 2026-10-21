@@ -700,3 +700,104 @@ body {
 @media (max-width: 760px) {
     .road-label { font-size: 9.5px; padding: 1px 5px; }
 }
+
+/* ===== Leaflet 全开源版适配（v39） ===== */
+/* 控件层级：toolbar 等自定义控件需高于 Leaflet 默认 panes（400）/controls（800） */
+#map .toolbar { z-index: 1200; }
+#map .zoom-ctrl { z-index: 1200; }
+#map .measure-result { z-index: 1300; }
+#map .map-toast { z-index: 1400; }
+#map .legend-panel { z-index: 1200; }
+.leaflet-container { font-family: inherit; background: #e8e8e8; }
+.leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,.75); }
+.leaflet-container .leaflet-control-scale-line {
+    font-size: 10px; background: rgba(255,255,255,.85);
+    border: 1px solid rgba(124,36,80,.35); border-top: none; color: var(--text);
+}
+
+/* 点位小圆点（divIcon） */
+.poi-dot-wrap { background: transparent; border: none; }
+.poi-dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.92), 0 1px 4px rgba(15,23,42,.25);
+    border: 1px solid rgba(255,255,255,.9);
+    cursor: pointer;
+}
+.poi-dot:hover { transform: scale(1.25); }
+
+/* 我的位置蓝点（divIcon）+ 脉冲 */
+.geo-dot-wrap { background: transparent; border: none; }
+.geo-dot {
+    position: relative;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #1677ff; border: 2px solid #fff;
+    box-shadow: 0 0 0 2px rgba(22,119,255,.55), 0 2px 8px rgba(22,119,255,.35);
+}
+.geo-dot::after {
+    content: ""; position: absolute; inset: -9px; border-radius: 50%;
+    background: rgba(22,119,255,.28); animation: geo-pulse 2s ease-out infinite;
+}
+
+/* Leaflet Popup 内容样式 */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px; box-shadow: 0 8px 24px rgba(15,23,42,.2);
+    border: 1px solid #f0dce4;
+}
+.leaflet-popup-content { margin: 10px 12px; line-height: 1.5; }
+.pw-box { font-size: 13px; color: var(--text); min-width: 180px; }
+.pw-t {
+    font-weight: 700; font-size: 14px; color: var(--plum);
+    padding: 2px 0 7px 9px; margin-bottom: 6px;
+    border-left: 3px solid var(--rose); line-height: 1.4;
+}
+.pw-row { display: flex; gap: 8px; padding: 2px 0; font-size: 12.5px; }
+.pw-k { color: var(--text-2, #7a6a72); flex-shrink: 0; min-width: 42px; }
+.pw-v { color: var(--text); word-break: break-all; }
+
+/* 道路名标签（Leaflet tooltip） */
+.road-tag {
+    background: rgba(124,36,80,.92) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 3px 10px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 1px !important;
+    box-shadow: 0 2px 10px rgba(124,36,80,.4) !important;
+    white-space: nowrap;
+}
+.road-tag::before { display: none !important; }
+
+/* 聚合气泡：小尺寸半透明，减少遮挡（MarkerCluster 默认配色覆盖） */
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+    background: rgba(142,42,82,.85) !important;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,.85);
+    box-shadow: 0 1px 6px rgba(124,36,80,.35);
+    font-weight: 700;
+}
+.marker-cluster-small div { border-radius: 50%; }
+.marker-cluster-medium div { border-radius: 50%; }
+.marker-cluster-large div { border-radius: 50%; background: rgba(112,26,62,.92) !important; }
+
+/* 搜索结果 */
+.sr-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 7px 10px; border-radius: 8px; cursor: pointer;
+    font-size: 13px; color: var(--text); border-bottom: 1px solid #f6edf1;
+}
+.sr-item:hover { background: var(--rose-soft, #fbeef3); }
+.sr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-type { flex-shrink: 0; font-size: 11px; }
+.sr-none { padding: 12px; font-size: 13px; color: var(--text-2, #9a8a92); text-align: center; }
+
+/* 非聚合模式：圆形点位可点 */
+.leaflet-interactive { outline: none; }
+
+/* 手机端：Leaflet 触摸优化 */
+@media (max-width: 768px) {
+    .leaflet-control-attribution { font-size: 9px; }
+    .road-tag { font-size: 10px !important; padding: 2px 7px !important; }
+    .pw-box { font-size: 12px; }
+}
