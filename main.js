@@ -61,7 +61,7 @@
         { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', name: 'CartoDB', attr: '&copy; OpenStreetMap &copy; <a href="https://carto.com/">CARTO</a>' },
         { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', name: 'ArcGIS', attr: 'Tiles &copy; Esri &mdash; Source: Esri, TomTom' }
     ];
-    var tile = null, tileIdx = 0, tileErr = 0;
+    var tile = null, tileIdx = 0, tileErr = 0, tileWatchdog = null;
     function activateTile(idx) {
         if (tile) map.removeLayer(tile);
         tileIdx = idx; tileErr = 0;
@@ -78,6 +78,27 @@
             }
         });
         tile.addTo(map);
+        // 加载超时看门狗：9 秒后瓦片仍稀少或 4 秒内无增长则判定当前源过慢，自动降级（OSM 慢速挂起不报 error，必须靠这个兜底）
+        function loadedCount() {
+            var n = 0;
+            try {
+                Object.keys(tile._tiles).forEach(function (k) {
+                    if (tile._tiles[k] && tile._tiles[k].loaded) n++;
+                });
+            } catch (e) { }
+            return n;
+        }
+        if (tileWatchdog) clearTimeout(tileWatchdog);
+        tileWatchdog = setTimeout(function () {
+            var n1 = loadedCount();
+            setTimeout(function () {
+                var n2 = loadedCount();
+                if (n2 < 12 && n2 - n1 < 3 && tileIdx < TILE_CHAIN.length - 1) {
+                    activateTile(tileIdx + 1);
+                    toast('底图加载缓慢，已自动切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+                }
+            }, 4000);
+        }, 9000);
     }
     // 启动探测：OSM 瓦片可达则优先，否则直接切换备用源
     var probe = new Image();
@@ -105,8 +126,8 @@
         scenic: { visible: true, data: [] },
         road: { visible: true, data: [] }
     };
-    // Leaflet 图层对象：pointsLayer[cluster|plain], linesLayer
-    var pointsLayer = { cluster: null, plain: null };
+    // Leaflet 图层对象：pointsLayer.clusters[key] / plains[key]（每个图层独立槽位，可同时显示）
+    var pointsLayer = { clusters: {}, plains: {} };
     var linesLayer = null;
     var clusterEnabled = true;
 
@@ -147,16 +168,30 @@
             .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 });
     }
 
+    function makeCluster(key) {
+        var color = LAYER_CONFIG[key].color;
+        return L.markerClusterGroup({
+            maxClusterRadius: 60,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            spiderfyOnMaxZoom: true,
+            disableClusteringAtZoom: 18,
+            iconCreateFunction: function (cluster) {
+                var n = cluster.getChildCount();
+                var size = n < 10 ? 32 : n < 40 ? 40 : 50;
+                var fs = n < 10 ? 12 : n < 40 ? 14 : 16;
+                return L.divIcon({
+                    html: '<div class="mc-bubble" style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;line-height:' + size + 'px;font-size:' + fs + 'px">' + n + '</div>',
+                    className: 'mc-wrap',
+                    iconSize: L.point(size, size)
+                });
+            }
+        });
+    }
     function buildPointLayers(key, useCluster) {
         var feats = layerState[key].data;
         if (useCluster) {
-            var cg = L.markerClusterGroup({
-                maxClusterRadius: 60,
-                showCoverageOnHover: false,
-                zoomToBoundsOnClick: true,
-                spiderfyOnMaxZoom: true,
-                disableClusteringAtZoom: 18
-            });
+            var cg = makeCluster(key);
             feats.forEach(function (f) { cg.addLayer(makePointMarker(key, f)); });
             return cg;
         }
@@ -178,9 +213,9 @@
         layerState.road.data.forEach(function (f) {
             var coords = f.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
             if (coords.length < 2) return;
-            // 双层线：浅色底衬 + 琥珀主线（质感更佳）
+            // 双层线：极淡描边 + 琥珀主线（描边仅用于分离底色，不喧宾夺主）
             g.addLayer(L.polyline(coords, {
-                color: '#ffffff', weight: 8.5, opacity: 0.4,
+                color: '#ffffff', weight: 6.5, opacity: 0.22,
                 lineJoin: 'round', lineCap: 'round'
             }));
             var line = L.polyline(coords, {
@@ -210,15 +245,15 @@
             if (vis) { linesLayer = buildLinesLayer(); map.addLayer(linesLayer); }
             return;
         }
-        if (pointsLayer.cluster) { map.removeLayer(pointsLayer.cluster); pointsLayer.cluster = null; }
-        if (pointsLayer.plain) { map.removeLayer(pointsLayer.plain); pointsLayer.plain = null; }
+        if (pointsLayer.clusters[key]) { map.removeLayer(pointsLayer.clusters[key]); pointsLayer.clusters[key] = null; }
+        if (pointsLayer.plains[key]) { map.removeLayer(pointsLayer.plains[key]); pointsLayer.plains[key] = null; }
         if (!vis) return;
         if (clusterEnabled) {
-            pointsLayer.cluster = buildPointLayers(key, true);
-            map.addLayer(pointsLayer.cluster);
+            pointsLayer.clusters[key] = buildPointLayers(key, true);
+            map.addLayer(pointsLayer.clusters[key]);
         } else {
-            pointsLayer.plain = buildPointLayers(key, false);
-            map.addLayer(pointsLayer.plain);
+            pointsLayer.plains[key] = buildPointLayers(key, false);
+            map.addLayer(pointsLayer.plains[key]);
         }
     }
     function refreshAllLayers() {
@@ -341,7 +376,7 @@
         var ll = [coords[1], coords[0]];
         map.setView(ll, Math.max(map.getZoom(), 15));
         var target = null;
-        var container = pointsLayer.cluster || pointsLayer.plain;
+        var container = (clusterEnabled ? pointsLayer.clusters[key] : pointsLayer.plains[key]);
         if (container) {
             container.eachLayer(function (ly) {
                 if (!target && ly.getLatLng && ly.getLatLng().lat === ll[0] && ly.getLatLng().lng === ll[1]) target = ly;
@@ -658,7 +693,7 @@
             toast(c.checked ? '聚合气泡已开启' : '聚合气泡已关闭');
         });
         document.getElementById('set-reset').addEventListener('click', function () {
-            setBlur.value = 12; setAlpha.value = 92;
+            setBlur.value = 14; setAlpha.value = 85;
             applyGlass();
         });
         try {

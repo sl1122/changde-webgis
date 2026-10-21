@@ -16,10 +16,10 @@
     --text-2: #64748b;
     --radius: 12px;
     --shadow: 0 4px 16px rgba(15, 23, 42, .08);
-    /* 玻璃质感（设置面板可调，localStorage 持久化；Liquid Glass 风格：半透明+高光+内边框） */
+    /* 玻璃质感（设置面板可调，localStorage 持久化；在原配色基础上叠加：半透明+高光+内边框） */
     --glass-blur: 14px;
-    --glass-alpha: .62;
-    --glass-sat: 170%;
+    --glass-alpha: .85;
+    --glass-sat: 165%;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,9 +42,9 @@ body {
     padding: 0 18px;
     gap: 18px;
     background: linear-gradient(135deg,
-        rgba(124, 36, 80, calc(var(--glass-alpha) * .62)),
-        rgba(164, 55, 107, calc(var(--glass-alpha) * .58)),
-        rgba(201, 91, 135, calc(var(--glass-alpha) * .64)));
+        rgba(124, 36, 80, calc(var(--glass-alpha) * .94)),
+        rgba(164, 55, 107, calc(var(--glass-alpha) * .90)),
+        rgba(201, 91, 135, calc(var(--glass-alpha) * .96)));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     color: #fff;
@@ -790,17 +790,18 @@ body {
 }
 .road-tag::before { display: none !important; }
 
-/* 聚合气泡：小尺寸半透明，减少遮挡（MarkerCluster 默认配色覆盖） */
-.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-    background: rgba(142,42,82,.85) !important;
+/* 聚合气泡：图层分类色（蓝/红/绿，与图例一致），小尺寸半透明减少遮挡 */
+.mc-wrap { background: transparent; border: none; }
+.mc-bubble {
+    border-radius: 50%;
     color: #fff;
-    border: 2px solid rgba(255,255,255,.85);
-    box-shadow: 0 1px 6px rgba(124,36,80,.35);
     font-weight: 700;
+    text-align: center;
+    border: 2px solid rgba(255, 255, 255, .9);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .45),
+        0 3px 10px rgba(15, 23, 42, .28);
 }
-.marker-cluster-small div { border-radius: 50%; }
-.marker-cluster-medium div { border-radius: 50%; }
-.marker-cluster-large div { border-radius: 50%; background: rgba(112,26,62,.92) !important; }
 
 /* 搜索结果 */
 .sr-item {
