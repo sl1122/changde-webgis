@@ -1449,7 +1449,8 @@
         { v: 'v64', t: '菜单按钮彻底修复', pts: ['修复 v63 推送时 CSS/JS 版本号漏升导致旧缓存', '菜单按钮四层加固：display!important + z-index + JS 强制显示 + pointerdown 兜底'] },
         { v: 'v65', t: '全端菜单按钮', pts: ['所有屏幕显示汉堡菜单按钮', '桌面端点击折叠 / 展开侧边栏，地图自动占满'] },
         { v: 'v66', t: '操作手感全面优化', pts: ['缩小限制放宽到全球（minZoom 9→3）', '桌面折叠改为平滑宽度动画，不再生硬', '缩放键防抖 320ms，手机端不再卡顿连跳', '菜单按钮 document 捕获级兜底，任何环境点击必触发', '手机端比例尺改绝对定位固定在底部中间，不再消失'] },
-        { v: 'v67', t: '悬浮球工具栏 + 测量修复', pts: ['右侧工具栏改为果冻质感悬浮球，点击扇形展开 + 弹性动画', '按钮点击果冻回弹 + 高光扫过，夜间深色果冻适配', '测距/测面修复：双击结束不再多加点，手机端新增「完成测量」按钮', '标题栏层级提升（z-index 2000）防被遮挡', '菜单按钮新增 touchstart 兜底，真实手机触摸必触发', '比例尺移到左下角（不再被缩放键遮挡）'] }
+        { v: 'v67', t: '悬浮球工具栏 + 测量修复', pts: ['右侧工具栏改为果冻质感悬浮球，点击扇形展开 + 弹性动画', '按钮点击果冻回弹 + 高光扫过，夜间深色果冻适配', '测距/测面修复：双击结束不再多加点，手机端新增「完成测量」按钮', '标题栏层级提升（z-index 2000）防被遮挡', '菜单按钮新增 touchstart 兜底，真实手机触摸必触发', '比例尺移到左下角（不再被缩放键遮挡）'] },
+        { v: 'v68', t: '右侧常驻功能区（不折叠）', pts: ['回退悬浮球折叠设计：右侧改为常驻竖排玻璃面板，10 个功能按钮一屏全显', '按钮为矩形横排（图标 + 文字），hover 高光扫过 + 点击果冻回弹', '桌面端 88px 宽面板，手机端自动收窄为图标窄条（不占地图）', '夜间模式深色玻璃面板适配'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1485,46 +1486,6 @@
             if (e.key === 'Escape' && clBackdrop && !clBackdrop.hidden && clBackdrop.classList.contains('show')) closeChangelog();
         });
     }
-
-    // ---------------- 13.5 悬浮球工具栏（果冻质感，扇形展开） ----------------
-    (function initFab() {
-        var fab = document.querySelector('.toolbar');
-        if (!fab) return;
-        var btns = Array.prototype.slice.call(fab.querySelectorAll('button'));
-        var open = false;
-        function layout(doOpen) {
-            open = doOpen;
-            fab.classList.toggle('fab-open', doOpen);
-            var n = btns.length;
-            var R = 104;
-            var start = -Math.PI / 2 - 0.72;
-            var span = 1.44;
-            btns.forEach(function (b, i) {
-                var a = start + (n > 1 ? (i / (n - 1)) * span : 0);
-                var dx = Math.cos(a) * R;
-                var dy = Math.sin(a) * R;
-                b.style.transitionDelay = (doOpen ? i * 26 : (n - 1 - i) * 16) + 'ms';
-                if (doOpen) {
-                    b.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(1)';
-                    b.style.opacity = '1';
-                } else {
-                    b.style.transform = 'translate(-50%, -50%) scale(.3)';
-                    b.style.opacity = '0';
-                }
-            });
-        }
-        fab.addEventListener('click', function (e) {
-            if (e.target.closest && e.target.closest('button')) return;
-            layout(!open);
-        });
-        // 点击悬浮球外部区域收起（捕获阶段）
-        document.addEventListener('click', function (e) {
-            if (open && (!e.target.closest || !e.target.closest('.toolbar'))) layout(false);
-        }, true);
-        document.addEventListener('touchstart', function (e) {
-            if (open && (!e.target.closest || !e.target.closest('.toolbar'))) layout(false);
-        }, true);
-    })();
 
     // ---------------- 14. 启动 ----------------
     loadTheme();

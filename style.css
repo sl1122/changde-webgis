@@ -400,79 +400,47 @@ body {
     background: #e8e8e8;
     min-height: 60vh;   /* 兜底：异常环境下仍保证地图容器可见 */
 }
-/* ===== 悬浮球工具栏（果冻质感，点击扇形展开） ===== */
+/* ===== 右侧功能区（常驻竖排玻璃面板，不折叠） ===== */
 .toolbar {
     position: absolute;
-    right: 16px;
-    bottom: 132px;
+    top: 64px;
+    right: 10px;
     z-index: 1500;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 26%,
-            rgba(255, 255, 255, .98),
-            rgba(255, 255, 255, .72) 38%,
-            rgba(255, 255, 255, .42) 68%,
-            rgba(255, 255, 255, .6));
-    backdrop-filter: blur(14px) saturate(160%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .95),
-        inset -2px -4px 8px rgba(255, 255, 255, .4),
-        inset 0 -8px 18px rgba(255, 255, 255, .28),
-        0 12px 32px rgba(15, 23, 42, .2),
-        0 0 0 .5px rgba(255, 255, 255, .6);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: width .45s cubic-bezier(.34, 1.56, .64, 1),
-        height .45s cubic-bezier(.34, 1.56, .64, 1),
-        border-radius .45s cubic-bezier(.34, 1.56, .64, 1),
-        background .45s ease, box-shadow .45s ease;
-}
-/* 悬浮球六点图标（折叠态） */
-.toolbar::before {
-    content: '';
-    width: 22px;
-    height: 22px;
-    background: var(--plum);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='5' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.4' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='5' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.4' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
-    transition: transform .45s cubic-bezier(.34, 1.56, .64, 1), opacity .3s ease;
-}
-.toolbar.fab-open { width: 300px; height: 300px; border-radius: 30px; background: rgba(255, 255, 255, .18); backdrop-filter: blur(4px) saturate(110%); -webkit-backdrop-filter: blur(4px) saturate(110%); box-shadow: none; }
-.toolbar.fab-open::before { transform: rotate(180deg) scale(.6); opacity: .4; }
-/* 按钮：从球心扇形弹出 */
-.toolbar button {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 44px;
-    height: 44px;
-    margin: 0;
-    padding: 0;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, .65);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    background: rgba(255, 255, 255, .94);
-    color: var(--text);
-    box-shadow: 0 5px 16px rgba(15, 23, 42, .16), inset 0 1px 0 rgba(255, 255, 255, .85);
-    transform: translate(-50%, -50%) scale(.3);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform .5s cubic-bezier(.34, 1.56, .64, 1), opacity .3s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease;
-    z-index: 2;
-    overflow: hidden;
+    gap: 4px;
+    padding: 8px;
+    width: 88px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    box-shadow:
+        0 12px 32px rgba(15, 23, 42, .16),
+        inset 0 1px 0 rgba(255, 255, 255, .9);
 }
-.toolbar.fab-open button { opacity: 1; pointer-events: auto; }
-.toolbar button svg { width: 18px; height: 18px; pointer-events: none; transition: transform .2s cubic-bezier(.34, 1.56, .64, 1); }
-.toolbar button span { font-size: 9px; line-height: 1.05; white-space: nowrap; pointer-events: none; }
-/* 高光扫过（内部元素，不动 transform 避免覆盖弹出位置） */
+.toolbar button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    height: 34px;
+    margin: 0;
+    padding: 0 10px;
+    border: none;
+    border-radius: 10px;
+    background: #f6f7fb;
+    color: var(--text);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: background-color .2s ease, color .2s ease, box-shadow .2s ease, transform .25s cubic-bezier(.34, 1.56, .64, 1);
+}
+.toolbar button svg { width: 16px; height: 16px; flex-shrink: 0; pointer-events: none; transition: transform .2s cubic-bezier(.34, 1.56, .64, 1); }
+.toolbar button span { font-size: 12px; line-height: 1; white-space: nowrap; pointer-events: none; }
+/* 高光扫过 */
 .toolbar button::after {
     content: '';
     position: absolute;
@@ -484,20 +452,21 @@ body {
     transition: left .5s ease;
     pointer-events: none;
 }
-.toolbar.fab-open button:hover::after { left: 130%; }
-.toolbar.fab-open button:hover {
+.toolbar button:hover::after { left: 130%; }
+.toolbar button:hover {
     background: var(--rose-soft);
     color: var(--plum);
-    box-shadow: 0 9px 22px rgba(15, 23, 42, .2), inset 0 1px 0 rgba(255, 255, 255, .6);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .12), inset 0 1px 0 rgba(255, 255, 255, .6);
 }
-.toolbar.fab-open button:hover svg { transform: scale(1.18); }
-.toolbar.fab-open button:active {
-    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .18), 0 2px 6px rgba(15, 23, 42, .1);
+.toolbar button:hover svg { transform: scale(1.15); }
+.toolbar button:active {
+    background: var(--rose-soft);
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .14);
 }
-.toolbar.fab-open button:active svg { transform: scale(.82); transition-duration: .12s; }
+.toolbar button:active svg { transform: scale(.85); transition-duration: .12s; }
 .toolbar button:disabled { opacity: .55; cursor: wait; }
-.toolbar button.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 5px 14px rgba(142, 42, 82, .4); }
-.toolbar .petal-btn.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 5px 14px rgba(142, 42, 82, .4); }
+.toolbar button.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 4px 12px rgba(142, 42, 82, .4); }
+.toolbar .petal-btn.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 4px 12px rgba(142, 42, 82, .4); }
 
 /* 自定义缩放按钮（更好用） */
 .zoom-ctrl {
@@ -870,24 +839,24 @@ body {
     .sidebar.open { transform: translateX(0); }
     .sidebar-backdrop.show { display: block; }
 
-    /* 悬浮球工具栏（手机端）：右下贴底，向上扇形展开 */
+    /* 右侧功能区（手机端）：窄条图标列，不折叠 */
     .toolbar {
-        right: 10px;
-        bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-        width: 52px;
-        height: 52px;
-    }
-    .toolbar.fab-open {
-        width: 280px;
-        height: 280px;
+        top: calc(var(--header-h) + 8px);
+        right: 6px;
+        width: 46px;
+        padding: 6px;
+        gap: 5px;
     }
     .toolbar button {
-        width: 42px;
-        height: 42px;
+        width: 100%;
+        height: 38px;
+        padding: 0;
+        justify-content: center;
+        gap: 0;
+        border-radius: 10px;
     }
-    .toolbar button svg { width: 15px; height: 15px; }
-    .toolbar button span { font-size: 8.5px; max-width: 60px; }
-    .toolbar::before { width: 20px; height: 20px; }
+    .toolbar button svg { width: 16px; height: 16px; }
+    .toolbar button span { display: none; }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .zoom-ctrl button { width: 38px; height: 38px; }
     /* 比例尺放左下角（不遮挡缩放键），默认 Leaflet 位置微调 */
@@ -920,7 +889,8 @@ body {
 @media (max-width: 380px) {
     .page-header h1 { font-size: 13px; }
     .page-header .author { font-size: 12px; }
-    .toolbar { right: 6px; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
+    .toolbar { top: calc(var(--header-h) + 6px); right: 4px; width: 42px; padding: 5px; gap: 4px; }
+    .toolbar button { height: 36px; }
 }
 
 /* ===== 道路图层：路名标签（白底主题字） ===== */
@@ -1100,18 +1070,13 @@ body {
         inset -1px 0 0 rgba(255, 255, 255, .45),
         2px 0 18px rgba(124, 36, 80, .10);
 }
-/* 夜间主题：悬浮球深色果冻质感 */
+/* 夜间主题：右侧功能区深色玻璃面板 */
 body.theme-night .toolbar {
-    background: radial-gradient(circle at 30% 26%,
-            rgba(56, 70, 128, .98),
-            rgba(32, 43, 86, .9) 45%,
-            rgba(24, 33, 68, .95));
+    background: rgba(15, 23, 42, .94);
     box-shadow:
-        inset 0 1px 0 rgba(148, 163, 212, .45),
-        inset 0 -6px 14px rgba(10, 14, 40, .5),
-        0 12px 32px rgba(2, 6, 23, .55);
+        0 12px 32px rgba(2, 6, 23, .5),
+        inset 0 1px 0 rgba(148, 163, 212, .3);
 }
-body.theme-night .toolbar::before { background: #a5b4fc; }
 #map .legend-panel, #map .settings-panel, #map .measure-result, #map .map-toast {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
