@@ -357,8 +357,19 @@
                 permanent: true, direction: 'center', className: 'road-tag user-road-tag', opacity: 1
             }).setContent('我的·' + (r.street || r.name)).setLatLng(mid));
         });
+        updateRoadLabelZoom();
         return g;
     }
+    // 路名标签随缩放级别控制字号与显隐：缩小地图时标签变小/隐藏，避免互相遮盖
+    function updateRoadLabelZoom() {
+        var z = map.getZoom();
+        var fs = z <= 12 ? 0 : z === 13 ? 10 : z === 14 ? 12 : z >= 17 ? 15 : 13;
+        document.querySelectorAll('.leaflet-tooltip.road-tag').forEach(function (t) {
+            if (fs <= 0) { t.style.display = 'none'; }
+            else { t.style.display = ''; t.style.fontSize = fs + 'px'; }
+        });
+    }
+    map.on('zoomend', updateRoadLabelZoom);
 
     function refreshLayer(key) {
         var vis = layerState[key].visible;

@@ -20,6 +20,7 @@
     --glass-blur: 14px;
     --glass-alpha: .85;
     --glass-sat: 1.5;
+    --header-h: 48px;
     --glass-sat: 165%;
 }
 
@@ -35,7 +36,7 @@ body {
 
 /* ===== 顶部标题栏（细长条，Liquid Glass 毛玻璃） ===== */
 .page-header {
-    height: 48px;
+    height: var(--header-h);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -625,6 +626,9 @@ body {
     .page-header { padding: 0 12px; gap: 10px; }
     .page-header h1 { font-size: 15px; letter-spacing: .5px; gap: 5px; }
     .page-header .author { font-size: 13px; }
+    /* 顶部标题防丢失：固定高度 + 文字溢出省略，防止标题栏变形/侧边栏错位 */
+    .page-header { height: var(--header-h); min-height: var(--header-h); overflow: hidden; }
+    .page-header h1, .page-header .author { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .blossom-logo { width: 16px; height: 16px; }
     .subtitle { display: none; }
 
@@ -634,7 +638,7 @@ body {
 
     .sidebar {
         position: fixed;
-        top: 48px;
+        top: var(--header-h);
         left: 0;
         bottom: 0;
         width: 280px;
@@ -645,6 +649,7 @@ body {
         box-shadow: 0 10px 40px rgba(15, 23, 42, .28);
         transform: translateX(-105%);
         transition: transform .25s ease;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
     }
     .sidebar.open { transform: translateX(0); }
     .sidebar-backdrop.show { display: block; }
