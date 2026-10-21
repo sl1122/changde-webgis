@@ -679,3 +679,24 @@ body {
     .page-header .author { font-size: 12px; }
     .toolbar { right: 6px; top: 6px; }
 }
+
+/* ===== 道路图层：路名标签（白底主题字） ===== */
+.road-label {
+    font-size: 11px;
+    color: #7c2450;
+    background: rgba(255, 255, 255, .92);
+    border: 1px solid rgba(124, 36, 80, .25);
+    border-radius: 9px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(124, 36, 80, .15);
+    font-weight: 600;
+    letter-spacing: .5px;
+    user-select: none;
+    cursor: pointer;
+    z-index: 62;
+}
+.road-label:hover { background: #fff; border-color: rgba(124, 36, 80, .55); }
+@media (max-width: 760px) {
+    .road-label { font-size: 9.5px; padding: 1px 5px; }
+}

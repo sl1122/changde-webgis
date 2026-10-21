@@ -425,30 +425,69 @@
         }
     }
 
+    // 主干道名单（前端分级：粗线+描边，次干道细线）
+    var MAIN_ROADS = ['武陵大道', '洞庭大道', '柳叶大道', '常德大道', '桃花源路', '阳山大道', '朗州路', '滨湖路'];
+    function isMainRoad(name) { return MAIN_ROADS.indexOf(name) >= 0; }
+
     function renderRoads(key, features) {
         var cfg = LAYER_CONFIG[key];
         var polylines = [];
         features.forEach(function (feat) {
             var coords = feat.geometry.coordinates || [];
             if (!coords.length) return;
+            var name = (feat.properties && feat.properties.name) || '';
+            var isMain = isMainRoad(name);
+            var wBase = isMain ? 7 : 4.5;      // 上层主线宽
+            var wCase = isMain ? 10 : 7;       // 下层描边宽
             var path = coords.map(function (c) { return new AMap.LngLat(c[0], c[1]); });
+            // 双层描边：深色 casing（路网底衬）+ 主题色主线（层次分明，像正式路网图）
+            var casing = new AMap.Polyline({
+                path: path,
+                strokeColor: '#7c2450',
+                strokeWeight: wCase,
+                strokeOpacity: 0.18,
+                strokeStyle: 'solid',
+                lineJoin: 'round',
+                lineCap: 'round',
+                zIndex: 58
+            });
             var line = new AMap.Polyline({
                 path: path,
                 strokeColor: cfg.color,
-                strokeWeight: 4,
-                strokeOpacity: 0.8,
+                strokeWeight: wBase,
+                strokeOpacity: 0.9,
                 strokeStyle: 'solid',
                 lineJoin: 'round',
                 lineCap: 'round',
                 zIndex: 60
             });
-            var name = (feat.properties && feat.properties.name) || '';
+            polylines.push(casing, line);
             if (name) {
-                line.on('click', function (e) {
-                    openInfo(cfg, feat, e.lnglat);
+                // 点击线 → 弹出详情
+                line.on('click', function (e) { openInfo(cfg, feat, e.lnglat); });
+                // 悬停高亮（主线加亮，描边加深）
+                line.on('mouseover', function () {
+                    line.setOptions({ strokeOpacity: 1, strokeWeight: wBase + 1 });
+                    casing.setOptions({ strokeOpacity: 0.32 });
                 });
+                line.on('mouseout', function () {
+                    line.setOptions({ strokeOpacity: 0.9, strokeWeight: wBase });
+                    casing.setOptions({ strokeOpacity: 0.18 });
+                });
+                // 路名标签：取线中部坐标，白底主题字
+                var mid = coords[Math.floor(coords.length / 2)];
+                if (mid) {
+                    var label = new AMap.Marker({
+                        position: new AMap.LngLat(mid[0], mid[1]),
+                        content: '<div class="road-label">' + name + '</div>',
+                        offset: new AMap.Pixel(-32, -10),
+                        zIndex: 62,
+                        title: name
+                    });
+                    label.on('click', function () { openInfo(cfg, feat); });
+                    polylines.push(label);
+                }
             }
-            polylines.push(line);
         });
         layerState[key].polylines = polylines;
         polylines.forEach(function (l) { l.setMap(map); });
