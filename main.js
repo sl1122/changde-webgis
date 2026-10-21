@@ -1103,21 +1103,24 @@
     function rebuildPetals() {
         var wrap = document.getElementById('petal-wrap');
         if (!wrap) return;
-        wrap.innerHTML = '';
         var p = PACKS[themeState.pack];
         var r = themeState.rhythm;              // 1-10：越大越密越快
         var count = 6 + r * 2;                  // 8 ~ 26 片
         var durBase = 15 - r * 0.8;             // 14.2 ~ 7s
         var swayBase = 20 + r * 7;              // 27 ~ 90px
-        for (var i = 0; i < count; i++) {
+        // 粒子池复用：数量不足补、多余移除；已有粒子只换外观类（保留下落动画状态，平滑变形状，不再整池重建闪跳）
+        while (wrap.children.length < count) {
             var d = document.createElement('i');
-            d.className = 'petal ' + p.pclass;
             var l = Math.random() * 100, s = 0.55 + Math.random() * 0.75;
             var dur = durBase * (0.7 + Math.random() * 0.6), delay = Math.random() * 12;
             var sway = swayBase * (0.6 + Math.random() * 0.8), rot = Math.random() * 360;
             var w = 7 + Math.random() * 9, h = 7 + Math.random() * 9;
             d.style.cssText = 'left:' + l.toFixed(1) + '%;--dur:' + dur.toFixed(2) + 's;--delay:-' + delay.toFixed(2) + 's;--sway:' + sway.toFixed(0) + 'px;--rot:' + rot.toFixed(0) + 'deg;width:' + w.toFixed(0) + 'px;height:' + h.toFixed(0) + 'px;transform:scale(' + s.toFixed(2) + ');';
             wrap.appendChild(d);
+        }
+        while (wrap.children.length > count) { wrap.removeChild(wrap.lastChild); }
+        for (var i = 0; i < wrap.children.length; i++) {
+            wrap.children[i].className = 'petal ' + p.pclass;
         }
     }
     // 材质包切换时同步地图图层颜色（POI 圆点/道路线随材质包与夜间模式换色）
@@ -1255,7 +1258,7 @@
         settingsPanel.addEventListener('animationend', function () { settingsPanel.classList.remove('jelly'); });
         // 材质包切换
         var autoCycleTimer = null;
-        var AUTO_CYCLE_MS = 6000;   // 综合包：每 6 秒丝滑轮播一次
+        var AUTO_CYCLE_MS = 6000;   // 综合包：每 6 秒丝滑轮播一次（只轮播白天四套，不含夜间）
         var AUTO_ORDER = ['peach', 'osmanthus', 'leaf', 'rose'];
         function stopAutoCycle() {
             if (autoCycleTimer) { clearInterval(autoCycleTimer); autoCycleTimer = null; }
@@ -1276,7 +1279,7 @@
                     document.body.classList.add('theme-anim');
                     applyPack(first, true);
                     setTimeout(function () { document.body.classList.remove('theme-anim'); }, 850);
-                    toast('综合材质包已开启：每 ' + (AUTO_CYCLE_MS / 1000) + ' 秒自动丝滑轮播');
+                    toast('综合材质包已开启：每 ' + (AUTO_CYCLE_MS / 1000) + ' 秒自动丝滑轮播（桃花/桂花/绿叶/玫瑰，不含夜间）');
                     return;
                 }
                 stopAutoCycle();
