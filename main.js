@@ -114,6 +114,7 @@
         return gcjMode ? ll : gcj2wgs(ll);
     }
     var tile = null, tileIdx = 0, tileWatchdog = null;
+    var basemapLocked = false; // 手动选择底图后锁定，不再自动跳变
     function activateTile(idx, silent) {
         var old = tile;
         var t = TILE_CHAIN[idx];
@@ -125,10 +126,14 @@
         var errN = 0;
         newT.on('tileerror', function () {
             errN++;
-            // 单源连续失败过多（≥8 张）才降级下一源，避免偶发 403/超时误切换造成底图跳变
+            // 单源连续失败过多才降级；手动锁定后不自动切换，仅提示
             if (errN >= 8 && tileIdx < TILE_CHAIN.length - 1) {
-                activateTile(tileIdx + 1, true);
-                toast('底图加载不畅，已切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+                if (basemapLocked) {
+                    toast('底图加载异常（' + TILE_CHAIN[tileIdx].name + '），可在「底图」面板手动切换');
+                } else {
+                    activateTile(tileIdx + 1, true);
+                    toast('底图加载不畅，已切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+                }
             }
         });
         // 平滑切换：新源首张瓦片加载成功后移除旧层，避免切换瞬间地图空白
@@ -167,8 +172,12 @@
             setTimeout(function () {
                 var n2 = loadedCount();
                 if (n2 < 10 && n2 - n1 < 2 && tileIdx < TILE_CHAIN.length - 1) {
-                    activateTile(tileIdx + 1, true);
-                    toast('底图加载缓慢，已切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+                    if (basemapLocked) {
+                        toast('底图加载缓慢（' + TILE_CHAIN[tileIdx].name + '），可在「底图」面板手动切换');
+                    } else {
+                        activateTile(tileIdx + 1, true);
+                        toast('底图加载缓慢，已切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+                    }
                 }
             }, 5000);
         }, 12000);
@@ -540,6 +549,143 @@
         showMeasure('单击地图添加顶点，双击闭合计算面积');
     });
     document.getElementById('btn-clear').addEventListener('click', clearMeasure);
+
+    // ---------------- 8.5 手动底图切换 ----------------
+    var btnBasemap = document.getElementById('btn-basemap');
+    var basemapPanel = document.getElementById('basemap-panel');
+    function paintBasemapSel() {
+        basemapPanel.querySelectorAll('.bm-item').forEach(function (it) {
+            it.classList.toggle('sel', parseInt(it.getAttribute('data-idx')) === tileIdx);
+        });
+    }
+    if (btnBasemap && basemapPanel) {
+        btnBasemap.addEventListener('click', function () {
+            basemapPanel.hidden = !basemapPanel.hidden;
+            if (!basemapPanel.hidden) paintBasemapSel();
+        });
+        document.getElementById('basemap-close').addEventListener('click', function () { basemapPanel.hidden = true; });
+        basemapPanel.querySelectorAll('.bm-item').forEach(function (it) {
+            it.addEventListener('click', function () {
+                var idx = parseInt(it.getAttribute('data-idx'));
+                if (idx === tileIdx) { basemapPanel.hidden = true; return; }
+                activateTile(idx, true);
+                basemapLocked = true;
+                paintBasemapSel();
+                try { localStorage.setItem('cd_basemap', idx); } catch (e) { }
+                toast('已切换为「' + TILE_CHAIN[idx].name + '」底图（已锁定，不再自动跳变）');
+                basemapPanel.hidden = true;
+            });
+        });
+        try {
+            var savedBm = parseInt(localStorage.getItem('cd_basemap'));
+            if (!isNaN(savedBm) && savedBm > 0 && savedBm < TILE_CHAIN.length) {
+                activateTile(savedBm, true);
+                basemapLocked = true;
+            }
+        } catch (e) { }
+    }
+
+    // ---------------- 8.6 道路打点工具 ----------------
+    var markMode = false, markStreet = '', markPts = [], markLayer = null, markLine = null;
+    var btnMark = document.getElementById('btn-mark');
+    var markPanel = document.getElementById('mark-panel');
+    function exitMark() {
+        markMode = false;
+        if (btnMark) btnMark.classList.remove('active');
+        if (markLayer) { map.removeLayer(markLayer); markLayer = null; }
+        if (markLine) { map.removeLayer(markLine); markLine = null; }
+        markPts = [];
+    }
+    function paintMarkDots() {
+        if (markLayer) map.removeLayer(markLayer);
+        if (markLine) { map.removeLayer(markLine); markLine = null; }
+        markLayer = L.layerGroup();
+        markPts.forEach(function (p, i) {
+            var icon = L.divIcon({
+                className: 'mark-dot-icon',
+                html: '<div class="mark-dot">' + (i + 1) + '</div>',
+                iconSize: [20, 20], iconAnchor: [10, 10]
+            });
+            markLayer.addLayer(L.marker(p, { icon: icon, interactive: false }));
+        });
+        if (markPts.length >= 2) {
+            markLine = L.polyline(markPts, { color: '#2563eb', weight: 3, opacity: .85, dashArray: '2 8' });
+            map.addLayer(markLine);
+        }
+        map.addLayer(markLayer);
+        document.getElementById('mark-status').textContent =
+            '「' + markStreet + '」已打 ' + markPts.length + ' 个点' +
+            (markPts.length >= 2 ? '，继续沿线点击加点；点击「完成」生成坐标 JSON' : '，继续沿道路点击添加节点');
+    }
+    map.on('click', function (e) {
+        if (!markMode) return;
+        markPts.push([e.latlng.lat, e.latlng.lng]);
+        paintMarkDots();
+    });
+    if (btnMark && markPanel) {
+        btnMark.addEventListener('click', function () {
+            markPanel.hidden = !markPanel.hidden;
+            if (markPanel.hidden && markMode) { exitMark(); toast('打点已退出'); }
+        });
+        document.getElementById('mark-close').addEventListener('click', function () {
+            markPanel.hidden = true;
+            if (markMode) { exitMark(); toast('打点已退出'); }
+        });
+        document.getElementById('mark-start').addEventListener('click', function () {
+            var name = (document.getElementById('mark-name').value || '').trim();
+            if (!name) { toast('请先输入街道名称', true); return; }
+            if (measure.mode) clearMeasure();
+            markStreet = name; markPts = []; markMode = true;
+            btnMark.classList.add('active');
+            document.getElementById('mark-ops').hidden = false;
+            document.getElementById('mark-export').value = '';
+            document.getElementById('mark-copy').hidden = true;
+            paintMarkDots();
+            toast('开始为「' + name + '」打点：单击地图沿线添加节点');
+        });
+        document.getElementById('mark-undo').addEventListener('click', function () {
+            if (markMode && markPts.length) { markPts.pop(); paintMarkDots(); }
+        });
+        document.getElementById('mark-clear').addEventListener('click', function () {
+            if (markMode) { markPts = []; paintMarkDots(); }
+        });
+        document.getElementById('mark-done').addEventListener('click', function () {
+            if (!markMode) return;
+            if (markPts.length < 2) { toast('至少需要 2 个点才能构成道路线', true); return; }
+            var coords = markPts.map(function (p) {
+                return [Math.round(p[1] * 1e6) / 1e6, Math.round(p[0] * 1e6) / 1e6];
+            });
+            var out = {
+                street: markStreet,
+                crs: gcjMode ? 'GCJ-02' : 'WGS-84',
+                basemap: TILE_CHAIN[tileIdx].name,
+                points: coords.length,
+                coordinates: coords
+            };
+            var txt = JSON.stringify(out, null, 2);
+            document.getElementById('mark-export').value = txt;
+            document.getElementById('mark-copy').hidden = false;
+            document.getElementById('mark-status').textContent =
+                '「' + markStreet + '」完成：' + coords.length + ' 个坐标（' + out.crs + '），点击「复制坐标 JSON」发送给开发者即可绘制';
+            markMode = false;
+            btnMark.classList.remove('active');
+        });
+        document.getElementById('mark-copy').addEventListener('click', function () {
+            var v = document.getElementById('mark-export').value;
+            if (!v) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(v).then(function () {
+                    toast('坐标 JSON 已复制，直接粘贴发送即可');
+                }).catch(function () {
+                    toast('复制失败，请手动全选复制');
+                });
+            } else {
+                var ta = document.getElementById('mark-export');
+                ta.focus(); ta.select();
+                toast('已选中，请手动复制');
+            }
+        });
+    }
 
     // ---------------- 9. 复位 / 全景适配 ----------------
     document.getElementById('btn-home').addEventListener('click', function () {

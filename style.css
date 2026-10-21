@@ -943,6 +943,75 @@ body {
 }
 .set-reset:hover { background: var(--rose-soft); border-color: var(--rose); }
 
+/* 底图切换面板 */
+.basemap-panel {
+    position: absolute; top: 14px; right: 70px; z-index: 1260;
+    width: 236px; padding: 13px 15px;
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
+    border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
+    font-size: 13px; color: var(--text);
+    transition: backdrop-filter .35s ease, background-color .35s ease;
+}
+.bm-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 9px; margin: 2px 0; border-radius: 10px;
+    cursor: pointer; transition: background .15s ease;
+}
+.bm-item:hover { background: var(--rose-soft); }
+.bm-item.sel { background: var(--rose-soft); box-shadow: inset 0 0 0 1.5px var(--rose); font-weight: 600; }
+.bm-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 1px 4px rgba(15,23,42,.25); }
+.bm-tag { margin-left: auto; font-size: 10.5px; color: var(--plum); background: var(--rose-soft); padding: 1px 7px; border-radius: 99px; }
+.bm-note { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0dce4; font-size: 11.5px; color: var(--text-2); line-height: 1.5; }
+
+/* 道路打点面板 */
+.mark-panel {
+    position: absolute; top: 14px; right: 70px; z-index: 1265;
+    width: 292px; padding: 13px 15px;
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
+    border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
+    font-size: 13px; color: var(--text);
+    transition: backdrop-filter .35s ease, background-color .35s ease;
+}
+.mark-panel input[type="text"] {
+    flex: 1; min-width: 0; padding: 6px 9px;
+    border: 1px solid #e3cdd8; border-radius: 8px; font-size: 12.5px;
+    background: rgba(255,255,255,.85); color: var(--text); outline: none;
+}
+.mark-panel input[type="text"]:focus { border-color: var(--rose); }
+.mark-btn {
+    width: 100%; margin-top: 8px; padding: 8px 0;
+    border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #c14f7c, #e05a8a); color: #fff;
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: transform .15s ease, filter .15s ease;
+}
+.mark-btn:hover { filter: brightness(1.08); }
+.mark-btn:active { transform: scale(.96); }
+.mark-btn.small { width: auto; padding: 6px 14px; font-size: 12px; margin-top: 0; }
+.mark-ops { display: flex; gap: 8px; margin-top: 8px; }
+.mark-status {
+    margin-top: 8px; font-size: 11.5px; color: var(--text-2); line-height: 1.5;
+    padding: 8px 10px; background: var(--rose-soft); border-radius: 9px;
+}
+.mark-export {
+    width: 100%; height: 108px; margin-top: 8px; box-sizing: border-box;
+    border: 1px dashed #d9c2cf; border-radius: 9px; padding: 8px 10px;
+    font-size: 11px; font-family: Consolas, Monaco, monospace;
+    background: rgba(255,255,255,.92); color: #4a3340; resize: none; outline: none;
+}
+.mark-dot-icon {
+    background: transparent; border: none;
+}
+.mark-dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.95), 0 2px 6px rgba(15,23,42,.35);
+}
+
 /* 点位图标重构：类别彩色圆底 + 白色符号 */
 .poi-icon-wrap { background: transparent; border: none; }
 .poi-icon {
