@@ -1348,6 +1348,66 @@
         } catch (e) { }
     }
 
+    // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
+    var CHANGELOG = [
+        { v: 'v36', t: '道路数据重构', pts: ['14 条主干道线要素重建（路口锚点 + 步行描线）', '弯道圆弧平滑、34/34 交叉口拓扑校验通过', '去抖动、无锯齿，拒绝横冲直撞的折线'] },
+        { v: 'v38', t: '定位技术开源化', pts: ['告别单一闭源方案，转向 OSM 开源体系', '定位精度问题开启根治之路'] },
+        { v: 'v39', t: '全开源迁移', pts: ['Leaflet + OSM 底图，坐标动态转换', '不再受制于单一地图源'] },
+        { v: 'v40', t: 'UI 全面升级', pts: ['玻璃质感界面 + 动态图例', '图层要素显示重构'] },
+        { v: 'v41', t: '底图多源 + Liquid Glass', pts: ['高德 / OSM 双源平滑切换', '毛玻璃材质重写'] },
+        { v: 'v42', t: '显示精修', pts: ['道路显示优化、玻璃原色还原', '气泡分类着色'] },
+        { v: 'v43', t: '双坐标体系', pts: ['高德 + OSM 综合底图，坐标动态换算', '两套坐标系共存互转'] },
+        { v: 'v45', t: '坐标彻底修复', pts: ['GCJ-02 统一口径，点位 1 米级准确', '多端显示不再错位'] },
+        { v: 'v46', t: '底图稳定', pts: ['平滑切换 + 缩放上限 18', '不再进入空白世界'] },
+        { v: 'v47', t: '玻璃滑块', pts: ['玻璃质感滑动调节', '透明度 / 模糊 / 饱和自由掌控'] },
+        { v: 'v48', t: '打点系统 + 底图锁定', pts: ['手选底图不再自动跳变', '街道打点替代绘制'] },
+        { v: 'v49', t: '点库同名替代', pts: ['用户打点道路优先显示', '跨设备数据同步'] },
+        { v: 'v50', t: '打点工具完善', pts: ['Ctrl+Z 撤销 / 拖动 / 编辑', '工具链完整化'] },
+        { v: 'v51', t: '草稿清理', pts: ['完成自动清空草稿', '交互手感优化'] },
+        { v: 'v52', t: '点击隔离', pts: ['打点 / 测距误触修复', '浮层事件全隔离'] },
+        { v: 'v53', t: '柳叶大道入库', pts: ['用户绘制 4.152km 同名替代', '多端适配规范确立'] },
+        { v: 'v54', t: '材质包系统上线', pts: ['桂花 / 绿叶 / 玫瑰首套材质', '飘落节律调节 + 工具栏重构'] },
+        { v: 'v55', t: '主题化 + 桃花包', pts: ['手机崩溃紧急修复', 'body 级主题联动 + 桃花默认包'] },
+        { v: 'v56', t: '夜间模式 + 自我审核', pts: ['夜间材质包（地图同变暗）', '自我审核 skill + 桂花四瓣花'] },
+        { v: 'v57', t: '材质联动深化', pts: ['夜间文字修复、符号随包变色', '综合轮播上线'] },
+        { v: 'v58', t: '区分度与丝滑', pts: ['设施四色区分度回归', '粒子池化 + 0.7s 平滑过渡'] },
+        { v: 'v59', t: '视觉语言统一', pts: ['logo 形状随材质、图例联动', '玻璃面板深色适配'] }
+    ];
+    var clBackdrop = document.getElementById('cl-backdrop');
+    var clList = document.getElementById('cl-list');
+    var clCount = document.getElementById('cl-count');
+    function renderChangelog() {
+        if (!clList || !clCount) return;
+        clList.innerHTML = CHANGELOG.map(function (c) {
+            return '<div class="cl-row">' +
+                '<span class="cl-ver">' + c.v + '</span>' +
+                '<div class="cl-body"><div class="cl-row-title">' + c.t + '</div>' +
+                '<div class="cl-row-points">' + c.pts.map(function (p) { return '· ' + p; }).join('<br>') + '</div></div></div>';
+        }).join('');
+        clCount.textContent = CHANGELOG.length;
+    }
+    function openChangelog() {
+        renderChangelog();
+        clBackdrop.hidden = false;
+        // 强制重排后加 .show，触发果冻弹入动画
+        void clBackdrop.offsetWidth;
+        clBackdrop.classList.add('show');
+    }
+    function closeChangelog() {
+        clBackdrop.classList.remove('show');
+        setTimeout(function () { clBackdrop.hidden = true; }, 280);
+    }
+    var verTag = document.getElementById('ver-tag');
+    if (verTag) verTag.addEventListener('click', openChangelog);
+    if (clBackdrop) {
+        clBackdrop.addEventListener('click', function (e) {
+            if (e.target === clBackdrop || e.target.id === 'cl-close') closeChangelog();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && clBackdrop && !clBackdrop.hidden && clBackdrop.classList.contains('show')) closeChangelog();
+        });
+    }
+
     // ---------------- 14. 启动 ----------------
     loadTheme();
     applyPack(themeState.pack);
