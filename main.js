@@ -758,6 +758,11 @@
             saveUserRoads();
             markMode = false;
             btnMark.classList.remove('active');
+            // 完成入库后自动清理草稿显示：序号点 + 蓝色预览线一并移除，只保留入库的紫色虚线
+            if (markLayer) { map.removeLayer(markLayer); markLayer = null; }
+            if (markLine) { map.removeLayer(markLine); markLine = null; }
+            markPts = [];
+            document.getElementById('mark-ops').hidden = true;
             if (layerState.road.visible) refreshLayer('road');
             updateCounts();
             renderMarkList();
@@ -765,8 +770,8 @@
             document.getElementById('mark-export').value = txt;
             document.getElementById('mark-copy').hidden = false;
             document.getElementById('mark-status').textContent =
-                (isEdit ? '已更新「' : '「') + markStreet + (isEdit ? '」标注道路（' : '」已存入我的道路点库（共 ') + userRoads.length + ' 条），紫色虚线已显示在地图上；可复制 JSON 或继续打点';
-            toast((isEdit ? '已更新「' : '已存入「') + markStreet + '」');
+                (isEdit ? '已更新「' : '「') + markStreet + (isEdit ? '」标注道路（' : '」已存入我的道路点库（共 ') + userRoads.length + ' 条），紫色虚线已显示在地图上；序号点已自动清除，可复制 JSON 或继续打点';
+            toast((isEdit ? '已更新「' : '已存入「') + markStreet + '」，序号点已自动清除');
         });
         document.getElementById('mark-copy').addEventListener('click', function () {
             var v = document.getElementById('mark-export').value;
