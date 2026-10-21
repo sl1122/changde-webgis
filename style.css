@@ -552,13 +552,20 @@ body {
     border-radius: 50%;
     box-shadow: 0 0 0 3px rgba(0, 0, 0, .04);
     flex-shrink: 0;
+    transition: background-color .5s ease;
 }
 .lg-line {
     width: 22px;
     height: 4px;
     border-radius: 2px;
     flex-shrink: 0;
+    transition: background-color .5s ease;
 }
+/* 图例点/线颜色走 CSS 变量，随材质包与夜间模式联动 */
+.lg-dot.lg-school { background: var(--school); }
+.lg-dot.lg-hospital { background: var(--hospital); }
+.lg-dot.lg-scenic { background: var(--scenic); }
+.lg-line.lg-road { background: var(--road); }
 .legend-note {
     margin-top: 7px;
     padding-top: 6px;
