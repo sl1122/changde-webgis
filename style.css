@@ -741,9 +741,9 @@ body {
 }
 #petal-wrap:not(.on) .petal { display: none; }
 
-/* ===== 汉堡菜单按钮（仅移动端显示） ===== */
+/* ===== 汉堡菜单按钮（全端显示；桌面端点击折叠/展开侧边栏，手机端打开抽屉） ===== */
 .menu-btn {
-    display: none;
+    display: flex;
     width: 34px;
     height: 34px;
     align-items: center;
@@ -754,9 +754,15 @@ body {
     border-radius: 9px;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background .15s;
+    position: relative;
+    z-index: 22;
+    transition: background .15s, transform .3s cubic-bezier(.34, 1.56, .64, 1);
 }
-.menu-btn:hover { background: rgba(255, 255, 255, .28); }
+.menu-btn:hover { background: rgba(255, 255, 255, .28); transform: rotate(6deg) scale(1.06); }
+.menu-btn:active { transform: scale(.94); transition-duration: .12s; }
+
+/* 桌面端折叠：点击菜单按钮隐藏侧边栏，地图占满 */
+.sidebar.hidden { display: none; }
 
 /* 侧边栏遮罩（移动端抽屉展开时） */
 .sidebar-backdrop {

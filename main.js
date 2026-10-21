@@ -1206,12 +1206,19 @@
         if (backdropEl) backdropEl.classList.remove('show');
     }
     var menuBtn = document.getElementById('btn-menu');
-    // 手机端强制显示菜单按钮（防 CSS 竞态被隐藏，保证左上角可点）
-    if (menuBtn && window.matchMedia && window.matchMedia('(max-width:768px)').matches) menuBtn.style.display = 'flex';
+    // 全端强制显示菜单按钮（桌面折叠侧边栏 / 手机打开抽屉）
+    if (menuBtn) menuBtn.style.display = 'flex';
     var menuHandledByPointer = false;
     function toggleDrawer() {
-        var open = sidebarEl ? sidebarEl.classList.toggle('open') : false;
-        if (backdropEl) backdropEl.classList.toggle('show', open);
+        var isPhone = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
+        if (isPhone) {
+            var open = sidebarEl ? sidebarEl.classList.toggle('open') : false;
+            if (backdropEl) backdropEl.classList.toggle('show', open);
+        } else if (sidebarEl) {
+            // 桌面端：折叠 / 展开侧边栏
+            sidebarEl.classList.toggle('hidden');
+            if (typeof map !== 'undefined' && map) setTimeout(function () { map.invalidateSize(); }, 260);
+        }
     }
     if (menuBtn) {
         // pointerdown 兜底：兼容部分 iframe / WebView 环境下 click 合成事件丢失
@@ -1386,7 +1393,9 @@
         { v: 'v60', t: '版本更新日志 + 灵动倾斜', pts: ['点击版本号打开更新日志（回顾全部版本）', '高透光泽玻璃卡片 + 果冻动画 + 随材质包', '工具栏按钮 3D 倾斜 + 顶部高光扫过'] },
         { v: 'v61', t: '胶囊质感 + 布局修复', pts: ['版本号改回椭圆玻璃胶囊（渐变 + 内高光 + 毛玻璃）', '修复 CSS 结构问题导致的地图 / 工具栏不显示'] },
         { v: 'v62', t: '地图回归 + 日志完善', pts: ['修复多余花括号导致的布局崩溃，地图 / 工具栏恢复显示', '更新日志收录 v60 / v61 版本'] },
-        { v: 'v63', t: '手机端体验优化', pts: ['标题栏名字与版本号不再重叠', '缩放键移到右下角贴底、比例尺底部居中', '菜单按钮可见性与点击稳定性加固'] }
+        { v: 'v63', t: '手机端体验优化', pts: ['标题栏名字与版本号不再重叠', '缩放键移到右下角贴底、比例尺底部居中', '菜单按钮可见性与点击稳定性加固'] },
+        { v: 'v64', t: '菜单按钮彻底修复', pts: ['修复 v63 推送时 CSS/JS 版本号漏升导致旧缓存', '菜单按钮四层加固：display!important + z-index + JS 强制显示 + pointerdown 兜底'] },
+        { v: 'v65', t: '全端菜单按钮', pts: ['所有屏幕显示汉堡菜单按钮', '桌面端点击折叠 / 展开侧边栏，地图自动占满'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
