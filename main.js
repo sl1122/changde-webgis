@@ -698,6 +698,12 @@
         paintMarkDots();
     });
     if (btnMark && markPanel) {
+        // 阻断地图内所有浮层 UI 的点击冒泡到地图容器
+        // （否则打点/测距模式下点击「开始打点」「清空」、工具栏按钮等，click 会冒泡到地图加点监听，在按钮位置误创建一个点）
+        ['.toolbar', '.zoom-ctrl', '.mark-panel', '.settings-panel', '.basemap-panel', '.legend-panel', '.measure-result', '.map-toast'].forEach(function (sel) {
+            var el = document.querySelector(sel);
+            if (el) el.addEventListener('click', function (e) { e.stopPropagation(); });
+        });
         btnMark.addEventListener('click', function () {
             markPanel.hidden = !markPanel.hidden;
             if (markPanel.hidden && markMode) { exitMark(); toast('打点已退出'); }
