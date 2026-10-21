@@ -1489,7 +1489,8 @@
         { v: 'v68', t: '右侧常驻功能区（不折叠）', pts: ['回退悬浮球折叠设计：右侧改为常驻竖排玻璃面板，10 个功能按钮一屏全显', '按钮为矩形横排（图标 + 文字），hover 高光扫过 + 点击果冻回弹', '桌面端 88px 宽面板，手机端自动收窄为图标窄条（不占地图）', '夜间模式深色玻璃面板适配'] },
         { v: 'v69', t: 'Apple 式高透重构', pts: ['右侧功能区改为 56px 纯图标果冻胶囊面板（杜绝文字截断），按钮 44px 图标 20px', '按钮 hover / 触摸一次弹性跳跃（上移 7px 回弹）+ 按压果冻压缩，transform 硬件加速', '侧边栏玻璃拟态（毛玻璃 + 高光边缘 + 柔和阴影），折叠动画结束后防抖重绘地图', '菜单按钮热区扩至 48×48 与标题栏居中对齐', '比例尺重构为 Apple 玻璃组件（桌面 150px / 手机 100px，米公里自动切换）', '测量卡片改高透玻璃（白底深字 + 细描边），完成按钮柔和绿色，清除按钮中性灰', '全局低饱和玻璃语言：面板 / 缩放键统一高透圆角，夜间模式全套深色玻璃'] },
         { v: 'v70', t: '悬浮球 + 玻璃液体调节', pts: ['右侧功能区升级为 Apple 悬浮球：点击展开果冻列表，按钮依次弹性弹出；再点/点外收起；手机端保持常驻窄条', '悬浮球与放大缩小键分离：缩放键独立玻璃胶囊，移到悬浮球下方保持间距', '按钮 hover 上浮 9px 回弹 + 按鼠标靠近方向左右倾斜 2-5° + 液态光泽扫过 + 按压压缩', 'hover 显示玻璃 tooltip 文字标签（定位/复位/测距/测面等），离开消失', '侧边栏三个面板统一关闭按钮（圆形 ×，hover 放大旋转 + 压缩反馈），可逐一面板关闭并一键恢复', '测量结果卡片非常驻：清除/切换工具/关闭即自动隐藏，关闭按钮 ×', '设置新增 glassliquid 调节：液态光泽 / 阴影强度 / 反射高光滑杆，全面板实时预览', '测量完成保留双击 + 绿色完成按钮双触发'] },
-        { v: 'v71', t: '悬浮球拖拽 + 全量液态玻璃', pts: ['悬浮球支持长按拖拽（桌面鼠标 / 手机手指），松手果冻吸附最近边缘，位置持久化记忆', '智能自适应展开方向：停靠左/右边缘竖向展开，停靠上/下边缘横向展开，自动避让缩放控件', '外部收起防误触：展开动画未完成不收起 + 200ms 延时 + 面板附近点击不收起，面板内新增收起按钮', '移动端窄条可点击展开详情：图标旁同步显示精简文字标签，不再纯图标盲操作', '全 UI 液态玻璃统一层：磨砂基底 + 内高光 + 细描边 + 外阴影全由 CSS 变量管控', '设置面板滑杆重构：磨砂模糊度 / 面板透明度 / 边框高光强度 / 阴影柔和度，滑杆 rAF 节流', '可读性边界保护：低模糊度自动提升背景不透明度，避免文字不可读', '新增液态折射增强开关：SVG 位移滤镜仅作用于侧边栏与设置面板，桌面默认开、移动端自动关', '清除测量全链路清零 + 切换底图/关闭面板/关闭设置自动隐藏测量卡', '移动端动效降幅：弹性上浮 4px、按压 0.97，渐进增强保性能'] }
+        { v: 'v71', t: '悬浮球拖拽 + 全量液态玻璃', pts: ['悬浮球支持长按拖拽（桌面鼠标 / 手机手指），松手果冻吸附最近边缘，位置持久化记忆', '智能自适应展开方向：停靠左/右边缘竖向展开，停靠上/下边缘横向展开，自动避让缩放控件', '外部收起防误触：展开动画未完成不收起 + 200ms 延时 + 面板附近点击不收起，面板内新增收起按钮', '移动端窄条可点击展开详情：图标旁同步显示精简文字标签，不再纯图标盲操作', '全 UI 液态玻璃统一层：磨砂基底 + 内高光 + 细描边 + 外阴影全由 CSS 变量管控', '设置面板滑杆重构：磨砂模糊度 / 面板透明度 / 边框高光强度 / 阴影柔和度，滑杆 rAF 节流', '可读性边界保护：低模糊度自动提升背景不透明度，避免文字不可读', '新增液态折射增强开关：SVG 位移滤镜仅作用于侧边栏与设置面板，桌面默认开、移动端自动关', '清除测量全链路清零 + 切换底图/关闭面板/关闭设置自动隐藏测量卡', '移动端动效降幅：弹性上浮 4px、按压 0.97，渐进增强保性能'] },
+        { v: 'v72', t: '玻璃单轴调节 + 交互误触修复', pts: ['玻璃质感改为 Apple 式单轴主滑杆：0-100% 预设联动磨砂模糊 / 面板透明 / 边框高光 / 阴影柔和 4 维变量，轻薄半透→中等通透→厚重磨砂连续渐变，调节差异显著', '高级设置折叠区：默认收起，展开可微调 4 项细分参数，与主滑杆双向联动（拖主滑杆同步高级值，微调高级参数自动反推主滑杆强度）', '液态折射增强落地：SVG 位移滤镜 + 错位折射层叠加，开启前后视觉差异明确，仅作用于侧边栏与设置面板', '全玻璃组件统一复用同一套 CSS 变量，单滑杆调节全量同步，杜绝质感脱节', '面板点击穿透修复：设置 / 底图 / 测量等玻璃弹层点击空白不再触发地图点位选择', '取消悬浮球「点击外部自动关闭」：仅面板收起按钮 / 再次点击球体收起，彻底解决误收起', '设置面板仅通过右上角 × / 再点设置按钮关闭，不随悬浮球收起自动关闭', '竖向停靠展开升级：按钮改胶囊长条「图标+文字」直显，48px 触控高，缩放组独立物理分离', '横向停靠保持纯图标 + hover tooltip，拖拽吸附与持久化保留'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1533,7 +1534,7 @@
         var btns = Array.prototype.slice.call(fab.querySelectorAll('button'));
         var mapEl = document.getElementById('map');
         var isMobile = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
-        var open = false, openedAt = 0, collapsing = false;
+        var open = false, openedAt = 0;
         function layout(doOpen) {
             if (doOpen === open) return;
             open = doOpen;
@@ -1603,7 +1604,6 @@
         // —— 展开/收起 ——
         fab.addEventListener('click', function (e) {
             if (e.target.closest && e.target.closest('button')) return; // 按钮点击不折叠（功能优先）
-            if (collapsing) return;
             if (drag.moved) { drag.moved = false; return; } // 拖拽后的 click 不触发展开
             layout(!open);
         });
@@ -1611,21 +1611,8 @@
         var collapseBtn = document.getElementById('fab-collapse');
         if (collapseBtn) collapseBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            if (collapsing) return;
             layout(false);
         });
-        // 外部点击收起：展开动画未完成不触发 + 200ms 防误触延时 + 收缩热区（仅远离面板处才收起）
-        document.addEventListener('click', function (e) {
-            if (isMobile) return;
-            if (!open || collapsing) return;
-            if (e.target.closest && e.target.closest('.toolbar')) return;
-            if (Date.now() - openedAt < 200) return; // 防误触：刚展开 200ms 内忽略
-            var r = fab.getBoundingClientRect();
-            var cx = e.clientX, cy = e.clientY;
-            var d = Math.hypot(cx - (r.left + r.width / 2), cy - (r.top + r.height / 2));
-            if (d < 140) return; // 收缩热区：面板附近点击不收起
-            layout(false);
-        }, true);
         // 触屏果冻跳跃 + 方向倾斜（react-tilt-button 方向逻辑）
         btns.forEach(function (b) {
             if (b._fabTouch) return;
@@ -1678,40 +1665,146 @@
         });
     })();
 
-    // ---------------- 13.8 glassliquid 调节（边框高光/阴影柔和度）实时预览 + 液态折射增强 ----------------
-    (function initGlassLiquid() {
+    // ---------------- 13.8 玻璃质感调节体系（Apple 式单轴主滑杆 + 高级微调双向联动，参考 glasskit 参数体系） ----------------
+    (function initGlassSystem() {
         var docEl = document.documentElement;
-        var sets = [
-            { id: 'set-shadow', css: '--glass-shadow', norm: true, valId: 'set-shadow-val' },
-            { id: 'set-sheen', css: '--glass-sheen', norm: true, valId: 'set-sheen-val' }
-        ];
-        function label(v) { return v <= 2 ? '弱' : v <= 4 ? '偏弱' : v === 5 ? '中' : v <= 7 ? '偏强' : '强'; }
-        sets.forEach(function (s) {
-            var el = document.getElementById(s.id), valEl = document.getElementById(s.valId);
-            if (!el) return;
-            try {
-                var saved = localStorage.getItem('cd_gl_' + s.id);
-                if (saved !== null) { el.value = saved; apply(); }
-            } catch (e) { /* ignore */ }
-            // 滑杆拖动 rAF 节流（高频操作防抖）
-            var ticking = false;
-            el.addEventListener('input', function () {
-                if (ticking) return;
-                ticking = true;
-                requestAnimationFrame(function () {
-                    ticking = false;
-                    apply();
-                });
+        var glass = document.getElementById('set-glass');
+        var glassVal = document.getElementById('set-glass-val');
+        var advArea = document.getElementById('adv-area');
+        var advToggle = document.getElementById('set-adv-toggle');
+        var adv = {
+            blur: document.getElementById('set-blur'),
+            alpha: document.getElementById('set-alpha'),
+            sheen: document.getElementById('set-sheen'),
+            shadow: document.getElementById('set-shadow')
+        };
+        var advVal = {
+            blur: document.getElementById('set-blur-val'),
+            alpha: document.getElementById('set-alpha-val'),
+            sheen: document.getElementById('set-sheen-val'),
+            shadow: document.getElementById('set-shadow-val')
+        };
+        var satEl = document.getElementById('set-sat');
+        var satVal = document.getElementById('set-sat-val');
+        // 预设联动：强度 0% / 50% / 100% 三段锚点 → 轻薄半透 / Apple 中等通透 / 厚重磨砂高反光
+        var P0 = { blur: 6, alpha: 70, sheen: 0.3, shadow: 0.3 };
+        var P50 = { blur: 14, alpha: 85, sheen: 0.9, shadow: 1.0 };
+        var P100 = { blur: 30, alpha: 97, sheen: 1.5, shadow: 1.6 };
+        function clamp(v, mn, mx) { return Math.max(mn, Math.min(v, mx)); }
+        function presetAt(g) {
+            var a = g < 50 ? { from: P0, to: P50, t: g / 50 } : { from: P50, to: P100, t: (g - 50) / 50 };
+            return {
+                blur: Math.round(a.from.blur + (a.to.blur - a.from.blur) * a.t),
+                alpha: Math.round(a.from.alpha + (a.to.alpha - a.from.alpha) * a.t),
+                sheen: +(a.from.sheen + (a.to.sheen - a.from.sheen) * a.t).toFixed(2),
+                shadow: +(a.from.shadow + (a.to.shadow - a.from.shadow) * a.t).toFixed(2)
+            };
+        }
+        function labelOf(v) { var x = Math.round(v); return x <= 2 ? '弱' : x <= 4 ? '偏弱' : x === 5 ? '中' : x <= 7 ? '偏强' : '强'; }
+        function glassLabel(g) { return g <= 15 ? '轻薄' : g <= 40 ? '偏透' : g <= 70 ? '中' : g <= 88 ? '偏厚' : '厚重'; }
+        function writeVars(v) {
+            docEl.style.setProperty('--glass-blur', v.blur + 'px');
+            docEl.style.setProperty('--glass-alpha', (Math.max(v.alpha, v.blur < 6 ? 60 : v.alpha) / 100).toFixed(2)); // 可读性边界保护
+            docEl.style.setProperty('--glass-sheen', v.sheen.toFixed(2));
+            docEl.style.setProperty('--glass-shadow', v.shadow.toFixed(2));
+        }
+        function saveState(s) { try { localStorage.setItem('cd_glass72', JSON.stringify(s)); } catch (e) { } }
+        // 主滑杆 → 预设联动（同步高级滑杆 UI + 变量）
+        function applyMain() {
+            var g = clamp(parseFloat(glass.value), 0, 100);
+            var v = presetAt(g);
+            writeVars(v);
+            adv.blur.value = v.blur; adv.alpha.value = v.alpha;
+            adv.sheen.value = Math.round(clamp(v.sheen / 1.5 * 10, 0, 10));
+            adv.shadow.value = Math.round(clamp(v.shadow / 1.6 * 10, 0, 10));
+            advVal.blur.textContent = v.blur + 'px';
+            advVal.alpha.textContent = v.alpha + '%';
+            advVal.sheen.textContent = labelOf(v.sheen / 1.5 * 10);
+            advVal.shadow.textContent = labelOf(v.shadow / 1.6 * 10);
+            glassVal.textContent = glassLabel(g);
+            applySat();
+            saveState({ glass: g, blur: v.blur, alpha: v.alpha, sheen: v.sheen, shadow: v.shadow });
+        }
+        // 高级微调 → 写变量 + 反推主滑杆相对强度（双向联动）
+        function applyAdv() {
+            var v = {
+                blur: clamp(parseFloat(adv.blur.value), 0, 40),
+                alpha: clamp(parseFloat(adv.alpha.value), 25, 100),
+                sheen: +(clamp(parseFloat(adv.sheen.value), 0, 10) / 10).toFixed(2),
+                shadow: +(clamp(parseFloat(adv.shadow.value), 0, 10) / 10).toFixed(2)
+            };
+            writeVars(v);
+            var b = clamp((v.blur - 6) / 24, 0, 1), a = clamp((v.alpha - 70) / 27, 0, 1);
+            var sn = clamp((v.sheen - 0.3) / 1.2, 0, 1), sh = clamp((v.shadow - 0.3) / 1.3, 0, 1);
+            var g = Math.round((b + a + sn + sh) / 4 * 100);
+            glass.value = g;
+            glassVal.textContent = glassLabel(g);
+            advVal.blur.textContent = v.blur + 'px';
+            advVal.alpha.textContent = v.alpha + '%';
+            advVal.sheen.textContent = labelOf(parseFloat(adv.sheen.value));
+            advVal.shadow.textContent = labelOf(parseFloat(adv.shadow.value));
+            applySat();
+            saveState({ glass: g, blur: v.blur, alpha: v.alpha, sheen: v.sheen, shadow: v.shadow });
+        }
+        function applySat() {
+            var sat = satEl ? parseFloat(satEl.value) : 150;
+            docEl.style.setProperty('--glass-sat', (sat / 100).toFixed(2));
+            if (satVal) satVal.textContent = sat + '%';
+            try { var g = JSON.parse(localStorage.getItem('cd_glass') || 'null'); if (!g) g = {}; g.sat = sat; localStorage.setItem('cd_glass', JSON.stringify(g)); } catch (e) { }
+        }
+        // 高级设置折叠区
+        if (advArea && advToggle) {
+            advToggle.addEventListener('click', function () {
+                var open = advArea.classList.toggle('open');
+                advArea.hidden = false;
+                advArea.classList.add('open');
+                if (!open) {
+                    setTimeout(function () { advArea.hidden = true; }, 280);
+                }
+                advToggle.textContent = open ? '收起' : '展开';
+                try { localStorage.setItem('cd_adv_open', open ? '1' : '0'); } catch (e) { }
             });
-            function apply() {
-                var v = parseFloat(el.value);
-                docEl.style.setProperty(s.css, String((v / 10).toFixed(2)));
-                if (valEl) valEl.textContent = label(v);
-                try { localStorage.setItem('cd_gl_' + s.id, String(v)); } catch (e) { /* ignore */ }
-            }
-            apply();
-        });
-        // 液态折射增强：桌面默认开、移动端自动关；SVG 位移滤镜仅作用于侧边栏与设置面板
+            try {
+                if (localStorage.getItem('cd_adv_open') === '1') {
+                    advArea.hidden = false;
+                    advArea.classList.add('open');
+                    advToggle.textContent = '收起';
+                }
+            } catch (e) { }
+        }
+        // 加载：新键优先，旧键（cd_glass / cd_gl_set-*）迁移
+        function load() {
+            try {
+                var s = JSON.parse(localStorage.getItem('cd_glass72') || 'null');
+                if (s && s.glass !== undefined && s.blur !== undefined) {
+                    glass.value = s.glass;
+                    adv.blur.value = s.blur; adv.alpha.value = s.alpha;
+                    adv.sheen.value = Math.round(s.sheen * 10); adv.shadow.value = Math.round(s.shadow * 10);
+                    applyMain(); return;
+                }
+            } catch (e) { }
+            try {
+                var g0 = JSON.parse(localStorage.getItem('cd_glass') || 'null');
+                var gs = localStorage.getItem('cd_gl_set-sheen');
+                var gsh = localStorage.getItem('cd_gl_set-shadow');
+                if (g0 && g0.blur !== undefined) {
+                    adv.blur.value = g0.blur; adv.alpha.value = g0.alpha;
+                    if (satEl && g0.sat !== undefined) satEl.value = g0.sat;
+                    if (gs !== null) adv.sheen.value = clamp(parseFloat(gs), 0, 10);
+                    if (gsh !== null) adv.shadow.value = clamp(parseFloat(gsh), 0, 10);
+                    applyAdv(); return;
+                }
+            } catch (e) { }
+            applyMain();
+        }
+        load();
+        glass.addEventListener('input', function () { applyMain(); });
+        adv.blur.addEventListener('input', function () { applyAdv(); });
+        adv.alpha.addEventListener('input', function () { applyAdv(); });
+        adv.sheen.addEventListener('input', function () { applyAdv(); });
+        adv.shadow.addEventListener('input', function () { applyAdv(); });
+        if (satEl) satEl.addEventListener('input', function () { applySat(); });
+        // 液态折射增强：桌面默认开、移动端自动关；SVG 位移滤镜 + 错位层仅作用于侧边栏与设置面板
         var refractBtn = document.getElementById('set-refract');
         if (refractBtn) {
             var refractDefault = !(window.matchMedia && window.matchMedia('(max-width:768px)').matches);
@@ -1719,7 +1812,7 @@
             try {
                 var rv = localStorage.getItem('cd_refract');
                 if (rv === '0' || rv === '1') refractOn = rv === '1';
-            } catch (e) { /* ignore */ }
+            } catch (e) { }
             function paintRefract() {
                 document.body.classList.toggle('refraction', refractOn);
                 refractBtn.textContent = refractOn ? '开启' : '关闭';
@@ -1728,10 +1821,27 @@
             refractBtn.addEventListener('click', function () {
                 refractOn = !refractOn;
                 paintRefract();
-                try { localStorage.setItem('cd_refract', refractOn ? '1' : '0'); } catch (e) { /* ignore */ }
+                try { localStorage.setItem('cd_refract', refractOn ? '1' : '0'); } catch (e) { }
             });
         }
     })();
+
+    // ---------------- 13.9 面板点击穿透拦截（玻璃弹层点击不触发地图 / 不误关悬浮球） ----------------
+    (function initPanelGuard() {
+        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'measure-result', 'cl-card', 'map-toast'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            ['mousedown', 'pointerdown', 'click'].forEach(function (t) {
+                el.addEventListener(t, function (e) { e.stopPropagation(); }, false);
+            });
+        });
+        var fab = document.getElementById('fab');
+        if (fab) fab.addEventListener('mousedown', function (e) {
+            if (e.target.closest && e.target.closest('button')) return;
+            e.stopPropagation();
+        }, false);
+    })();
+
 
     // ---------------- 14. 启动 ----------------
     loadTheme();

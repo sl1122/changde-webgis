@@ -546,6 +546,34 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     cursor: default;
 }
 .toolbar.fab-open::before { transform: rotate(180deg) scale(.6); opacity: .35; }
+/* 竖向停靠（左/右边缘）展开：按钮改胶囊长条，「图标 + 功能文字」横向排列，默认显示文字（提升辨识度、消除空白冗余） */
+.toolbar[data-anchor="left"].fab-open,
+.toolbar[data-anchor="right"].fab-open {
+    width: 138px;
+    padding: 8px;
+}
+.toolbar[data-anchor="left"].fab-open button,
+.toolbar[data-anchor="right"].fab-open button {
+    width: 100%;
+    height: 48px;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 14px;
+    border-radius: 999px;
+}
+.toolbar[data-anchor="left"].fab-open button span,
+.toolbar[data-anchor="right"].fab-open button span {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+}
+.toolbar[data-anchor="left"].fab-open button svg,
+.toolbar[data-anchor="right"].fab-open button svg { width: 19px; height: 19px; }
+/* 竖向停靠已有文字说明，不再叠加 hover tooltip */
+.toolbar[data-anchor="left"].fab-open button::before,
+.toolbar[data-anchor="right"].fab-open button::before { display: none; }
 /* 停靠上/下边缘：横向展开功能列表（智能自适应方向，避让缩放控件与地图核心区） */
 .toolbar[data-anchor="top"].fab-open,
 .toolbar[data-anchor="bottom"].fab-open {
@@ -1389,14 +1417,48 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
         0 0 0 .5px rgba(255, 255, 255, .45);
 }
 .set-note { font-size: 11px; color: var(--text-2); line-height: 1.5; margin-top: 4px; padding-left: 2px; }
+/* 高级设置折叠区：默认收起（max-height 0），展开时平滑淡入 + 高度过渡 */
+.adv-toggle { min-width: 56px; }
+.adv-area {
+    border-top: 1px dashed rgba(255, 255, 255, .5);
+    margin-top: 4px;
+    padding-top: 0;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity .22s ease, transform .22s ease, max-height .3s cubic-bezier(.34, 1.56, .64, 1), padding-top .3s ease;
+}
+.adv-area.open {
+    opacity: 1;
+    transform: none;
+    max-height: 500px;
+    padding-top: 8px;
+}
+body.theme-night .adv-area { border-top-color: rgba(148, 163, 212, .25); }
 
-/* 液态折射增强（参考 liquid-glass SVG 位移滤镜；桌面默认开、移动端自动关，仅作用于侧边栏与设置面板）
-   性能说明：filter 只在覆盖 DOM 上启用，不触及地图容器/瓦片/聚合层 */
+/* 液态折射增强（参考 liquid-glass SVG 位移滤镜 + 多层背景错位叠加，形成真实背景形变折射）
+   桌面默认开、移动端自动关，仅作用于侧边栏与设置面板两大核心面板；
+   性能说明：filter 只在上层覆盖 DOM 启用，不触及地图容器/瓦片/聚合层 */
 body.refraction .sidebar,
 body.refraction .settings-panel {
-    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='16' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+    position: relative;
+    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
 }
-body.refraction .settings-panel { filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq2' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='16' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E"); }
+/* 错位折射层：伪元素复制背景并以 SVG 滤镜位移 3px，与主层叠加产生液态通透感 */
+body.refraction .sidebar::after,
+body.refraction .settings-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: rgba(255, 255, 255, calc(.08 * var(--glass-sheen)));
+    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq3' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03' numOctaves='3' seed='3' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='18' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+    transform: translate(3px, 3px);
+}
+body.refraction.theme-night .sidebar::after,
+body.theme-night.refraction .settings-panel::after { background: rgba(129, 140, 248, .05); }
 
 /* 夜间主题：悬浮球 + 展开面板深色玻璃 */
 body.theme-night .toolbar {
