@@ -634,15 +634,34 @@
     }
 
     // ---------------- 8.6 道路打点工具 ----------------
-    var markMode = false, markStreet = '', markPts = [], markLayer = null, markLine = null;
+    var markMode = false, markStreet = '', markPts = [], markLayer = null, markLine = null, markEditingId = null;
     var btnMark = document.getElementById('btn-mark');
     var markPanel = document.getElementById('mark-panel');
     function exitMark() {
         markMode = false;
+        markEditingId = null;
         if (btnMark) btnMark.classList.remove('active');
         if (markLayer) { map.removeLayer(markLayer); markLayer = null; }
         if (markLine) { map.removeLayer(markLine); markLine = null; }
         markPts = [];
+    }
+    // 载入已有道路为可编辑草稿（节点可拖动，完成后更新原记录）
+    function loadUserRoadForEdit(r) {
+        if (measure.mode) clearMeasure();
+        markEditingId = r.id;
+        markStreet = r.street || r.name;
+        markPts = (r.coordinates || []).map(function (c) { return [c[1], c[0]]; });
+        markMode = true;
+        btnMark.classList.add('active');
+        document.getElementById('mark-name').value = markStreet;
+        document.getElementById('mark-ops').hidden = false;
+        document.getElementById('mark-export').value = '';
+        document.getElementById('mark-copy').hidden = true;
+        markPanel.hidden = false;
+        paintMarkDots();
+        document.getElementById('mark-status').textContent =
+            '编辑「' + markStreet + '」：拖动节点调整位置、点击可加点、撤销可删点，完成后更新原记录';
+        toast('已载入「' + markStreet + '」进入编辑模式：拖动节点微调');
     }
     function paintMarkDots() {
         if (markLayer) map.removeLayer(markLayer);
@@ -654,7 +673,15 @@
                 html: '<div class="mark-dot">' + (i + 1) + '</div>',
                 iconSize: [20, 20], iconAnchor: [10, 10]
             });
-            markLayer.addLayer(L.marker(p, { icon: icon, interactive: false }));
+            var m = L.marker(p, { icon: icon, draggable: true, title: '第 ' + (i + 1) + ' 个点（可拖动调整）' });
+            // 移动点：拖动节点实时更新坐标并重绘连线
+            m.on('dragend', function (e) {
+                var ll = e.target.getLatLng();
+                markPts[i] = [ll.lat, ll.lng];
+                paintMarkDots();
+                toast('已移动第 ' + (i + 1) + ' 个节点');
+            });
+            markLayer.addLayer(m);
         });
         if (markPts.length >= 2) {
             markLine = L.polyline(markPts, { color: '#2563eb', weight: 3, opacity: .85, dashArray: '2 8' });
@@ -663,7 +690,7 @@
         map.addLayer(markLayer);
         document.getElementById('mark-status').textContent =
             '「' + markStreet + '」已打 ' + markPts.length + ' 个点' +
-            (markPts.length >= 2 ? '，继续沿线点击加点；点击「完成」生成坐标 JSON' : '，继续沿道路点击添加节点');
+            (markPts.length >= 2 ? '，继续沿线点击加点（节点可拖动调整）' : '，继续沿道路点击添加节点');
     }
     map.on('click', function (e) {
         if (!markMode) return;
@@ -683,7 +710,7 @@
             var name = (document.getElementById('mark-name').value || '').trim();
             if (!name) { toast('请先输入街道名称', true); return; }
             if (measure.mode) clearMeasure();
-            markStreet = name; markPts = []; markMode = true;
+            markStreet = name; markPts = []; markMode = true; markEditingId = null;
             btnMark.classList.add('active');
             document.getElementById('mark-ops').hidden = false;
             document.getElementById('mark-export').value = '';
@@ -692,10 +719,18 @@
             toast('开始为「' + name + '」打点：单击地图沿线添加节点');
         });
         document.getElementById('mark-undo').addEventListener('click', function () {
-            if (markMode && markPts.length) { markPts.pop(); paintMarkDots(); }
+            if (markMode && markPts.length) { markPts.pop(); paintMarkDots(); toast('已撤销一个节点'); }
         });
+        // 清空：始终清空当前草稿节点；已入库的标注道路不受影响（用「清空全部」删除）
         document.getElementById('mark-clear').addEventListener('click', function () {
-            if (markMode) { markPts = []; paintMarkDots(); }
+            markPts = [];
+            if (markMode) paintMarkDots();
+            if (markEditingId) {
+                markEditingId = null;
+                btnMark.classList.remove('active');
+                document.getElementById('mark-ops').hidden = true;
+            }
+            toast('已清空当前打点节点（已入库的 ' + userRoads.length + ' 条标注道路仍保留，删除请用「清空全部」）');
         });
         document.getElementById('mark-done').addEventListener('click', function () {
             if (!markMode) return;
@@ -704,15 +739,22 @@
                 return [Math.round(p[1] * 1e6) / 1e6, Math.round(p[0] * 1e6) / 1e6];
             });
             var rec = {
-                id: Date.now(),
+                id: markEditingId || Date.now(),
                 street: markStreet,
                 crs: gcjMode ? 'GCJ-02' : 'WGS-84',
                 basemap: TILE_CHAIN[tileIdx].name,
                 ts: Date.now(),
                 coordinates: coords
             };
-            // 实时入库：localStorage 持久化 + 立即重建道路图层（同名自动替代内置线）
-            userRoads.push(rec);
+            var isEdit = !!markEditingId;
+            markEditingId = null;
+            if (isEdit) {
+                var idx = -1;
+                for (var k = 0; k < userRoads.length; k++) { if (userRoads[k].id === rec.id) { idx = k; break; } }
+                if (idx >= 0) userRoads[idx] = rec; else { isEdit = false; userRoads.push(rec); }
+            } else {
+                userRoads.push(rec);
+            }
             saveUserRoads();
             markMode = false;
             btnMark.classList.remove('active');
@@ -723,8 +765,8 @@
             document.getElementById('mark-export').value = txt;
             document.getElementById('mark-copy').hidden = false;
             document.getElementById('mark-status').textContent =
-                '「' + markStreet + '」已存入我的道路点库（共 ' + userRoads.length + ' 条），紫色虚线已显示在地图上；可复制 JSON 或继续打点';
-            toast('「' + markStreet + '」已存入我的道路点库并显示');
+                (isEdit ? '已更新「' : '「') + markStreet + (isEdit ? '」标注道路（' : '」已存入我的道路点库（共 ') + userRoads.length + ' 条），紫色虚线已显示在地图上；可复制 JSON 或继续打点';
+            toast((isEdit ? '已更新「' : '已存入「') + markStreet + '」');
         });
         document.getElementById('mark-copy').addEventListener('click', function () {
             var v = document.getElementById('mark-export').value;
@@ -760,9 +802,13 @@
                     '<span class="mi-name">我的·' + esc(r.street || r.name) + '</span>' +
                     '<span class="mi-meta">' + (r.coordinates || []).length + '点·' + esc(r.crs || '') + '</span>' +
                     '<span class="mi-ops">' +
+                    '<button data-act="edit" class="mi-btn" title="编辑这条道路（载入草稿，节点可拖动）">改</button>' +
                     '<button data-act="del" class="mi-btn" title="删除这条标注道路">删</button>' +
                     '<button data-act="exp" class="mi-btn" title="导出这条道路 JSON">导出</button>' +
                     '</span>';
+                row.querySelector('[data-act=edit]').addEventListener('click', function () {
+                    loadUserRoadForEdit(userRoads[i]);
+                });
                 row.querySelector('[data-act=del]').addEventListener('click', function () {
                     userRoads.splice(i, 1);
                     saveUserRoads();
@@ -808,6 +854,42 @@
         });
         renderMarkList();
     }
+
+    // ---------------- 8.7 Ctrl+Z 全局撤销 ----------------
+    // 打点模式：撤销最后一个打点节点；测距/测面模式：撤销最后一个测量点
+    document.addEventListener('keydown', function (e) {
+        if (!(e.ctrlKey || e.metaKey) || String(e.key).toLowerCase() !== 'z') return;
+        if (markMode && markPts.length) {
+            e.preventDefault();
+            markPts.pop();
+            paintMarkDots();
+            toast('已撤销一个打点节点（Ctrl+Z）');
+            return;
+        }
+        if (measure.mode && measure.pts.length) {
+            e.preventDefault();
+            measure.pts.pop();
+            var d = measure.dots.pop();
+            if (d) map.removeLayer(d);
+            if (measure.mode === 'dist') {
+                var seg = measure.segs.pop();
+                if (seg) map.removeLayer(seg);
+                measure.total = 0;
+                for (var k = 1; k < measure.pts.length; k++) {
+                    measure.total += havMeters(measure.pts[k - 1][0], measure.pts[k - 1][1], measure.pts[k][0], measure.pts[k][1]);
+                }
+                showMeasure(measure.pts.length >= 2 ? '距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）' : '单击地图添加测量点（双击结束）');
+            } else {
+                if (measure.line) { map.removeLayer(measure.line); measure.line = null; }
+                if (measure.pts.length >= 2) {
+                    measure.line = L.polyline(measure.pts, { color: '#059669', weight: 2.5, dashArray: '6 6' });
+                    map.addLayer(measure.line);
+                }
+                showMeasure('已添加 ' + measure.pts.length + ' 个顶点（双击闭合求面积）');
+            }
+            toast('已撤销一个测量点（Ctrl+Z）');
+        }
+    });
 
     // ---------------- 9. 复位 / 全景适配 ----------------
     document.getElementById('btn-home').addEventListener('click', function () {
