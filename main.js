@@ -699,8 +699,14 @@
         return [lng + dLng, lat + dLat];
     }
 
-    // ---------- 我的位置：高德定位组件优先 + 持续收敛（纯定位追踪，无手动移动/校正） ----------
+    // ---------- 我的位置：开源定位栈（v38，OpenStreetMap 系方案） ----------
+    // 引擎：原生 navigator.geolocation 持续追踪（GPS / WiFi·基站，WGS-84→GCJ-02）
+    //       + 国外开源 IP 定位降级（ipapi.co，WGS-84）
+    //       + OSM Nominatim 逆地理地址（失败降级高德 regeo）
+    // 不再使用高德 AMap.Geolocation 组件：其内部 IP 兜底常返回运营商节点固定点，
+    // 与"每次定位都是同一个点"的反馈一致。开源栈让定位来源与精度完全透明可查。
     var geoMarker = null, geoCircle = null;
+    var geoWatchId = null, geoLastBest = null, geoLastAddrAt = 0;
 
     function makeGeoCircle(center, radius) {
         return new AMap.Circle({
@@ -726,7 +732,7 @@
         return best ? { name: best, dist: Math.round(bestD) } : null;
     }
 
-    // 蓝色定位点：纯定位追踪标记（不可拖动，也不支持点击地图手动移动）
+    // 蓝色定位点：纯定位追踪标记（不可拖动，不支持手动移动）
     function makeGeoMarker(lnglat, title) {
         return new AMap.Marker({
             position: lnglat,
@@ -737,147 +743,147 @@
         });
     }
 
-    // 强制重新自动定位：高德定位组件优先（自动处理坐标系与国产手机纠偏，内部含IP兜底），多次采样取精度最优
-    // ===== 定位底层重构（v35）：原生 watchPosition 主通道 + 高德参照校验 + 固定点/粗略权限检测 =====
-    // 参考市面主流开源 WebGIS 定位实现：自己控制坐标系转换与多帧收敛，不依赖单一组件的隐藏行为
+    // GCJ-02 → WGS-84（近似反变换，2 次迭代；供 OSM Nominatim 使用，底图仍为高德 GCJ-02）
+    function gcj02towgs84(lng, lat) {
+        if (outOfChina(lng, lat)) return [lng, lat];
+        var g = wgs84togcj02(lng, lat);
+        return [lng * 2 - g[0], lat * 2 - g[1]];
+    }
+
+    // 精度分级：<=100m 卫星/GPS，<=500m WiFi·基站，更粗 IP 网络
+    function locLevelText(acc) {
+        if (acc <= 100) return { level: 'gps', src: '卫星/GPS' };
+        if (acc <= 500) return { level: 'network', src: 'WiFi·基站' };
+        return { level: 'ip', src: 'IP 网络' };
+    }
+
+    // 逆地理地址：OSM Nominatim 开源优先，失败降级高德 regeo；3s 节流
+    function reverseAddr(lnglat, cb) {
+        if (Date.now() - geoLastAddrAt < 3000) return;
+        geoLastAddrAt = Date.now();
+        var wgs = gcj02towgs84(lnglat.lng, lnglat.lat);
+        var fallback = function () {
+            fetch('https://restapi.amap.com/v3/geocode/regeo?location=' + lnglat.lng + ',' + lnglat.lat + '&key=2585b6886cfa60e5e7dd7001b92e8ab0&radius=300')
+                .then(function (r) { return r.json(); })
+                .then(function (d) { if (d && d.regeocode) cb(d.regeocode.formatted_address); })
+                .catch(function () { cb(''); });
+        };
+        fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + wgs[1] + '&lon=' + wgs[0] + '&zoom=16&accept-language=zh-CN')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.display_name) cb('OSM · ' + String(d.display_name).split(',').slice(0, 3).join(','));
+                else fallback();
+            })
+            .catch(fallback);
+    }
+
+    // 渲染定位点 + 精度圆 + 逆地理地址（isFresh=true 时弹 toast）
+    function renderLoc(lnglat, acc, srcText, level, isFresh) {
+        if (geoMarker) geoMarker.setMap(null);
+        if (geoCircle) geoCircle.setMap(null);
+        geoMarker = makeGeoMarker(lnglat, '我的位置（' + srcText + '，精度约±' + Math.round(acc) + ' 米）');
+        geoMarker.setMap(map);
+        geoCircle = makeGeoCircle(lnglat, Math.max(acc, 20));
+        geoCircle.setMap(map);
+        map.setZoomAndCenter(16, lnglat);
+        var lm = nearestLandmark(lnglat);
+        var lmText = lm ? '；附近地标：' + lm.name + '（约' + lm.dist + ' 米）' : '';
+        var poor = (level === 'ip') ? '；IP 级定位（运营商节点，误差较大），建议到室外并授予"精确位置"权限' : '';
+        if (isFresh) showToast('已定位（' + srcText + '，精度约±' + Math.round(acc) + ' 米）' + lmText + poor);
+        reverseAddr(lnglat, function (addr) {
+            if (addr && geoMarker) geoMarker.setTitle('我的位置（' + srcText + '，精度约±' + Math.round(acc) + ' 米）· ' + addr);
+        });
+    }
+
+    // 点击"我的位置"：开始/重启开源定位追踪（持续 watch，GPS 到位自动收敛）
     function doAutoLocate(btn) {
-        btn.disabled = true;
-        // 国产/系统浏览器定位能力受限检测（小米浏览器/UC/夸克等）：提前提醒换 Chrome
+        // 国产/系统浏览器定位能力受限检测：提前提醒换 Chrome
         try {
             var ua = navigator.userAgent || '';
             if (/MiuiBrowser|UCBrowser|Quark|baiduboxapp|Coolpad|DingTalk|MicroMessenger/i.test(ua)) {
-                showToast('检测到系统/国产浏览器，定位能力受限。建议用手机 Chrome 打开本页后重试（当前仍继续定位，但精度可能不理想）', true);
+                showToast('检测到系统/国产浏览器，定位能力受限。建议用手机 Chrome 打开本页后重试', true);
             }
         } catch (e) { /* 忽略 */ }
-        showToast('正在定位当前位置…');
-        var settled = false, t0 = Date.now();
-        var nativeFrames = [];          // 原生通道样本（已转 GCJ-02），用于收敛与固定点检测
-        var amapRef = null;             // 高德参照（GCJ-02），仅用于坐标交叉校验与兜底
-        var amapDone = false;
-        var nativeOk = !!navigator.geolocation;
-        var wid = null;
+        showToast('正在定位（开源引擎：GPS / WiFi·基站）…');
+        var gotNative = false, settled = false, t0 = Date.now();
+        var frames = [];            // GCJ-02 样本 {lng,lat,acc,t}
+        var ipDone = false;
 
-        // 两坐标间近似距离（米），用于定位交叉校验
-        function distanceMeters(a, b) {
-            var dLng = (a.lng - b.lng) * 85000;
-            var dLat = (a.lat - b.lat) * 110000;
-            return Math.sqrt(dLng * dLng + dLat * dLat);
-        }
-
-        function finishWith(result) {
-            if (settled) return; settled = true;
-            btn.disabled = false;
-            if (geoMarker) geoMarker.setMap(null);
-            if (geoCircle) geoCircle.setMap(null);
-            var lnglat = result.pos;
-            geoMarker = makeGeoMarker(lnglat, '我的位置（' + result.srcText + '，精度约±' + Math.round(result.acc) + ' 米）');
-            geoMarker.setMap(map);
-            var radius = Math.max(result.acc, 20);
-            geoCircle = makeGeoCircle(lnglat, radius);
-            geoCircle.setMap(map);
-            map.setZoomAndCenter(16, lnglat);
-            var accText = result.acc > 0 ? '，精度约±' + Math.round(result.acc) + ' 米' : '';
-            var lm = nearestLandmark(lnglat);
-            var lmText = lm ? '；附近地标：' + lm.name + '（约' + lm.dist + ' 米）' : '';
-            var poor = '';
-            if (result.level === 'ip') {
-                poor = '；当前为 IP 级固定定位（运营商节点，每次都会是同一个点）。建议到室外并授予浏览器"精确位置"权限后重试';
-            } else if (result.level === 'network') {
-                poor = '；精度偏粗（室内无 GPS 属正常），建议到室外并确认位置权限为"精确"';
-            }
-            showToast('已定位（' + result.srcText + '定位' + accText + '）' + lmText + poor);
-        }
-
-        function finishFail(msg) {
-            if (settled) return; settled = true;
-            btn.disabled = false;
-            showToast(msg, true);
-        }
-
-        function decide() {
-            // 汇总所有通道结果，取精度最优
+        function renderBest(isFresh) {
             var best = null;
-            for (var i = 0; i < nativeFrames.length; i++) {
-                var f = nativeFrames[i];
-                if (!best || f.acc < best.acc) {
-                    best = { pos: new AMap.LngLat(f.lng, f.lat), acc: f.acc };
-                }
+            for (var i = 0; i < frames.length; i++) {
+                var f = frames[i];
+                if (!best || f.acc < best.acc) best = f;
             }
-            if (!best && amapRef) {
-                best = { pos: amapRef.pos, acc: amapRef.acc };
-            }
-            if (!best) {
-                finishFail('定位失败：请允许浏览器"精确位置"权限（Android 设置→应用→浏览器→权限→位置→精确），并确认系统定位服务已开启后重试');
-                return;
-            }
-            // 来源分级 + 固定点检测（连续帧完全同坐标 = IP/粗略定位特征）
-            var level, srcText;
-            if (best.acc <= 100) { level = 'gps'; srcText = '卫星/GPS'; }
-            else if (best.acc <= 500) { level = 'network'; srcText = '网络(WiFi/基站)'; }
-            else { level = 'ip'; srcText = 'IP 网络'; }
-            if (nativeFrames.length >= 3) {
-                var sameAll = true;
-                for (var k = 1; k < nativeFrames.length; k++) {
-                    if (nativeFrames[k].lng !== nativeFrames[0].lng || nativeFrames[k].lat !== nativeFrames[0].lat) { sameAll = false; break; }
-                }
-                if (sameAll && best.acc > 200) { level = 'ip'; srcText = 'IP 固定点'; }
-            }
-            finishWith({ pos: best.pos, acc: best.acc, level: level, srcText: srcText });
+            if (!best) return;
+            var s = locLevelText(best.acc);
+            // 固定点检测：连续3帧完全同坐标且精度粗 → IP 固定点特征
+            var n = frames.length;
+            var fixed = n >= 3 &&
+                frames[n-1].lng === frames[n-2].lng && frames[n-2].lng === frames[n-3].lng &&
+                frames[n-1].lat === frames[n-2].lat && frames[n-2].lat === frames[n-3].lat &&
+                best.acc > 200;
+            if (fixed) { s.level = 'ip'; s.src = 'IP 固定点'; }
+            renderLoc(new AMap.LngLat(best.lng, best.lat), best.acc, s.src, s.level, isFresh);
         }
 
-        // ① 原生主通道：watchPosition 持续监听（多帧收敛 + 固定点识别）
-        if (nativeOk) {
-            wid = navigator.geolocation.watchPosition(
+        function startNative() {
+            if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+            if (!navigator.geolocation) { ipLocate(); return; }
+            geoWatchId = navigator.geolocation.watchPosition(
                 function (pos) {
+                    gotNative = true;
                     var acc = pos.coords.accuracy || 9999;
                     var g = wgs84togcj02(pos.coords.longitude, pos.coords.latitude);
-                    // 与高德参照交叉校验：相差>1500m 且高德结果可信 → 疑似坐标双转样本，丢弃
-                    if (amapRef && amapRef.acc < 9999) {
-                        var d = distanceMeters(amapRef.pos, new AMap.LngLat(g[0], g[1]));
-                        if (d > 1500) return;
+                    frames.push({ lng: g[0], lat: g[1], acc: acc, t: Date.now() });
+                    if (frames.length > 40) frames.splice(0, frames.length - 40);
+                    // 持续追踪：位置/精度更新即重绘，好结果不被差结果覆盖
+                    var best = null;
+                    for (var i = 0; i < frames.length; i++) if (!best || frames[i].acc < best.acc) best = frames[i];
+                    if (!best) return;
+                    if (!geoLastBest || best.acc <= geoLastBest.acc * 3) {
+                        geoLastBest = { acc: best.acc };
+                        renderBest(false);
                     }
-                    nativeFrames.push({ lng: g[0], lat: g[1], acc: acc, t: Date.now() });
-                    // 收敛判定：精度<=40m、或连续3帧完全同坐标（固定点/IP特征）、或12s超时
-                    var n = nativeFrames.length;
-                    var fixed = n >= 3 &&
-                        nativeFrames[n-1].lng === nativeFrames[n-2].lng && nativeFrames[n-1].lat === nativeFrames[n-2].lat &&
-                        nativeFrames[n-2].lng === nativeFrames[n-3].lng && nativeFrames[n-2].lat === nativeFrames[n-3].lat;
-                    if (acc <= 40 || fixed || Date.now() - t0 > 12000) {
-                        if (wid) navigator.geolocation.clearWatch(wid);
-                        decide();
-                    }
+                    if (Date.now() - t0 > 12000 && !settled) { settled = true; btn.disabled = false; }
                 },
                 function () {
-                    if (wid) navigator.geolocation.clearWatch(wid);
-                    if (amapDone) decide();   // 原生失败：等高德结果后汇总
+                    if (!gotNative && !ipDone) ipLocate();
                 },
-                { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
+            // native 8s 无结果 → 国外开源 IP 定位降级
+            setTimeout(function () {
+                if (!gotNative && !ipDone && !settled) ipLocate();
+            }, 8000);
         }
-        // 原生通道超时兜底（watch 无回调也无报错）
-        setTimeout(function () {
-            if (wid) navigator.geolocation.clearWatch(wid);
-            if (!settled) decide();
-        }, 15000);
 
-        // ② 高德参照通道：仅坐标校验与兜底（不再主导定位结果）
-        if (window.AMap && AMap.Geolocation) {
-            var geo = new AMap.Geolocation({ enableHighAccuracy: true, timeout: 8000, maximumAge: 0, zoomToAccuracy: false });
-            geo.getCurrentPosition(function (status, result) {
-                amapDone = true;
-                if (status === 'complete' && result.position) {
-                    var a = (result.accuracy && result.accuracy > 0) ? result.accuracy : 9999;
-                    if (a > 8000) a = 9999;
-                    var lt = result.locationType || 'unknown';
-                    var srcT = lt === 'gps' ? '卫星/GPS' : (lt === 'network' ? '网络' : 'IP 网络');
-                    if (!amapRef || a < amapRef.acc) amapRef = { pos: result.position, acc: a, level: lt, srcText: srcT };
-                }
-                // 原生不可用或无样本时用高德结果兜底
-                if (!nativeOk || nativeFrames.length === 0) decide();
-            });
-        } else if (!nativeOk) {
-            finishFail('当前浏览器不支持定位，请更换 Chrome 等现代浏览器后重试');
+        function ipLocate() {
+            if (ipDone || settled) return;
+            ipDone = true;
+            // 国外开源 IP 定位：ipapi.co（https + CORS，返回 WGS-84）
+            fetch('https://ipapi.co/json/')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && typeof d.latitude === 'number' && typeof d.longitude === 'number') {
+                        var g = wgs84togcj02(d.longitude, d.latitude);
+                        frames.push({ lng: g[0], lat: g[1], acc: 3000, t: Date.now() });
+                        if (!geoLastBest || geoLastBest.acc > 3000) {
+                            geoLastBest = { acc: 3000 };
+                            renderBest(true);
+                        }
+                        if (!settled) { settled = true; btn.disabled = false; }
+                    } else { throw new Error('bad payload'); }
+                })
+                .catch(function () {
+                    if (!settled) {
+                        settled = true; btn.disabled = false;
+                        showToast('定位失败：浏览器未授予精确位置权限，且开源 IP 定位不可达。请在浏览器地址栏旁点击"位置"图标授权后重试', true);
+                    }
+                });
         }
+
+        startNative();
     }
 
 
