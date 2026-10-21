@@ -213,6 +213,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    transition: width .35s cubic-bezier(.4, 0, .2, 1), min-width .35s cubic-bezier(.4, 0, .2, 1), padding .35s cubic-bezier(.4, 0, .2, 1), opacity .22s ease;
 }
 .panel {
     background: #fdfbfc;
@@ -761,8 +762,15 @@ body {
 .menu-btn:hover { background: rgba(255, 255, 255, .28); transform: rotate(6deg) scale(1.06); }
 .menu-btn:active { transform: scale(.94); transition-duration: .12s; }
 
-/* 桌面端折叠：点击菜单按钮隐藏侧边栏，地图占满 */
-.sidebar.hidden { display: none; }
+/* 桌面端折叠：平滑收起侧边栏，地图占满 */
+.sidebar.hidden {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border-right: none;
+    opacity: 0;
+}
 
 /* 侧边栏遮罩（移动端抽屉展开时） */
 .sidebar-backdrop {
@@ -851,9 +859,17 @@ body {
     }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .zoom-ctrl button { width: 38px; height: 38px; }
-    /* 比例尺居中显示在底部中间，打开图层抽屉时不被遮挡 */
+    /* 比例尺绝对定位固定在底部中间（不依赖 flex/max-content 兼容性） */
     #map .leaflet-bottom.leaflet-left { left: 0; right: 0; pointer-events: none; }
-    #map .leaflet-control-scale { float: none; display: block; width: max-content; margin: 0 auto; pointer-events: auto; }
+    #map .leaflet-control-scale {
+        position: absolute;
+        left: 50%;
+        bottom: 3px;
+        transform: translateX(-50%);
+        float: none;
+        margin: 0;
+        pointer-events: auto;
+    }
     .legend-panel { left: 10px; bottom: 26px; padding: 9px 11px; min-width: 132px; }
     .legend-note { font-size: 10px; }
     /* 底部提示文字：允许换行，不再省略截断 */

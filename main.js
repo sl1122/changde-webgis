@@ -52,7 +52,7 @@
         center: gcjMode ? [29.045, 111.69] : gcj2wgs([29.045, 111.69]),
         zoom: 13,
         zoomControl: false,
-        minZoom: 9,
+        minZoom: 3,
         maxZoom: 18,
         attributionControl: true
     });
@@ -185,8 +185,20 @@
     activateTile(0);
     L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 140 }).addTo(map);
     // 自定义放大缩小按钮
-    document.getElementById('btn-zoom-in').addEventListener('click', function () { map.zoomIn(); });
-    document.getElementById('btn-zoom-out').addEventListener('click', function () { map.zoomOut(); });
+    // 缩放键：防抖 320ms，避免快速连点触发多级缩放叠加导致卡顿
+    function bindZoom(btnId, fn) {
+        var btn = document.getElementById(btnId);
+        if (!btn) return;
+        var locked = false;
+        btn.addEventListener('click', function () {
+            if (locked) return;
+            locked = true;
+            setTimeout(function () { locked = false; }, 320);
+            fn();
+        });
+    }
+    bindZoom('btn-zoom-in', function () { map.zoomIn(); });
+    bindZoom('btn-zoom-out', function () { map.zoomOut(); });
 
     var INIT_CENTER = [29.045, 111.69], INIT_ZOOM = 13; // GCJ-02 中心（高德底图直用）
 
@@ -1208,7 +1220,6 @@
     var menuBtn = document.getElementById('btn-menu');
     // 全端强制显示菜单按钮（桌面折叠侧边栏 / 手机打开抽屉）
     if (menuBtn) menuBtn.style.display = 'flex';
-    var menuHandledByPointer = false;
     function toggleDrawer() {
         var isPhone = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
         if (isPhone) {
@@ -1221,14 +1232,26 @@
         }
     }
     if (menuBtn) {
-        // pointerdown 兜底：兼容部分 iframe / WebView 环境下 click 合成事件丢失
-        menuBtn.addEventListener('pointerdown', function () { menuHandledByPointer = true; toggleDrawer(); });
-        menuBtn.addEventListener('click', function () {
-            if (menuHandledByPointer) { menuHandledByPointer = false; return; }
+        // click 监听作为次级兜底；capture 兜底正常时会 stopPropagation，这里不会重复触发
+        menuBtn.addEventListener('click', function (e) {
+            if (e.menuHandled) return;
+            e.menuHandled = true;
             toggleDrawer();
         });
     }
     if (backdropEl) backdropEl.addEventListener('click', closeDrawer);
+    // document 级捕获兜底：某些 iframe / WebView 环境点击事件在冒泡阶段被吞，
+    // 捕获阶段（先于 target 触发）直接判定点击目标是否落在菜单按钮内，100% 可靠
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        if (t.closest('#btn-menu')) {
+            e.stopPropagation();
+            if (e.menuHandled) return;
+            e.menuHandled = true;
+            toggleDrawer();
+        }
+    }, true);
     var layerListEl = document.getElementById('layer-list');
     if (layerListEl) layerListEl.addEventListener('click', closeDrawer);
     if (searchResultEl) searchResultEl.addEventListener('click', closeDrawer);
@@ -1395,7 +1418,8 @@
         { v: 'v62', t: '地图回归 + 日志完善', pts: ['修复多余花括号导致的布局崩溃，地图 / 工具栏恢复显示', '更新日志收录 v60 / v61 版本'] },
         { v: 'v63', t: '手机端体验优化', pts: ['标题栏名字与版本号不再重叠', '缩放键移到右下角贴底、比例尺底部居中', '菜单按钮可见性与点击稳定性加固'] },
         { v: 'v64', t: '菜单按钮彻底修复', pts: ['修复 v63 推送时 CSS/JS 版本号漏升导致旧缓存', '菜单按钮四层加固：display!important + z-index + JS 强制显示 + pointerdown 兜底'] },
-        { v: 'v65', t: '全端菜单按钮', pts: ['所有屏幕显示汉堡菜单按钮', '桌面端点击折叠 / 展开侧边栏，地图自动占满'] }
+        { v: 'v65', t: '全端菜单按钮', pts: ['所有屏幕显示汉堡菜单按钮', '桌面端点击折叠 / 展开侧边栏，地图自动占满'] },
+        { v: 'v66', t: '操作手感全面优化', pts: ['缩小限制放宽到全球（minZoom 9→3）', '桌面折叠改为平滑宽度动画，不再生硬', '缩放键防抖 320ms，手机端不再卡顿连跳', '菜单按钮 document 捕获级兜底，任何环境点击必触发', '手机端比例尺改绝对定位固定在底部中间，不再消失'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
