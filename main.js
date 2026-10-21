@@ -209,6 +209,26 @@
     var linesLayer = null;
     var clusterEnabled = true;
 
+    // 用户打点道路库（localStorage 持久化；与内置 14 条道路合并显示，同名自动替代内置线）
+    var userRoads = [];
+    function loadUserRoads() {
+        try { userRoads = JSON.parse(localStorage.getItem('cd_user_roads') || '[]'); } catch (e) { userRoads = []; }
+        if (!Array.isArray(userRoads)) userRoads = [];
+    }
+    function saveUserRoads() {
+        try { localStorage.setItem('cd_user_roads', JSON.stringify(userRoads)); } catch (e) { }
+    }
+    loadUserRoads();
+    function userRoadPopupHtml(r) {
+        var n = (r.coordinates || []).length;
+        var dt = r.ts ? new Date(r.ts).toLocaleString() : '';
+        return '<div class="pw-box"><div class="pw-t" style="border-left-color:#6d28d9">我的标注 · ' + esc(r.street || r.name) + '</div>' +
+            '<div class="pw-row"><span class="pw-k">点数</span><span class="pw-v">' + n + '</span></div>' +
+            '<div class="pw-row"><span class="pw-k">坐标系</span><span class="pw-v">' + esc(r.crs || 'GCJ-02') + '</span></div>' +
+            '<div class="pw-row"><span class="pw-k">底图</span><span class="pw-v">' + esc(r.basemap || '-') + '</span></div>' +
+            '<div class="pw-row"><span class="pw-k">时间</span><span class="pw-v">' + esc(dt) + '</span></div></div>';
+    }
+
     function pointPopupHtml(key, p) {
         var c = LAYER_CONFIG[key];
         var rows = [
@@ -288,7 +308,11 @@
 
     function buildLinesLayer() {
         var g = L.layerGroup();
+        // 同名替代：用户打点道路（如"武陵大道"）优先于内置同名线
+        var userNames = {};
+        userRoads.forEach(function (r) { userNames[r.street || r.name] = true; });
         layerState.road.data.forEach(function (f) {
+            if (userNames[f.properties.name]) return;
             var coords = f.geometry.coordinates.map(function (c) { return toMapCoord(c); });
             if (coords.length < 2) return;
             // 双层线：极淡描边 + 琥珀主线（描边仅用于分离底色，不喧宾夺主）
@@ -312,6 +336,26 @@
                 }).setContent(f.properties.name).setLatLng(mid);
                 g.addLayer(tag);
             }
+        });
+        // 用户打点道路（紫色虚线，实时入库后立即参与显示）
+        userRoads.forEach(function (r) {
+            var coords = (r.coordinates || []).map(function (c) { return toMapCoord(c); });
+            if (coords.length < 2) return;
+            g.addLayer(L.polyline(coords, {
+                color: '#ffffff', weight: 7, opacity: 0.35,
+                lineJoin: 'round', lineCap: 'round'
+            }));
+            var line = L.polyline(coords, {
+                color: '#6d28d9', weight: 4, opacity: 0.95, dashArray: '9 6',
+                lineJoin: 'round', lineCap: 'round'
+            }).bindPopup(userRoadPopupHtml(r), { autoPan: true, maxWidth: 300 });
+            line.on('mouseover', function () { line.setStyle({ weight: 6.5, opacity: 1 }); });
+            line.on('mouseout', function () { line.setStyle({ weight: 4, opacity: 0.95, dashArray: '9 6' }); });
+            g.addLayer(line);
+            var mid = coords[Math.floor(coords.length / 2)];
+            g.addLayer(L.tooltip({
+                permanent: true, direction: 'center', className: 'road-tag user-road-tag', opacity: 1
+            }).setContent('我的·' + (r.street || r.name)).setLatLng(mid));
         });
         return g;
     }
@@ -357,6 +401,10 @@
                 var any = f.geometry.coordinates.some(function (c) { return b.contains(toMapCoord(c)); });
                 if (any) n++;
             });
+            // 用户打点道路计入视野计数
+            n += userRoads.filter(function (r) {
+                return (r.coordinates || []).some(function (c) { return b.contains(toMapCoord(c)); });
+            }).length;
             return n;
         }
         return layerState[key].data.filter(function (f) {
@@ -655,20 +703,28 @@
             var coords = markPts.map(function (p) {
                 return [Math.round(p[1] * 1e6) / 1e6, Math.round(p[0] * 1e6) / 1e6];
             });
-            var out = {
+            var rec = {
+                id: Date.now(),
                 street: markStreet,
                 crs: gcjMode ? 'GCJ-02' : 'WGS-84',
                 basemap: TILE_CHAIN[tileIdx].name,
-                points: coords.length,
+                ts: Date.now(),
                 coordinates: coords
             };
-            var txt = JSON.stringify(out, null, 2);
+            // 实时入库：localStorage 持久化 + 立即重建道路图层（同名自动替代内置线）
+            userRoads.push(rec);
+            saveUserRoads();
+            markMode = false;
+            btnMark.classList.remove('active');
+            if (layerState.road.visible) refreshLayer('road');
+            updateCounts();
+            renderMarkList();
+            var txt = JSON.stringify(rec, null, 2);
             document.getElementById('mark-export').value = txt;
             document.getElementById('mark-copy').hidden = false;
             document.getElementById('mark-status').textContent =
-                '「' + markStreet + '」完成：' + coords.length + ' 个坐标（' + out.crs + '），点击「复制坐标 JSON」发送给开发者即可绘制';
-            markMode = false;
-            btnMark.classList.remove('active');
+                '「' + markStreet + '」已存入我的道路点库（共 ' + userRoads.length + ' 条），紫色虚线已显示在地图上；可复制 JSON 或继续打点';
+            toast('「' + markStreet + '」已存入我的道路点库并显示');
         });
         document.getElementById('mark-copy').addEventListener('click', function () {
             var v = document.getElementById('mark-export').value;
@@ -685,6 +741,72 @@
                 toast('已选中，请手动复制');
             }
         });
+
+        // ---- 我的道路点库：管理列表 ----
+        function renderMarkList() {
+            var sec = document.getElementById('mark-sec');
+            var list = document.getElementById('mark-list');
+            if (!sec || !list) return;
+            document.getElementById('mark-sec-n').textContent = userRoads.length;
+            list.innerHTML = '';
+            if (!userRoads.length) {
+                list.innerHTML = '<div class="mark-empty">暂无标注道路：输入名称 → 开始打点 → 完成即自动入库</div>';
+                return;
+            }
+            userRoads.forEach(function (r, i) {
+                var row = document.createElement('div');
+                row.className = 'mark-item';
+                row.innerHTML =
+                    '<span class="mi-name">我的·' + esc(r.street || r.name) + '</span>' +
+                    '<span class="mi-meta">' + (r.coordinates || []).length + '点·' + esc(r.crs || '') + '</span>' +
+                    '<span class="mi-ops">' +
+                    '<button data-act="del" class="mi-btn" title="删除这条标注道路">删</button>' +
+                    '<button data-act="exp" class="mi-btn" title="导出这条道路 JSON">导出</button>' +
+                    '</span>';
+                row.querySelector('[data-act=del]').addEventListener('click', function () {
+                    userRoads.splice(i, 1);
+                    saveUserRoads();
+                    if (layerState.road.visible) refreshLayer('road');
+                    updateCounts();
+                    renderMarkList();
+                    toast('已删除「' + (r.street || r.name) + '」标注道路');
+                });
+                row.querySelector('[data-act=exp]').addEventListener('click', function () {
+                    document.getElementById('mark-export').value = JSON.stringify(r, null, 2);
+                    document.getElementById('mark-copy').hidden = false;
+                    toast('「' + (r.street || r.name) + '」JSON 已生成，可复制');
+                });
+                list.appendChild(row);
+            });
+        }
+        document.getElementById('mark-export-all').addEventListener('click', function () {
+            if (!userRoads.length) { toast('暂无标注道路可导出', true); return; }
+            var payload = {
+                generated: new Date().toISOString(),
+                crs_note: '高德底图下为GCJ-02（与 road.geojson 一致）；导出后可直接合并入库',
+                roads: userRoads
+            };
+            var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = '我的道路点库.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+            toast('已下载「我的道路点库.json」（' + userRoads.length + ' 条），发送给开发者即可合入数据');
+        });
+        document.getElementById('mark-clear-all').addEventListener('click', function () {
+            if (!userRoads.length) return;
+            if (!window.confirm('确定清空全部 ' + userRoads.length + ' 条标注道路？此操作不可恢复')) return;
+            userRoads = [];
+            saveUserRoads();
+            if (layerState.road.visible) refreshLayer('road');
+            updateCounts();
+            renderMarkList();
+            toast('已清空全部标注道路');
+        });
+        renderMarkList();
     }
 
     // ---------------- 9. 复位 / 全景适配 ----------------
@@ -707,6 +829,9 @@
                     bounds.extend(toMapCoord(coords)); any = true;
                 }
             });
+        });
+        userRoads.forEach(function (r) {
+            (r.coordinates || []).forEach(function (c) { bounds.extend(toMapCoord(c)); any = true; });
         });
         if (any) map.fitBounds(bounds, { padding: [70, 70, 40, 70], maxZoom: 14 });
     }
