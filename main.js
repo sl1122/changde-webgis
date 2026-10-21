@@ -46,7 +46,7 @@
         showMeasure._t = setTimeout(function () { el.hidden = true; }, 6000);
     }
 
-    // ---------------- 3. 地图（Leaflet + OSM） ----------------
+    // ---------------- 3. 地图（Leaflet + 多源开源底图） ----------------
     var map = L.map('map', {
         center: [29.045, 111.69],
         zoom: 13,
@@ -55,26 +55,36 @@
         maxZoom: 19,
         attributionControl: true
     });
-    // 主瓦片：OSM 官方；加载失败自动切换备用源（CartoDB Voyager）
-    var OSM_URLS = [
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+    // 底图多源链：OSM 官方 → CartoDB Voyager → ArcGIS World Street（国内网络自动降级切换）
+    var TILE_CHAIN = [
+        { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
+        { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', name: 'CartoDB', attr: '&copy; OpenStreetMap &copy; <a href="https://carto.com/">CARTO</a>' },
+        { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', name: 'ArcGIS', attr: 'Tiles &copy; Esri &mdash; Source: Esri, TomTom' }
     ];
-    var tile = L.tileLayer(OSM_URLS[0], {
-        maxZoom: 19,
-        subdomains: 'abc',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-    }).addTo(map);
-    var tileIdx = 0;
-    tile.on('tileerror', function () {
-        if (tileIdx < OSM_URLS.length - 1) {
-            tileIdx++;
-            map.removeLayer(tile);
-            tile = L.tileLayer(OSM_URLS[tileIdx], { maxZoom: 19, subdomains: 'abc', attribution: tile.options.attribution });
-            tile.on('tileerror', arguments.callee);
-            tile.addTo(map);
-        }
-    });
+    var tile = null, tileIdx = 0, tileErr = 0;
+    function activateTile(idx) {
+        if (tile) map.removeLayer(tile);
+        tileIdx = idx; tileErr = 0;
+        var t = TILE_CHAIN[idx];
+        tile = L.tileLayer(t.url, {
+            maxZoom: 20, subdomains: 'abc',
+            attribution: t.attr
+        });
+        tile.on('tileerror', function () {
+            tileErr++;
+            if (tileErr >= 5 && tileIdx < TILE_CHAIN.length - 1) {
+                activateTile(tileIdx + 1);
+                toast('底图加载不畅，已自动切换为 ' + TILE_CHAIN[tileIdx].name + ' 瓦片');
+            }
+        });
+        tile.addTo(map);
+    }
+    // 启动探测：OSM 瓦片可达则优先，否则直接切换备用源
+    var probe = new Image();
+    probe.onload = function () { activateTile(0); };
+    probe.onerror = function () { activateTile(1); toast('OSM 底图不可达，已切换为 CartoDB 瓦片'); };
+    probe.src = 'https://tile.openstreetmap.org/0/0/0.png';
+    setTimeout(function () { if (tile == null) activateTile(1); }, 5000);
     L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 140 }).addTo(map);
     // 自定义放大缩小按钮
     document.getElementById('btn-zoom-in').addEventListener('click', function () { map.zoomIn(); });
@@ -635,12 +645,17 @@
         });
         setBlur.addEventListener('input', applyGlass);
         setAlpha.addEventListener('input', applyGlass);
-        document.getElementById('set-petal').addEventListener('click', togglePetals);
+        document.getElementById('set-petal').addEventListener('click', function () {
+            var before = document.getElementById('petal-wrap').classList.contains('on');
+            togglePetals();
+            toast(before ? '桃花花瓣特效已关闭' : '桃花花瓣特效已开启');
+        });
         document.getElementById('set-cluster').addEventListener('click', function () {
             var c = document.getElementById('chk-cluster');
             c.checked = !c.checked;
             c.dispatchEvent(new Event('change', { bubbles: true }));
             syncSetToggles();
+            toast(c.checked ? '聚合气泡已开启' : '聚合气泡已关闭');
         });
         document.getElementById('set-reset').addEventListener('click', function () {
             setBlur.value = 12; setAlpha.value = 92;
