@@ -710,9 +710,21 @@
     if (btnMark && markPanel) {
         // 阻断地图内所有浮层 UI 的点击冒泡到地图容器
         // （否则打点/测距模式下点击「开始打点」「清空」、工具栏按钮等，click 会冒泡到地图加点监听，在按钮位置误创建一个点）
+        // v56 扩展：同时隔离 touch/pointer/mouse 拖动事件，防止手机端拖动滑块/面板时事件穿透到地图导致地图跟着动
         ['.toolbar', '.zoom-ctrl', '.mark-panel', '.settings-panel', '.basemap-panel', '.legend-panel', '.measure-result', '.map-toast'].forEach(function (sel) {
             var el = document.querySelector(sel);
-            if (el) el.addEventListener('click', function (e) { e.stopPropagation(); });
+            if (el) {
+                el.addEventListener('click', function (e) { e.stopPropagation(); });
+                el.addEventListener('touchstart', function (e) { e.stopPropagation(); });
+                el.addEventListener('touchmove', function (e) { e.stopPropagation(); });
+                el.addEventListener('touchend', function (e) { e.stopPropagation(); });
+                el.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+                el.addEventListener('pointermove', function (e) { e.stopPropagation(); });
+                el.addEventListener('pointerup', function (e) { e.stopPropagation(); });
+                el.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+                el.addEventListener('mousemove', function (e) { e.stopPropagation(); });
+                el.addEventListener('mouseup', function (e) { e.stopPropagation(); });
+            }
         });
         btnMark.addEventListener('click', function () {
             markPanel.hidden = !markPanel.hidden;
@@ -1075,7 +1087,8 @@
         peach: { name: '桃花', accent: '#c85d8b', accentDark: '#a9446f', accentSoft: '#fdf2f6', pclass: 'peach' },
         osmanthus: { name: '桂花', accent: '#b45309', accentDark: '#92400e', accentSoft: '#fef3c7', pclass: 'osmanthus' },
         leaf: { name: '绿叶', accent: '#15803d', accentDark: '#166534', accentSoft: '#dcfce7', pclass: 'leaf' },
-        rose: { name: '玫瑰', accent: '#be185d', accentDark: '#9d174d', accentSoft: '#fce7f3', pclass: 'rose' }
+        rose: { name: '玫瑰', accent: '#be185d', accentDark: '#9d174d', accentSoft: '#fce7f3', pclass: 'rose' },
+        night: { name: '夜间', accent: '#818cf8', accentDark: '#6366f1', accentSoft: 'rgba(129,140,248,.14)', pclass: 'night' }
     };
     var themeState = { pack: 'peach', rhythm: 5, on: false };
     function loadTheme() {
@@ -1111,7 +1124,7 @@
         var p = PACKS[packKey] || PACKS.peach;
         themeState.pack = packKey;
         // body 级主题类：整套 --plum/--rose/--rose-soft/--accent 联动，材质包切换彻底生效
-        var cls = ['theme-peach', 'theme-osmanthus', 'theme-leaf', 'theme-rose'];
+        var cls = ['theme-peach', 'theme-osmanthus', 'theme-leaf', 'theme-rose', 'theme-night'];
         document.body.classList.remove.apply(document.body.classList, cls);
         document.body.classList.add('theme-' + packKey);
         var root = document.documentElement;

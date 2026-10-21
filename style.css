@@ -24,12 +24,31 @@
     --glass-sat: 165%;
     --accent: #8e2a52;        /* 材质包强调色（默认桃花梅红，随桂花/绿叶/玫瑰切换） */
     --accent-soft: #fceef3;
+    --header-grad: linear-gradient(135deg, rgba(124, 36, 80, .80), rgba(164, 55, 107, .76), rgba(201, 91, 135, .82));
+    --logo-color: #fff;
 }
 /* ===== 材质包主题（body 级变量覆盖，切换时整套 UI 配色联动） ===== */
-body.theme-peach { --plum: #d16b8f; --rose: #e8a3bd; --rose-soft: #fdf2f6; --accent: #c85d8b; --accent-soft: #fdf2f6; }
-body.theme-osmanthus { --plum: #b45309; --rose: #f59e0b; --rose-soft: #fef3c7; --accent: #b45309; --accent-soft: #fef3c7; }
-body.theme-leaf { --plum: #15803d; --rose: #22c55e; --rose-soft: #dcfce7; --accent: #15803d; --accent-soft: #dcfce7; }
-body.theme-rose { --plum: #be185d; --rose: #f43f5e; --rose-soft: #fce7f3; --accent: #be185d; --accent-soft: #fce7f3; }
+body.theme-peach { --plum: #d16b8f; --rose: #e8a3bd; --rose-soft: #fdf2f6; --accent: #c85d8b; --accent-soft: #fdf2f6; --header-grad: linear-gradient(135deg, rgba(197, 93, 124, .82), rgba(216, 140, 168, .78), rgba(232, 163, 189, .84)); --logo-color: #fff8fb; }
+body.theme-osmanthus { --plum: #b45309; --rose: #f59e0b; --rose-soft: #fef3c7; --accent: #b45309; --accent-soft: #fef3c7; --header-grad: linear-gradient(135deg, rgba(146, 90, 14, .82), rgba(196, 124, 24, .78), rgba(245, 159, 11, .84)); --logo-color: #fff7e0; }
+body.theme-leaf { --plum: #15803d; --rose: #22c55e; --rose-soft: #dcfce7; --accent: #15803d; --accent-soft: #dcfce7; --header-grad: linear-gradient(135deg, rgba(22, 101, 52, .82), rgba(34, 160, 84, .78), rgba(74, 222, 128, .84)); --logo-color: #f0fdf4; }
+body.theme-rose { --plum: #be185d; --rose: #f43f5e; --rose-soft: #fce7f3; --accent: #be185d; --accent-soft: #fce7f3; --header-grad: linear-gradient(135deg, rgba(157, 23, 77, .82), rgba(190, 24, 93, .78), rgba(244, 63, 94, .84)); --logo-color: #fff1f2; }
+/* 夜间模式：标题栏深蓝紫 + 全局暗色面板 */
+body.theme-night {
+    --plum: #818cf8; --rose: #a5b4fc; --rose-soft: rgba(129, 140, 248, .14); --accent: #818cf8; --accent-soft: rgba(129, 140, 248, .14);
+    --bg: #0b1020; --card: #131a30; --border: #26304d; --text: #e2e8f0; --text-2: #94a3b8;
+    --header-grad: linear-gradient(135deg, rgba(30, 27, 75, .88), rgba(67, 56, 202, .82), rgba(99, 102, 241, .86));
+    --logo-color: #e0e7ff;
+}
+/* 夜间模式：地图瓦片整体反色变暗（只作用于瓦片层，POI/道路标记保持原色） */
+body.theme-night .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.96); }
+/* 夜间模式：毛玻璃面板底色转深（透明深色玻璃） */
+body.theme-night #map .toolbar,
+body.theme-night #map .settings-panel,
+body.theme-night #map .basemap-panel,
+body.theme-night #map .mark-panel,
+body.theme-night #map .legend-panel,
+body.theme-night .sidebar { background: rgba(19, 26, 48, calc(var(--glass-alpha) * .9)); color: var(--text); }
+body.theme-night .settings-panel .settings-title { border-bottom-color: #26304d; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
@@ -50,10 +69,7 @@ body {
     justify-content: flex-start;
     padding: 0 18px;
     gap: 18px;
-    background: linear-gradient(135deg,
-        rgba(124, 36, 80, calc(var(--glass-alpha) * .94)),
-        rgba(164, 55, 107, calc(var(--glass-alpha) * .90)),
-        rgba(201, 91, 135, calc(var(--glass-alpha) * .96)));
+    background: var(--header-grad);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     color: #fff;
@@ -98,7 +114,7 @@ body {
     white-space: nowrap;
     z-index: 1;
 }
-.blossom-logo { color: #ffe3ec; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(60, 10, 30, .35)); }
+.blossom-logo { color: var(--logo-color, #ffe3ec); flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(60, 10, 30, .35)); }
 .page-header .author {
     font-size: 15px;
     font-weight: 400;
@@ -185,9 +201,29 @@ body {
 .layer-item input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: var(--rose);
+    appearance: none;
+    -webkit-appearance: none;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .15s ease, background .15s ease;
+}
+.layer-item input[type="checkbox"]:checked {
+    border-color: var(--accent, var(--plum));
+    background: var(--accent, var(--plum));
+}
+.layer-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
 }
 .layer-name { flex: 1; }
 .dot {
@@ -586,11 +622,20 @@ body {
     background: linear-gradient(135deg, #f9c8d9, #ee8fb4);
     box-shadow: inset 0 0 4px rgba(214, 74, 120, .45);
 }
-/* 桂花：暖金小花（圆点+光晕） */
+/* 桂花：金黄四瓣小花（十字花瓣，非圆球） */
 .petal.osmanthus {
     border-radius: 50%;
-    background: radial-gradient(circle at 50% 32%, #fff8e1 0%, #fcd34d 52%, #f59e0b 100%);
-    box-shadow: 0 0 7px rgba(251, 191, 36, .6), inset 0 -1px 2px rgba(180, 83, 9, .4);
+    background: radial-gradient(circle at 50% 50%, #fde68a 22%, #f59e0b 62%, #d97706 100%);
+    box-shadow:
+        -11px 0 0 -5px #fcd34d, 11px 0 0 -5px #fcd34d,
+        0 -11px 0 -5px #fcd34d, 0 11px 0 -5px #fcd34d,
+        0 0 8px rgba(251, 191, 36, .55);
+}
+/* 夜间模式：星尘微光小点 */
+.petal.night {
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #f8fafc 20%, #a5b4fc 70%, rgba(129, 140, 248, 0) 100%);
+    box-shadow: 0 0 10px rgba(129, 140, 248, .8);
 }
 /* 绿叶：清新叶形 */
 .petal.leaf {
@@ -1137,12 +1182,12 @@ body {
     /* 手机端打开设置时背景遮罩（仅 .show 时显示，hidden 时严格隐藏——防止默认显示盖住整个页面） */
     .settings-backdrop { display: none; }
     .settings-backdrop.show { display: block; }
-    /* 低端机降玻璃：减少模糊/饱和开销，保证地图滑动流畅 */
+    /* 低端机降玻璃：减少模糊/饱和开销，保证地图滑动流畅；滑块调节保留平滑过渡 */
     .sidebar, #map .toolbar, #map .legend-panel, #map .settings-panel,
     #map .measure-result, #map .map-toast, .page-header {
         backdrop-filter: blur(6px) saturate(120%);
         -webkit-backdrop-filter: blur(6px) saturate(120%);
-        transition: none !important;
+        transition: backdrop-filter .25s ease, background-color .25s ease;
     }
     .poi-icon { width: 15px; height: 15px; }
     .poi-icon svg { width: 8px; height: 8px; }
