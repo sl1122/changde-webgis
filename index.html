@@ -12,7 +12,7 @@
     <meta name="format-detection" content="telephone=no,email=no,address=no">
     <link rel="icon" href="data:,">
     <meta http-equiv="Cache-Control" content="no-store">
-    <title>常德市城市公共服务WebGIS系统 - 佘磊</title>
+    <title>常德市公共服务WebGIS系统</title>
     <!-- 开源地图栈：Leaflet + OpenStreetMap（WGS-84，无坐标转换、无平台缓存） -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
@@ -42,8 +42,8 @@
             </svg>
             常德市城市公共服务WebGIS系统 <span class="author">- 佘磊</span>
         </h1>
-        <span class="ver-tag" id="ver-tag" title="当前版本">v53</span>
-        <p class="subtitle">基于开源地图（Leaflet + OpenStreetMap）的常德市区公共服务空间信息查询平台 · 桃花源里好读书</p>
+        <span class="ver-tag" id="ver-tag" title="当前版本">v54</span>
+        <p class="subtitle">常德市区公共服务空间信息平台</p>
     </header>
 
     <div class="container">
@@ -156,11 +156,7 @@
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                     <span>打点</span>
                 </button>
-                <button id="btn-petal" title="关闭桃花花瓣飘落" class="petal-btn">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3c-1.4 1.5-1.9 3.6-1.3 5.4.5 1.8 2.4 3.1 4.1 2.7 1.8-.4 2.8-2.3 2.3-4.1-.6-1.8-2.4-3.2-4.2-3.5-.4-.1-.7-.4-.9-.5zm0 7.2c-1.4 1.5-1.9 3.6-1.3 5.4.5 1.8 2.4 3.1 4.1 2.7 1.8-.4 2.8-2.3 2.3-4.1-.6-1.8-2.4-3.2-4.2-3.5-.4-.1-.7-.4-.9-.5zM6.5 9.4c-1.3 1.2-1.8 3-1.4 4.7.5 1.7 2.2 2.9 3.8 2.6 1.6-.3 2.5-2.1 2-3.8-.5-1.7-2.2-2.9-3.9-3.2-.2 0-.4-.2-.5-.3zm10.9.2c1.3 1.2 1.8 3 1.4 4.7-.5 1.7-2.2 2.9-3.8 2.6-1.6-.3-2.5-2.1-2-3.8.5-1.7 2.2-2.9 3.9-3.2.2 0 .4-.2.5-.3z"/></svg>
-                    <span>花瓣</span>
-                </button>
-                <button id="btn-settings" title="显示设置（玻璃效果调节）">
+                <button id="btn-settings" title="显示设置（材质包/玻璃/飘落效果）">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.62l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.62l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.62l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.62l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
                     <span>设置</span>
                 </button>
@@ -179,8 +175,6 @@
                 <div class="bm-item" data-idx="0"><span class="bm-dot" style="background:#1677ff"></span>高德·矢量<span class="bm-tag">推荐</span></div>
                 <div class="bm-item" data-idx="1"><span class="bm-dot" style="background:#1677ff"></span>高德·栅格</div>
                 <div class="bm-item" data-idx="2"><span class="bm-dot" style="background:#22c55e"></span>OpenStreetMap</div>
-                <div class="bm-item" data-idx="3"><span class="bm-dot" style="background:#f59e0b"></span>CartoDB Voyager</div>
-                <div class="bm-item" data-idx="4"><span class="bm-dot" style="background:#ef4444"></span>ArcGIS World</div>
                 <div class="bm-note">选择后锁定该底图，不再自动跳变；若加载异常可在本面板重新切换</div>
             </div>
             <div id="mark-panel" class="mark-panel" hidden>
@@ -206,6 +200,7 @@
                 </div>
             </div>
             <div id="map-toast" class="map-toast" hidden></div>
+            <div id="settings-backdrop" class="settings-backdrop" hidden></div>
             <div id="legend-panel" class="legend-panel" hidden>
                 <div class="legend-title">图例</div>
                 <div class="legend-row" data-layer="school"><span class="lg-dot" style="background:#2563eb"></span>学校</div>
@@ -232,8 +227,21 @@
                     <input type="range" id="set-sat" min="50" max="250" step="5" value="150">
                 </div>
                 <div class="set-row">
-                    <span class="set-name">花瓣特效</span>
-                    <button id="set-petal" class="set-toggle">关闭</button>
+                    <span class="set-name">材质包</span>
+                    <div class="pack-switch" id="pack-switch">
+                        <button class="pack-item" data-pack="osmanthus" title="桂花飘落·暖金材质">桂花</button>
+                        <button class="pack-item" data-pack="leaf" title="绿叶飘落·清新材质">绿叶</button>
+                        <button class="pack-item" data-pack="rose" title="玫瑰飘落·浪漫材质">玫瑰</button>
+                    </div>
+                </div>
+                <div class="set-row">
+                    <span class="set-name">飘落节律</span>
+                    <span class="set-val" id="set-rhythm-val">中</span>
+                    <input type="range" id="set-rhythm" min="1" max="10" step="1" value="5">
+                </div>
+                <div class="set-row">
+                    <span class="set-name">飘落特效</span>
+                    <button id="set-petal" class="set-toggle">开启</button>
                 </div>
                 <div class="set-row">
                     <span class="set-name">聚合气泡</span>
@@ -245,6 +253,6 @@
         </main>
     </div>
 
-    <script src="main.js?v=53"></script>
+    <script src="main.js?v=54"></script>
 </body>
 </html>

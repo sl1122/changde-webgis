@@ -56,14 +56,13 @@
         maxZoom: 18,
         attributionControl: true
     });
-    // 底图多源链：高德矢量/栅格（GCJ-02，国内最快最稳）→ OSM → CartoDB → ArcGIS（WGS-84）
+    // 底图多源链：高德矢量/栅格（GCJ-02，国内最快最稳）→ OSM（WGS-84）
     // 同坐标系内先切换（高德矢量→高德栅格，数据不重绘、无缝），跨坐标系才重绘数据
+    // v54：裁剪掉易丢瓦片的 CartoDB / ArcGIS 源，保留三个稳定源
     var TILE_CHAIN = [
         { url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', name: '高德·矢量', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
         { url: 'https://wprd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}', name: '高德·栅格', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
-        { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
-        { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', name: 'CartoDB', attr: '&copy; OpenStreetMap &copy; <a href="https://carto.com/">CARTO</a>' },
-        { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', name: 'ArcGIS', attr: 'Tiles &copy; Esri &mdash; Source: Esri, TomTom' }
+        { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
     ];
     // 标准 WGS-84 → GCJ-02（高德）加密转换
     function transformLat(x, y) {
@@ -788,7 +787,7 @@
             document.getElementById('mark-copy').hidden = false;
             document.getElementById('mark-status').textContent =
                 (isEdit ? '已更新「' : '「') + markStreet + (isEdit ? '」标注道路（' : '」已存入我的道路点库（共 ') + userRoads.length + ' 条），紫色虚线已显示在地图上；序号点已自动清除，可复制 JSON 或继续打点';
-            toast((isEdit ? '已更新「' : '已存入「') + markStreet + '」，序号点已自动清除');
+            toast((isEdit ? '已更新「' : '已存入「') + markStreet + '」，将自动合入网站正式数据');
         });
         document.getElementById('mark-copy').addEventListener('click', function () {
             var v = document.getElementById('mark-export').value;
@@ -807,6 +806,19 @@
         });
 
         // ---- 我的道路点库：管理列表 ----
+        // 已合入判断：拉取服务端 road.geojson 的道路名集合，与标注同名即显示「已合入」徽标
+        var mergedNames = null;
+        function ensureMergedNames() {
+            if (mergedNames) return mergedNames;
+            mergedNames = [];
+            try {
+                fetch('data/road.geojson').then(function (r) { return r.json(); }).then(function (j) {
+                    mergedNames = (j.features || []).map(function (f) { return f.properties && f.properties.name; });
+                    renderMarkList();
+                }).catch(function () { });
+            } catch (e) { }
+            return mergedNames;
+        }
         function renderMarkList() {
             var sec = document.getElementById('mark-sec');
             var list = document.getElementById('mark-list');
@@ -820,8 +832,10 @@
             userRoads.forEach(function (r, i) {
                 var row = document.createElement('div');
                 row.className = 'mark-item';
+                var isMerged = mergedNames && mergedNames.indexOf(r.street || r.name) >= 0;
                 row.innerHTML =
                     '<span class="mi-name">我的·' + esc(r.street || r.name) + '</span>' +
+                    (isMerged ? '<span class="mi-badge">已合入</span>' : '<span class="mi-badge wait">待合入</span>') +
                     '<span class="mi-meta">' + (r.coordinates || []).length + '点·' + esc(r.crs || '') + '</span>' +
                     '<span class="mi-ops">' +
                     '<button data-act="edit" class="mi-btn" title="编辑这条道路（载入草稿，节点可拖动）">改</button>' +
@@ -875,6 +889,7 @@
             toast('已清空全部标注道路');
         });
         renderMarkList();
+        ensureMergedNames();
     }
 
     // ---------------- 8.7 Ctrl+Z 全局撤销 ----------------
@@ -1051,24 +1066,58 @@
     }
     document.getElementById('btn-geoloc').addEventListener('click', function () { doAutoLocate(this); });
 
-    // ---------------- 11. 图例 / 花瓣 ----------------
+    // ---------------- 11. 图例 / 材质包飘落系统（桂花/绿叶/玫瑰 + 节律调节） ----------------
     document.getElementById('btn-legend').addEventListener('click', function () {
         var p = document.getElementById('legend-panel');
         p.hidden = !p.hidden;
     });
-    function initPetals() {
+    var PACKS = {
+        osmanthus: { name: '桂花', accent: '#b45309', accentDark: '#92400e', accentSoft: '#fef3c7', pclass: 'osmanthus' },
+        leaf: { name: '绿叶', accent: '#15803d', accentDark: '#166534', accentSoft: '#dcfce7', pclass: 'leaf' },
+        rose: { name: '玫瑰', accent: '#be185d', accentDark: '#9d174d', accentSoft: '#fce7f3', pclass: 'rose' }
+    };
+    var themeState = { pack: 'osmanthus', rhythm: 5, on: false };
+    function loadTheme() {
+        try {
+            var t = JSON.parse(localStorage.getItem('cd_theme') || 'null');
+            if (t && PACKS[t.pack]) { themeState.pack = t.pack; }
+            if (t && t.rhythm !== undefined && t.rhythm >= 1 && t.rhythm <= 10) { themeState.rhythm = t.rhythm; }
+            if (t && t.on !== undefined) { themeState.on = !!t.on; }
+        } catch (e) { }
+    }
+    function saveTheme() { try { localStorage.setItem('cd_theme', JSON.stringify(themeState)); } catch (e) { } }
+    function rebuildPetals() {
         var wrap = document.getElementById('petal-wrap');
         if (!wrap) return;
-        for (var i = 0; i < 26; i++) {
+        wrap.innerHTML = '';
+        var p = PACKS[themeState.pack];
+        var r = themeState.rhythm;              // 1-10：越大越密越快
+        var count = 6 + r * 2;                  // 8 ~ 26 片
+        var durBase = 15 - r * 0.8;             // 14.2 ~ 7s
+        var swayBase = 20 + r * 7;              // 27 ~ 90px
+        for (var i = 0; i < count; i++) {
             var d = document.createElement('i');
-            d.className = 'petal';
+            d.className = 'petal ' + p.pclass;
             var l = Math.random() * 100, s = 0.55 + Math.random() * 0.75;
-            var dur = 7 + Math.random() * 7, delay = Math.random() * 12;
-            var sway = 30 + Math.random() * 60, rot = Math.random() * 360;
-            var w = 8 + Math.random() * 8, h = 8 + Math.random() * 8;
-            d.style.cssText = 'left:' + l + '%;--dur:' + dur + 's;--delay:-' + delay + 's;--sway:' + sway + 'px;--rot:' + rot + 'deg;width:' + w + 'px;height:' + h + 'px;transform:scale(' + s + ');';
+            var dur = durBase * (0.7 + Math.random() * 0.6), delay = Math.random() * 12;
+            var sway = swayBase * (0.6 + Math.random() * 0.8), rot = Math.random() * 360;
+            var w = 7 + Math.random() * 9, h = 7 + Math.random() * 9;
+            d.style.cssText = 'left:' + l.toFixed(1) + '%;--dur:' + dur.toFixed(2) + 's;--delay:-' + delay.toFixed(2) + 's;--sway:' + sway.toFixed(0) + 'px;--rot:' + rot.toFixed(0) + 'deg;width:' + w.toFixed(0) + 'px;height:' + h.toFixed(0) + 'px;transform:scale(' + s.toFixed(2) + ');';
             wrap.appendChild(d);
         }
+    }
+    function applyPack(packKey) {
+        var p = PACKS[packKey] || PACKS.osmanthus;
+        themeState.pack = packKey;
+        var root = document.documentElement;
+        root.style.setProperty('--accent', p.accent);
+        root.style.setProperty('--accent-dark', p.accentDark);
+        root.style.setProperty('--accent-soft', p.accentSoft);
+        document.querySelectorAll('.pack-item').forEach(function (b) {
+            b.classList.toggle('sel', b.getAttribute('data-pack') === packKey);
+        });
+        rebuildPetals();
+        saveTheme();
     }
     function syncSetToggles() {
         var pOn = document.getElementById('petal-wrap').classList.contains('on');
@@ -1080,11 +1129,10 @@
     }
     function togglePetals() {
         var w = document.getElementById('petal-wrap');
-        var on = w.classList.toggle('on');
-        document.getElementById('btn-petal').classList.toggle('active', on);
+        themeState.on = w.classList.toggle('on');
         syncSetToggles();
+        saveTheme();
     }
-    document.getElementById('btn-petal').addEventListener('click', togglePetals);
 
     // ---------------- 12. 移动端抽屉 ----------------
     var sidebarEl = document.querySelector('.sidebar');
@@ -1119,7 +1167,19 @@
         if (setSat && document.getElementById('set-sat-val')) document.getElementById('set-sat-val').textContent = sat + '%';
         try { localStorage.setItem('cd_glass', JSON.stringify({ blur: blur, alpha: alpha, sat: sat })); } catch (e) { }
     }
-    // 果冻感：调节滑块时设置面板弹性回弹
+    // 果冻感：调节滑块时设置面板弹性回弹（手机端跳过，避免毛玻璃+动画卡顿）
+    var isMobileDevice = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
+    var settingsBackdrop = document.getElementById('settings-backdrop');
+    function toggleSettingsBackdrop(show) {
+        if (!settingsBackdrop || !isMobileDevice) return;
+        settingsBackdrop.hidden = !show;
+        settingsBackdrop.classList.toggle('show', show);
+    }
+    if (settingsBackdrop) settingsBackdrop.addEventListener('click', function () {
+        if (settingsPanel) settingsPanel.hidden = true;
+        if (btnSettings) btnSettings.classList.remove('active');
+        toggleSettingsBackdrop(false);
+    });
     function jellyPulse() {
         if (!settingsPanel) return;
         settingsPanel.classList.remove('jelly');
@@ -1130,20 +1190,51 @@
         btnSettings.addEventListener('click', function () {
             settingsPanel.hidden = !settingsPanel.hidden;
             btnSettings.classList.toggle('active', !settingsPanel.hidden);
-            if (!settingsPanel.hidden) jellyPulse();
+            if (!settingsPanel.hidden) {
+                if (!isMobileDevice) jellyPulse();
+                toggleSettingsBackdrop(true);
+            } else {
+                toggleSettingsBackdrop(false);
+            }
         });
         document.getElementById('settings-close').addEventListener('click', function () {
             settingsPanel.hidden = true;
             btnSettings.classList.remove('active');
+            toggleSettingsBackdrop(false);
         });
-        setBlur.addEventListener('input', function () { applyGlass(); jellyPulse(); });
-        setAlpha.addEventListener('input', function () { applyGlass(); jellyPulse(); });
-        if (setSat) setSat.addEventListener('input', function () { applyGlass(); jellyPulse(); });
+        setBlur.addEventListener('input', function () { applyGlass(); if (!isMobileDevice) jellyPulse(); });
+        setAlpha.addEventListener('input', function () { applyGlass(); if (!isMobileDevice) jellyPulse(); });
+        if (setSat) setSat.addEventListener('input', function () { applyGlass(); if (!isMobileDevice) jellyPulse(); });
         settingsPanel.addEventListener('animationend', function () { settingsPanel.classList.remove('jelly'); });
+        // 材质包切换
+        document.querySelectorAll('.pack-item').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var pk = b.getAttribute('data-pack');
+                if (pk && PACKS[pk]) {
+                    applyPack(pk);
+                    toast('已切换「' + PACKS[pk].name + '」材质包（飘落与界面配色同步更新）');
+                }
+            });
+        });
+        // 飘落节律滑块
+        var setRhythm = document.getElementById('set-rhythm');
+        if (setRhythm) {
+            setRhythm.value = themeState.rhythm;
+            var rhythmVal = document.getElementById('set-rhythm-val');
+            function paintRhythm() {
+                var v = parseInt(setRhythm.value, 10);
+                themeState.rhythm = v;
+                rhythmVal.textContent = v <= 3 ? '舒缓' : v <= 7 ? '适中' : '热烈';
+                rebuildPetals();
+                saveTheme();
+            }
+            setRhythm.addEventListener('input', paintRhythm);
+            paintRhythm();
+        }
         document.getElementById('set-petal').addEventListener('click', function () {
             var before = document.getElementById('petal-wrap').classList.contains('on');
             togglePetals();
-            toast(before ? '桃花花瓣特效已关闭' : '桃花花瓣特效已开启');
+            toast(before ? '飘落特效已关闭' : '「' + PACKS[themeState.pack].name + '」飘落特效已开启');
         });
         document.getElementById('set-cluster').addEventListener('click', function () {
             var c = document.getElementById('chk-cluster');
@@ -1155,7 +1246,10 @@
         document.getElementById('set-reset').addEventListener('click', function () {
             setBlur.value = 14; setAlpha.value = 85; if (setSat) setSat.value = 150;
             applyGlass();
-            jellyPulse();
+            applyPack('osmanthus');
+            if (setRhythm) { setRhythm.value = 5; setRhythm.dispatchEvent(new Event('input', { bubbles: true })); }
+            if (!isMobileDevice) jellyPulse();
+            toast('已恢复默认（毛玻璃默认值 + 桂花材质包）');
         });
         try {
             var g = JSON.parse(localStorage.getItem('cd_glass') || 'null');
@@ -1164,14 +1258,10 @@
     }
 
     // ---------------- 14. 启动 ----------------
-    initPetals();
+    loadTheme();
+    applyPack(themeState.pack);
+    if (themeState.on) document.getElementById('petal-wrap').classList.add('on');
     syncSetToggles();
-    var isMobileDevice = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
-    if (!isMobileDevice) {
-        document.getElementById('petal-wrap').classList.add('on');
-        document.getElementById('btn-petal').classList.add('active');
-        syncSetToggles();
-    }
     var loaders = GEO_KEYS.map(function (k) {
         return fetchOrEmbed(k).then(function () {
             layerState[k].data = (DATA[k] && DATA[k].features) || [];
