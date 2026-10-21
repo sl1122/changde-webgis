@@ -176,17 +176,23 @@ body {
     transform: translateY(-50%);
     font-size: 11px;
     font-weight: 600;
+    letter-spacing: .3px;
     color: #fff;
-    background: rgba(255, 255, 255, .18);
-    border: 1px solid rgba(255, 255, 255, .35);
+    background: linear-gradient(135deg, rgba(255, 255, 255, .38), rgba(255, 255, 255, .16));
+    border: 1px solid rgba(255, 255, 255, .45);
+    border-radius: 999px;
+    padding: 2px 11px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 2px 8px rgba(15, 23, 42, .15);
     cursor: pointer;
     user-select: none;
     transition: background .25s ease, transform .3s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s ease;
 }
 .ver-tag:hover {
-    background: rgba(255, 255, 255, .32);
-    transform: translateY(-50%) scale(1.12);
-    box-shadow: 0 0 12px rgba(255, 255, 255, .45);
+    background: linear-gradient(135deg, rgba(255, 255, 255, .52), rgba(255, 255, 255, .26));
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 0 14px rgba(255, 255, 255, .5), 0 3px 10px rgba(15, 23, 42, .18);
 }
     border-radius: 10px;
     padding: 2px 7px;
@@ -779,7 +785,7 @@ body {
     .page-header h1 { font-size: 17px; }
     .page-header .author { font-size: 14px; }
     .subtitle { max-width: 42vw; }
-    .ver-tag { right: 6px; font-size: 10px; padding: 1px 5px; }
+    .ver-tag { right: 6px; font-size: 10px; padding: 2px 9px; }
 }
 
 /* ===== 响应式：手机（≤768px）：侧边栏变抽屉 + 紧凑控件 ===== */
