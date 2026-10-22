@@ -1997,7 +1997,7 @@ body.theme-night .cl-row-points { color: #94a3b8; }
    再次点击触发球 → 收缩回圆球；折叠态长按可拖、沿边吸附；展开态禁拖 */
 #fab { border-radius: 50%; }
 #fab::before { display: none; }                              /* 弃用旧三点伪元素 */
-#fab > button:not(#fab-trigger) { display: none; }           /* 折叠只显示触发球 */
+#fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* v82：仅折叠态隐藏功能按钮（修复优先级压制导致展开后按钮不可见） */
 #fab-trigger {
     width: 56px; height: 56px;
     display: flex; flex-direction: column;
