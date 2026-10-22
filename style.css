@@ -201,11 +201,23 @@ body {
 /* ===== 主体左右布局 ===== */
 .container {
     display: flex;
+    /* v78：100dvh 优先（移动浏览器动态工具栏收起/展开时容器高度实时跟随，不再跳动），100vh 兜底 */
+    height: calc(100dvh - 48px);
     height: calc(100vh - 48px);
     width: 100%;
 }
 
+/* v78：全局触控优化——禁双击缩放延迟（viewport 已禁缩放，此处消除触摸点击 300ms 延迟残留） */
+html, body, button, a, input, select, label {
+    touch-action: manipulation;
+}
+
 /* ===== 侧边栏 ===== */
+/* v78：底部导航仅手机端显示；抽屉快捷区仅手机端显示（桌面有悬浮球全功能） */
+.mobile-nav { display: none; }
+@media (min-width: 769px) {
+    .sidebar-quick { display: none; }
+}
 .sidebar {
     width: 286px;
     min-width: 286px;
@@ -1211,6 +1223,92 @@ body.theme-night .measure-result {
     .toolbar button:active { transform: translateY(0) scale(.97); }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .zoom-ctrl button { width: 34px; height: 34px; font-size: 16px; }
+
+    /* ===== v78 手机端底部导航（替代右侧窄条工具栏；桌面端 display none） ===== */
+    .mobile-nav {
+        display: flex;
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+        height: 52px;
+        z-index: 1250;
+        align-items: center;
+        justify-content: space-around;
+        background: rgba(255, 255, 255, .66);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, .65);
+        border-radius: 18px;
+        box-shadow:
+            0 8px 28px rgba(15, 23, 42, .16),
+            inset 0 1px 0 rgba(255, 255, 255, .9),
+            0 0 0 .5px rgba(255, 255, 255, .45);
+    }
+    .mobile-nav button {
+        flex: 1;
+        min-width: 0;
+        height: 44px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        border: none;
+        background: transparent;
+        color: var(--plum);
+        font-size: 10.5px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), background-color .15s ease;
+    }
+    .mobile-nav button:active { transform: scale(.93); background: rgba(124, 58, 237, .08); }
+    /* 缩放组上移避让底部导航（导航上方 8px） */
+    .zoom-ctrl { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+    /* 手机端悬浮球隐藏（功能由底部导航 + 抽屉快捷区接管）；桌面保留拖拽悬浮球 */
+    #fab { display: none; }
+
+    /* ===== v78 信息密度分级：手机默认只显示聚合气泡，地名/道路标签随缩放浮现 ===== */
+    .road-label {
+        opacity: 0;
+        transition: opacity .25s ease;
+        pointer-events: none;
+    }
+    .road-tag {
+        opacity: 0;
+        transition: opacity .25s ease;
+        pointer-events: none;
+    }
+    body.labels-13 .road-label { opacity: .72; }
+    body.labels-14 .road-tag { opacity: .55; }
+    /* 浮现后的标签允许交互（气泡聚合计数不受影响） */
+    body.labels-13 .road-label { pointer-events: auto; }
+    body.labels-14 .road-tag { pointer-events: auto; }
+
+    /* ===== v78 抽屉快捷功能区（定位常德/复位/打点） ===== */
+    .sidebar-quick {
+        display: flex;
+        gap: 8px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--border);
+        margin-top: auto;
+    }
+    .sidebar-quick button {
+        flex: 1;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        border: 1px solid rgba(255, 255, 255, .6);
+        background: rgba(255, 255, 255, .55);
+        color: var(--plum);
+        font-size: 12px;
+        border-radius: 11px;
+        cursor: pointer;
+        transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), background-color .15s ease;
+    }
+    .sidebar-quick button:active { transform: scale(.95); background: rgba(124, 58, 237, .1); }
     /* 比例尺放左下角（不遮挡缩放键），默认 Leaflet 位置微调 */
     #map .leaflet-bottom.leaflet-left { left: 0; pointer-events: none; }
     #map .leaflet-control-scale {

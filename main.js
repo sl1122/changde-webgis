@@ -446,6 +446,13 @@
     }
     map.on('moveend', updateCounts);
     map.on('zoomend', updateCounts);
+    // v78：手机端信息密度分级——默认只显示聚合气泡；缩放 >= 13 浮现地名标签、>= 14 浮现道路标签
+    // （内容按缩放压力分层浮现，CSS 控制 opacity，零性能负担、不碰数据层）
+    map.on('zoomend', function () {
+        var z = map.getZoom();
+        document.body.classList.toggle('labels-13', z >= 13);
+        document.body.classList.toggle('labels-14', z >= 14);
+    });
 
     // ---------------- 6. 图层勾选 / 全选 / 隐藏 ----------------
     // 图例动态联动：勾选状态 ↔ 图例行增删（带过渡）
@@ -1262,6 +1269,16 @@
         if (sidebarEl) sidebarEl.classList.remove('open');
         if (backdropEl) backdropEl.classList.remove('show');
     }
+    // v78：Esc 关闭抽屉（mobile-ux-optimizer Drawer 模式规范）
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeDrawer();
+    });
+    // v78：手机端抽屉打开时锁定背景滚动，关闭恢复
+    var drawerObs = new MutationObserver(function () {
+        var open = sidebarEl && sidebarEl.classList.contains('open');
+        document.body.style.overflow = open ? 'hidden' : '';
+    });
+    if (sidebarEl) drawerObs.observe(sidebarEl, { attributes: true, attributeFilter: ['class'] });
     var menuBtn = document.getElementById('btn-menu');
     // 全端强制显示菜单按钮（桌面折叠侧边栏 / 手机打开抽屉）
     if (menuBtn) menuBtn.style.display = 'flex';
@@ -1284,6 +1301,18 @@
             resizeMapDebounced();
         }
     }
+    // v78：手机端底部导航 / 抽屉快捷区——点击代理到悬浮球原按钮（复用全部功能，桌面悬浮球不受影响）
+    [['m-geoloc', 'btn-geoloc'], ['m-distance', 'btn-distance'], ['m-area', 'btn-area'],
+     ['m-clear', 'btn-clear'], ['m-basemap', 'btn-basemap'], ['m-legend', 'btn-legend'], ['m-settings', 'btn-settings']]
+        .forEach(function (pair) {
+            var m = document.getElementById(pair[0]), o = document.getElementById(pair[1]);
+            if (m && o) m.addEventListener('click', function (e) { e.stopPropagation(); o.click(); });
+        });
+    [['q-locate', 'btn-locate'], ['q-home', 'btn-home'], ['q-mark', 'btn-mark']]
+        .forEach(function (pair) {
+            var m = document.getElementById(pair[0]), o = document.getElementById(pair[1]);
+            if (m && o) m.addEventListener('click', function (e) { e.stopPropagation(); o.click(); });
+        });
     if (menuBtn) {
         // click 监听作为次级兜底；capture 兜底正常时会 stopPropagation，这里不会重复触发
         menuBtn.addEventListener('click', function (e) {
@@ -1506,7 +1535,8 @@
         { v: 'v74', t: '日志关闭根治 + 高级设置折叠修复 + 横向全量展开', pts: ['更新日志叉号关闭根治：发现 removing 动画防抖残留会导致快速重开后再点叉号被误拦，openChangelog 现会清除残留；关闭按钮升级 click + touchstart + pointerdown 三通道直接绑定；面板拦截名单移除 cl-card，杜绝一切事件干扰', '高级设置折叠修复：展开/收起改为 hidden 与 open 类完全同步（去掉原无条件 add 类与 280ms 延时收起），杜绝展开后自动折叠与按钮状态错乱，折叠状态持久化保留', '悬浮球横向停靠升级：横向展开改为 flex-wrap 自动换行，一次性完整展示全部功能按钮，移除滚动条与拖动条遮挡，超宽自动两行排布；竖向展开保持长胶囊直显不变', '吸附/折叠方向/避让规则与 v73 保持一致，三通道绑定不影响正常关闭动效 0.25s 淡出缩放'] },
         { v: 'v75', t: '地图穿透终极守卫 + 日志关闭流畅化', pts: ['地图穿透终极修复：Leaflet 地图点击监听（测量加点 / 打点）增加 UI 命中守卫——事件来源落在任何玻璃面板/卡片/弹窗（设置/底图/打点/图例/测量卡/更新日志/悬浮球/缩放组/POI 弹窗）时一律忽略，不再依赖冒泡拦截顺序，杜绝卡片点击刺透到地图', '更新日志 cl-card 恢复面板拦截名单（叉号三通道直绑不受影响），卡内点击不冒泡到地图', '日志关闭卡顿优化：关闭动画期间移除全屏 backdrop-filter 模糊（动画结束自动恢复），消除大屏 blur 重排卡顿'] },
         { v: 'v76', t: '测量斑块清理 + 悬浮球拖拽手感重构', pts: ['测量卡片显示严格化：未激活工具时完全不显示；点击测距/测面瞬间显示操作提示卡（实时数值随绘制更新，6s 自动消退不常驻）；清除测量同步清图形+隐藏卡+重置状态，无斑块残留', '悬浮球吸附回归沿边投影：取消"强制中点吸附"导致的拖拽后位置跳变，球停哪吸哪，仅做安全范围 clamp', '竖向停靠吸附上限收紧（视口高 - 展开面板高 - 边距）：保证竖向展开后功能栏完整显示在视口内，不被底部截断、无遮挡滚动条', '横向展开固定一排（nowrap）：桌面 44px 完整一排；移动端 36px 紧凑排布，超宽隐藏式横向滚动（滚动条不可见），杜绝两行换行与可见滚动条', '吸附避让规则保留：横向停靠避开左下比例尺与右下缩放组；展开方向/折叠方向与停靠边严格平行'] },
-        { v: 'v77', t: '双击卡片放大根治 + 全站性能提速 + 悬浮球/缩放组布局修正', pts: ['双击卡片放大根治：所有玻璃面板/卡片（设置/底图/打点/图例/测量卡/更新日志/提示）新增 dblclick 拦截，双击它们不再触发 Leaflet 地图双击缩放；viewport 禁用用户缩放（maximum-scale=1, user-scalable=no），手机端双击页面也不放大', '全站卡顿修复：更新日志遮罩移除全屏 backdrop-filter（纯 rgba 暗化遮罩，日志卡自身保留小面积玻璃模糊），打开/关闭日志不再触发全屏 blur 重排；侧边栏面板恢复按钮打开前统一清除关闭动画残留类，快速多次开合不再动画叠加卡顿', '悬浮球横向展开态禁用拖拽（停靠上/下边缘时）——该状态用于浏览功能列表，拖动不再把悬浮球吸走；竖向展开与折叠态仍可长按拖动', '悬浮球初始位置改为右上角（off 56px），anchor 持久化键升级 cd_fab_anchor77，旧位置作废强制复位右上', '缩放按钮组移至右下角（桌面/手机统一），按钮适当缩小（桌面 38px / 手机 34px），与右上悬浮球完全分离不重叠', '手机横向展开固定一排完整展示（31px 紧凑按钮全功能容纳在 96vw 内，无需滚动）'] }
+        { v: 'v77', t: '双击卡片放大根治 + 全站性能提速 + 悬浮球/缩放组布局修正', pts: ['双击卡片放大根治：所有玻璃面板/卡片（设置/底图/打点/图例/测量卡/更新日志/提示）新增 dblclick 拦截，双击它们不再触发 Leaflet 地图双击缩放；viewport 禁用用户缩放（maximum-scale=1, user-scalable=no），手机端双击页面也不放大', '全站卡顿修复：更新日志遮罩移除全屏 backdrop-filter（纯 rgba 暗化遮罩，日志卡自身保留小面积玻璃模糊），打开/关闭日志不再触发全屏 blur 重排；侧边栏面板恢复按钮打开前统一清除关闭动画残留类，快速多次开合不再动画叠加卡顿', '悬浮球横向展开态禁用拖拽（停靠上/下边缘时）——该状态用于浏览功能列表，拖动不再把悬浮球吸走；竖向展开与折叠态仍可长按拖动', '悬浮球初始位置改为右上角（off 56px），anchor 持久化键升级 cd_fab_anchor77，旧位置作废强制复位右上', '缩放按钮组移至右下角（桌面/手机统一），按钮适当缩小（桌面 38px / 手机 34px），与右上悬浮球完全分离不重叠', '手机横向展开固定一排完整展示（31px 紧凑按钮全功能容纳在 96vw 内，无需滚动）'] },
+        { v: 'v78', t: '移动端从0适应性配置（底部导航 + 信息密度分级 + dvh + 触控审计）', pts: ['手机端功能入口重构：右侧 46px 常驻窄条改为全宽玻璃底部导航条（我的位置/测距/测面/清除/底图/图例/设置 7 项，44px 触控高、图标+文字、safe-area 避让、底部玻璃胶囊外壳），右侧地图彻底清爽；缩放组上移至导航上方；手机端悬浮球隐藏', '信息密度分级（dense-data）：手机默认只显示聚合气泡，地名标签在地图放大 ≥13 级浮现、道路标签 ≥14 级浮现，三重文字叠压问题根治；桌面端不受影响', '页面壳层（page-layout）：顶部 title 精简为「常德公共服务WebGIS」；地图容器高度 100dvh 优先 + 100vh 兜底，浏览器地址栏收起/展开不再导致地图跳变；全局 touch-action: manipulation 消除触摸点击延迟', '抽屉侧边栏补齐：Esc 键关闭、打开时锁定背景滚动；抽屉底部新增快捷功能区（定位常德/复位/打点），手机端全功能保留', '学习成果落地：本版按 responsive-design（先分类 dense-data+page-layout 再写 CSS）、mobile-ux-optimizer（底部导航/dvh/44px/safe-area）、layout-system（内容驱动断点）、apple-hig-expert（触控≥44pt 审计）五组 skill 原则执行'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
