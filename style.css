@@ -2489,3 +2489,31 @@ body.theme-night .mark-ops input {
     color: #eef2ff !important;
 }
 body.theme-night .search-input::placeholder { color: #a5b4fc !important; }
+
+/* ================= v98 设施点详情卡（.pw-box）统一优化 =================
+   根因：设施点/道路/用户标注详情卡用的是 .pw-box（不是 .iw-card），v95-v97 的夜间实色规则
+   从未覆盖它——夜间仍是 Leaflet 默认白底卡片（石灰社区卫生室截图实证）。v98 统一：
+   白天 .pw-box 对齐全局玻璃（外层 popup 半透明白 + 磨砂），夜间转 Apple 深色实底卡片
+   （外层 popup 透明、尖角同步深色、标题纯白、行亮字、标签提亮）——所有设施点详情卡全覆盖 */
+.leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .92)) !important;
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+}
+.leaflet-popup-tip { background: rgba(255, 255, 255, .92) !important; }
+body.theme-night .leaflet-popup-content-wrapper,
+body.theme-night .leaflet-popup-tip {
+    background: #0f1628 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: #334155 !important;
+    box-shadow: 0 10px 28px rgba(2, 6, 23, .55), inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+}
+body.theme-night .pw-box { color: #f8faff !important; }
+body.theme-night .pw-t {
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(148, 163, 212, .3);
+    padding-bottom: 8px;
+}
+body.theme-night .pw-k { color: #a5b4fc !important; }
+body.theme-night .pw-v { color: #dbe7ff !important; }
