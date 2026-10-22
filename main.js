@@ -1718,6 +1718,7 @@
         { v: 'v99', t: '材质包→地图底图联动着色（tile-pane 主题色叠加）', pts: ['收到「地图还是其他材质的样子」——切换材质包只有 UI 变色、地图底图完全不变（此前仅夜间有 .45 深色遮罩）。v99 给每套材质包定义 --map-tint：桃花 rgba(216,93,140,.16) / 桂花 rgba(214,128,26,.14) / 绿叶 rgba(34,130,80,.13) / 玫瑰 rgba(210,32,92,.14) 低透明主题色，夜间沿用 .45 深色遮罩，综合透明', '实现：tile-pane 单层伪元素 background:var(--map-tint)——纯 CSS 一次合成、pointer-events none、z-index 10 只盖瓦片（POI/聚合/标注在上层不受影响）、零逐帧开销、切换 0.5s 平滑过渡；夜间特化规则（特异性更高）仍保证 .45 深色优先——切换材质包时地图底图可见地随主题染色'] },
         { v: 'v100', t: '夜间真深色底图（高覆盖深色遮罩 .8）+ 设施点悬停标签深底亮字', pts: ['收到「夜间的时候地图底色还没更换 + 鼠标经过图层设施点显示的标签白底白字」——① 底色：实测排查全部分案——免费暗色瓦片源（Carto Dark / Esri Dark Gray / OpenFreeMap）2026 已全部 API key 化或停服（API KEY REQUIRED / Map data not yet available / 404）；高德 wprd0{s}+night=1 参数实测无效（下载瓦片 PIL 实测 avg-rgb 228,222,209 仍是亮色）；高德暗色样式只能走 JS API 矢量渲染（mapStyle，需 AMap 地图实例，与 Leaflet 瓦片体系不兼容）。v100 最终采用高覆盖深色遮罩方案：夜间 --map-tint 提升至 rgba(8,12,32,.8)——底图整体呈现深色底（视觉=底色真正更换），POI 圆点/道路线/标注在遮罩上层保持原色清晰可读；纯 CSS 单层合成一次、零逐帧开销、拖动缩放零 filter 成本', '② 悬停标签：.poi-tip 白天玻璃白底、夜间文字随全局规则变亮 → 白底白字看不清（v97 兜底漏了 tooltip）。v100 夜间 .leaflet-tooltip/.poi-tip 统一深底 rgba(15,22,40,.96)+亮字 #f8faff+描边 #334155+深阴影，箭头三角四向同步深色——设施点/道路悬停标签夜间全部深底亮字，无白底白字'] },
         { v: 'v101', t: 'v100-fix 最终修复：夜间真深色底图(深遮罩.8)+单文件重复清理+反色filter残留清除', pts: ['收到「用高德的啊 + 暗色瓦片没显示」——① 实测高德 wprd0{s}+night=1 参数无效（下载瓦片 PIL 实测 avg-rgb 228,222,209 仍亮色）；免费暗色源（Carto/Esri/OpenFreeMap）2026 已全部 key 化/停服；高德暗色仅 JS API 矢量渲染可做。v101 最终采用高覆盖深色遮罩 rgba(8,12,32,.8)：夜间底图整体呈现深色底（视觉=底色真正更换），POI/道路/标注在上层保持原色清晰；纯 CSS 单层合成零性能开销', '② 根因级修复：main.js 曾被重复拼接 4 份完整副本（8560 行，重复执行互相覆盖导致夜间样式失效+卡顿），v101 重建为单份 2143 行；同时移除 v94 瓦片反色 filter 残留（卡顿主源）。③ 悬停标签深底亮字（v100 已做，保留）'] },
+        { v: 'v102', t: '悬浮球「细胞形态+液态折射」动态化：细胞膜呼吸浮动+边缘色散+细胞核布朗漂移+色散光晕', pts: ['三层细胞级液态结构落地：外层细胞膜 = border-radius 低频呼吸浮动（0.45Hz/2.2s 周期，±2px 幅度）+ 多层冷暖半透描边错位色散（棱镜感）；中层细胞质 = 沿用 backdrop 磨砂透光玻璃；内层细胞核 = 珍珠白高光核心（15px，左上聚光渐变）+ 蓝紫/粉双色散光晕 + 12s 缓慢布朗漂移（±5px 安全区，不触碰按钮图标）', '参数可调：--cell-breathe（膜呼吸周期 2.2s）/ --cell-drift（核漂移周期 12s）/ --cell-disperse（色散强度 .5）三组 CSS 变量，色散随玻璃质感滑杆（--glass-sheen/--glass-shadow）联动，夜间蓝紫散色更通透；装饰层由 main.js 注入（.fab-cell-core/.fab-cell-glow，pointer-events:none）', '性能与分级：纯 transform/border-radius/box-shadow/opacity 合成层动画、零重排；拖拽/展开/收起（.fab-dragging/.fab-open/.fab-closing）全停动画仅留基础玻璃；移动端（≤768px）关闭全部连续形变与漂移、隐藏装饰层；prefers-reduced-motion 自动降级——桌面端完整细胞液态效果，移动端零额外开销'] },
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1771,6 +1772,15 @@
     (function initFab() {
         var fab = document.getElementById('fab');
         if (!fab) return;
+        // v102：注入细胞形态装饰层（折叠态细胞核 + 色散光晕），纯视觉、pointer-events none、不影响按钮与拖拽热区
+        if (!fab.querySelector('.fab-cell-core')) {
+            var cellGlow = document.createElement('i');
+            cellGlow.className = 'fab-cell-glow';
+            var cellCore = document.createElement('i');
+            cellCore.className = 'fab-cell-core';
+            fab.insertBefore(cellGlow, fab.firstChild);
+            fab.insertBefore(cellCore, fab.firstChild);
+        }
         var btns = Array.prototype.slice.call(fab.querySelectorAll('button'));
         var mapEl = document.getElementById('map');
         var isMobile = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
@@ -2131,6 +2141,8 @@
         if (el) nobf(el);
     }, true);
 })();
+
+
 
 
 

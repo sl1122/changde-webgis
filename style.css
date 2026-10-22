@@ -22,6 +22,10 @@
     --glass-sat: 1.5;
     --glass-shadow: 1;       /* glassliquid 阴影柔和度 0-1 */
     --glass-sheen: .9;       /* glassliquid 边框高光强度 0-1 */
+    /* v102 悬浮球「细胞形态 + 液态折射」动态参数（仅作用于折叠态悬浮球本体，桌面端生效） */
+    --cell-breathe: 2.2s;    /* 细胞膜呼吸周期（≈0.45Hz 低频起伏） */
+    --cell-drift: 12s;       /* 细胞核漂移周期（缓慢布朗运动） */
+    --cell-disperse: .5;     /* 折射色散强度 0-1（随玻璃质感联动） */
     --header-h: 48px;
     --glass-sat: 165%;
     --accent: #8e2a52;        /* 材质包强调色（默认桃花梅红，随桂花/绿叶/玫瑰切换） */
@@ -750,6 +754,107 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 .toolbar button#btn-clear:hover,
 .toolbar button#btn-clear.fab-pop { color: #5b6474; background: rgba(226, 232, 240, .85); }
 .toolbar .petal-btn.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 6px 16px rgba(142, 42, 82, .35); }
+
+/* ================= v102 悬浮球「细胞形态 + 液态折射」动态化 =================
+   三层细胞级液态结构：外层细胞膜（呼吸浮动 + 边缘色散折射）→ 中层细胞质玻璃
+   （backdrop 磨砂透光）→ 内层细胞核（珍珠白高光核心，布朗漂移 + 色散光晕）。
+   仅作用于折叠态悬浮球本体视觉层；纯 transform/border-radius/box-shadow/opacity
+   合成层动画、低频低开销；拖拽/展开/收起全停（配合 .fab-dragging/.fab-open/.fab-closing），
+   桌面全开、移动端自动降级；色散强度随 --cell-disperse 与玻璃强度（--glass-sheen）联动。
+   装饰元素 .fab-cell-core/.fab-cell-glow 由 main.js 注入，pointer-events:none 不影响点击。 */
+#fab:not(.fab-open) {
+    animation: fabMembrane var(--cell-breathe, 2.2s) ease-in-out infinite;
+    will-change: border-radius;
+}
+@keyframes fabMembrane {
+    0%, 100% {
+        border-radius: 20px 20px 20px 20px;
+        box-shadow:
+            0 8px 28px rgba(15, 23, 42, calc(.12 * var(--glass-shadow))),
+            inset 0 1px 0 rgba(255, 255, 255, calc(.8 * var(--glass-sheen))),
+            inset 0 -1px 0 rgba(255, 255, 255, calc(.35 * var(--glass-sheen))),
+            0 0 0 .5px rgba(255, 255, 255, .55),
+            0 0 0 1px rgba(129, 140, 248, calc(.05 * var(--cell-disperse))),
+            0 0 0 1.5px rgba(244, 114, 182, calc(.04 * var(--cell-disperse)));
+    }
+    50% {
+        border-radius: 22px 18px 24px 19px;
+        box-shadow:
+            0 10px 32px rgba(15, 23, 42, calc(.15 * var(--glass-shadow))),
+            inset 0 1px 0 rgba(255, 255, 255, calc(.9 * var(--glass-sheen))),
+            inset 0 -1px 0 rgba(255, 255, 255, calc(.42 * var(--glass-sheen))),
+            0 0 0 .5px rgba(255, 255, 255, .65),
+            0 0 0 1px rgba(129, 140, 248, calc(.12 * var(--cell-disperse))),
+            0 0 0 1.5px rgba(244, 114, 182, calc(.09 * var(--cell-disperse))),
+            0 0 10px 2px rgba(129, 140, 248, calc(.1 * var(--cell-disperse)));
+    }
+}
+/* —— 细胞核：珍珠白半透高光核心 + 色散光晕 + 布朗漂移（安全区 ±5px，不触按钮图标） —— */
+#fab:not(.fab-open) .fab-cell-core,
+#fab:not(.fab-open) .fab-cell-glow {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 0;
+}
+#fab:not(.fab-open) .fab-cell-core {
+    width: 15px; height: 15px; left: 20px; top: 20px;
+    background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, .98), rgba(255, 255, 255, .6) 40%, rgba(255, 255, 255, .18) 72%, rgba(255, 255, 255, .05) 82%, transparent 84%);
+    box-shadow:
+        0 0 6px 2px rgba(255, 255, 255, calc(.5 * var(--glass-sheen))),
+        0 0 14px 4px rgba(129, 140, 248, calc(.3 * var(--cell-disperse))),
+        0 0 22px 8px rgba(244, 114, 182, calc(.16 * var(--cell-disperse)));
+    animation: fabCellDrift var(--cell-drift, 12s) ease-in-out infinite alternate;
+    will-change: transform;
+}
+@keyframes fabCellDrift {
+    0%   { transform: translate(0px, 0px) scale(1); opacity: .85; }
+    18%  { transform: translate(3px, -2px) scale(1.08); opacity: 1; }
+    36%  { transform: translate(-2px, 3px) scale(.97); opacity: .8; }
+    55%  { transform: translate(4px, 2px) scale(1.04); opacity: 1; }
+    74%  { transform: translate(-3px, -3px) scale(.95); opacity: .75; }
+    100% { transform: translate(1px, 3px) scale(1.03); opacity: .9; }
+}
+/* —— 色散扩散光晕：细胞核外更大范围氛围层，随漂移同相位呼吸 —— */
+#fab:not(.fab-open) .fab-cell-glow {
+    left: 50%; top: 50%; width: 46px; height: 46px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(129, 140, 248, calc(.16 * var(--cell-disperse))), rgba(244, 114, 182, calc(.09 * var(--cell-disperse))) 46%, transparent 72%);
+    filter: blur(2px);
+    animation: fabCellGlow var(--cell-drift, 12s) ease-in-out infinite alternate;
+    will-change: transform, opacity;
+}
+@keyframes fabCellGlow {
+    0%   { opacity: .5; transform: translate(-50%, -50%) scale(.88); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+}
+/* —— 交互暂停：拖拽 / 展开 / 收起过程全停动画，仅保留基础玻璃与半透底色 —— */
+.toolbar.fab-dragging, .toolbar.fab-open, .toolbar.fab-closing { animation: none !important; }
+.toolbar.fab-dragging .fab-cell-core, .toolbar.fab-open .fab-cell-core,
+.toolbar.fab-dragging .fab-cell-glow, .toolbar.fab-open .fab-cell-glow { animation: none !important; opacity: .35; }
+.toolbar.fab-closing .fab-cell-core, .toolbar.fab-closing .fab-cell-glow { animation: none !important; opacity: .5; }
+/* 展开态隐藏装饰层，避免干扰功能按钮辨识 */
+.toolbar.fab-open .fab-cell-core, .toolbar.fab-open .fab-cell-glow { opacity: 0; }
+/* —— 夜间适配：细胞核蓝紫散色更通透，呼吸光晕随玻璃强度联动 —— */
+body.theme-night #fab:not(.fab-open) .fab-cell-core {
+    box-shadow:
+        0 0 7px 2px rgba(255, 255, 255, calc(.6 * var(--glass-sheen))),
+        0 0 18px 6px rgba(129, 140, 248, calc(.4 * var(--cell-disperse))),
+        0 0 28px 10px rgba(56, 189, 248, calc(.2 * var(--cell-disperse)));
+}
+body.theme-night #fab:not(.fab-open) .fab-cell-glow {
+    background: radial-gradient(circle, rgba(129, 140, 248, calc(.22 * var(--cell-disperse))), rgba(56, 189, 248, calc(.1 * var(--cell-disperse))) 46%, transparent 72%);
+}
+/* —— 移动端降级：关闭连续形变与细胞核漂移，仅保留静态玻璃（优先地图流畅度） —— */
+@media (max-width: 768px) {
+    #fab:not(.fab-open) { animation: none !important; }
+    #fab .fab-cell-core, #fab .fab-cell-glow { display: none !important; }
+}
+/* —— 系统「减弱动态效果」偏好降级 —— */
+@media (prefers-reduced-motion: reduce) {
+    #fab:not(.fab-open) { animation: none !important; }
+    #fab .fab-cell-core, #fab .fab-cell-glow { animation: none !important; }
+}
 
 /* 自定义缩放按钮（Apple 玻璃质感；v77：移至右下角、尺寸适当缩小——桌面 38px / 手机 34px） */
 .zoom-ctrl {
