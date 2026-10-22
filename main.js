@@ -1719,6 +1719,7 @@
         { v: 'v100', t: '夜间真深色底图（高覆盖深色遮罩 .8）+ 设施点悬停标签深底亮字', pts: ['收到「夜间的时候地图底色还没更换 + 鼠标经过图层设施点显示的标签白底白字」——① 底色：实测排查全部分案——免费暗色瓦片源（Carto Dark / Esri Dark Gray / OpenFreeMap）2026 已全部 API key 化或停服（API KEY REQUIRED / Map data not yet available / 404）；高德 wprd0{s}+night=1 参数实测无效（下载瓦片 PIL 实测 avg-rgb 228,222,209 仍是亮色）；高德暗色样式只能走 JS API 矢量渲染（mapStyle，需 AMap 地图实例，与 Leaflet 瓦片体系不兼容）。v100 最终采用高覆盖深色遮罩方案：夜间 --map-tint 提升至 rgba(8,12,32,.8)——底图整体呈现深色底（视觉=底色真正更换），POI 圆点/道路线/标注在遮罩上层保持原色清晰可读；纯 CSS 单层合成一次、零逐帧开销、拖动缩放零 filter 成本', '② 悬停标签：.poi-tip 白天玻璃白底、夜间文字随全局规则变亮 → 白底白字看不清（v97 兜底漏了 tooltip）。v100 夜间 .leaflet-tooltip/.poi-tip 统一深底 rgba(15,22,40,.96)+亮字 #f8faff+描边 #334155+深阴影，箭头三角四向同步深色——设施点/道路悬停标签夜间全部深底亮字，无白底白字'] },
         { v: 'v101', t: 'v100-fix 最终修复：夜间真深色底图(深遮罩.8)+单文件重复清理+反色filter残留清除', pts: ['收到「用高德的啊 + 暗色瓦片没显示」——① 实测高德 wprd0{s}+night=1 参数无效（下载瓦片 PIL 实测 avg-rgb 228,222,209 仍亮色）；免费暗色源（Carto/Esri/OpenFreeMap）2026 已全部 key 化/停服；高德暗色仅 JS API 矢量渲染可做。v101 最终采用高覆盖深色遮罩 rgba(8,12,32,.8)：夜间底图整体呈现深色底（视觉=底色真正更换），POI/道路/标注在上层保持原色清晰；纯 CSS 单层合成零性能开销', '② 根因级修复：main.js 曾被重复拼接 4 份完整副本（8560 行，重复执行互相覆盖导致夜间样式失效+卡顿），v101 重建为单份 2143 行；同时移除 v94 瓦片反色 filter 残留（卡顿主源）。③ 悬停标签深底亮字（v100 已做，保留）'] },
         { v: 'v102', t: '悬浮球「细胞形态+液态折射」动态化：细胞膜呼吸浮动+边缘色散+细胞核布朗漂移+色散光晕', pts: ['三层细胞级液态结构落地：外层细胞膜 = border-radius 低频呼吸浮动（0.45Hz/2.2s 周期，±2px 幅度）+ 多层冷暖半透描边错位色散（棱镜感）；中层细胞质 = 沿用 backdrop 磨砂透光玻璃；内层细胞核 = 珍珠白高光核心（15px，左上聚光渐变）+ 蓝紫/粉双色散光晕 + 12s 缓慢布朗漂移（±5px 安全区，不触碰按钮图标）', '参数可调：--cell-breathe（膜呼吸周期 2.2s）/ --cell-drift（核漂移周期 12s）/ --cell-disperse（色散强度 .5）三组 CSS 变量，色散随玻璃质感滑杆（--glass-sheen/--glass-shadow）联动，夜间蓝紫散色更通透；装饰层由 main.js 注入（.fab-cell-core/.fab-cell-glow，pointer-events:none）', '性能与分级：纯 transform/border-radius/box-shadow/opacity 合成层动画、零重排；拖拽/展开/收起（.fab-dragging/.fab-open/.fab-closing）全停动画仅留基础玻璃；移动端（≤768px）关闭全部连续形变与漂移、隐藏装饰层；prefers-reduced-motion 自动降级——桌面端完整细胞液态效果，移动端零额外开销'] },
+        { v: 'v103', t: '悬浮球专项修正：轮廓恒正圆 + 移除中心色块 + 细胞核气泡化 + 基底透光折射', pts: ['收到「都不圆了 / 细胞核没采用原来的 / 没折射透光感 / 去掉中间色块」四项反馈——① 不圆根因：v102 膜呼吸动画改 border-radius 各角非对称值（22/18/24/19），动画中帧视觉变形。v103 废弃角变化，改纯 scale(1↔1.02) 微呼吸 + 边缘色散光晕同步呼吸，几何永远正圆、轮廓不破形', '② 中间色块根因：v90 遗留的「中心白色玻璃环」（#fab:not(.fab-open)::before 15px 白环）与 v102 细胞核叠成两个核——v103 移除该环（display:none），细胞核成为唯一核心；③ 细胞核由实心珍珠白点重做为透明液态折射气泡（聚光高光点+半透渐变+1px 细折射环+底部微内阴影+蓝紫/粉双色散光晕），像液体中悬浮的气泡/晶核', '④ 折射透光：折叠球基底由完全不透明材质包纯色改为 color-mix 掺 transparent 的半透明（透出底图）+ 顶部透光带折射光路层，边缘冷暖双色描边保留；夜间气泡蓝紫散色更通透。参数与降级不变：--cell-breathe/--cell-drift/--cell-disperse 三组可调，拖拽/展开/收起全停，移动端与 prefers-reduced-motion 自动降级'] },
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -2141,6 +2142,8 @@
         if (el) nobf(el);
     }, true);
 })();
+
+
 
 
 
