@@ -28,14 +28,15 @@
     --accent-soft: #fceef3;
     --header-grad: linear-gradient(135deg, rgba(124, 36, 80, .80), rgba(164, 55, 107, .76), rgba(201, 91, 135, .82));
     --logo-color: #fff;
+    --map-tint: transparent;  /* v99：材质包→地图底图着色（白天低透明主题色 / 夜间深色遮罩 / 综合透明） */
 }
 /* ===== 材质包主题（body 级变量覆盖，切换时整套 UI 配色联动） ===== */
 /* 非夜间材质包：设施点保持标准语义色（学校蓝/医院红/景点绿/道路橙），保证四类区分度；
    材质包风格体现在 UI 主色（--plum/--rose/--accent）与粒子外观，不影响地图符号可读性 */
-body.theme-peach { --plum: #d16b8f; --rose: #e8a3bd; --rose-soft: #fdf2f6; --accent: #c85d8b; --accent-soft: #fdf2f6; --header-grad: linear-gradient(135deg, rgba(197, 93, 124, .82), rgba(216, 140, 168, .78), rgba(232, 163, 189, .84)); --logo-color: #fff8fb; }
-body.theme-osmanthus { --plum: #b45309; --rose: #f59e0b; --rose-soft: #fef3c7; --accent: #b45309; --accent-soft: #fef3c7; --header-grad: linear-gradient(135deg, rgba(146, 90, 14, .82), rgba(196, 124, 24, .78), rgba(245, 159, 11, .84)); --logo-color: #fff7e0; }
-body.theme-leaf { --plum: #15803d; --rose: #22c55e; --rose-soft: #dcfce7; --accent: #15803d; --accent-soft: #dcfce7; --header-grad: linear-gradient(135deg, rgba(22, 101, 52, .82), rgba(34, 160, 84, .78), rgba(74, 222, 128, .84)); --logo-color: #f0fdf4; }
-body.theme-rose { --plum: #be185d; --rose: #f43f5e; --rose-soft: #fce7f3; --accent: #be185d; --accent-soft: #fce7f3; --header-grad: linear-gradient(135deg, rgba(157, 23, 77, .82), rgba(190, 24, 93, .78), rgba(244, 63, 94, .84)); --logo-color: #fff1f2; }
+body.theme-peach { --plum: #d16b8f; --rose: #e8a3bd; --rose-soft: #fdf2f6; --accent: #c85d8b; --accent-soft: #fdf2f6; --header-grad: linear-gradient(135deg, rgba(197, 93, 124, .82), rgba(216, 140, 168, .78), rgba(232, 163, 189, .84)); --logo-color: #fff8fb; --map-tint: rgba(216, 93, 140, .16); }
+body.theme-osmanthus { --plum: #b45309; --rose: #f59e0b; --rose-soft: #fef3c7; --accent: #b45309; --accent-soft: #fef3c7; --header-grad: linear-gradient(135deg, rgba(146, 90, 14, .82), rgba(196, 124, 24, .78), rgba(245, 159, 11, .84)); --logo-color: #fff7e0; --map-tint: rgba(214, 128, 26, .14); }
+body.theme-leaf { --plum: #15803d; --rose: #22c55e; --rose-soft: #dcfce7; --accent: #15803d; --accent-soft: #dcfce7; --header-grad: linear-gradient(135deg, rgba(22, 101, 52, .82), rgba(34, 160, 84, .78), rgba(74, 222, 128, .84)); --logo-color: #f0fdf4; --map-tint: rgba(34, 130, 80, .13); }
+body.theme-rose { --plum: #be185d; --rose: #f43f5e; --rose-soft: #fce7f3; --accent: #be185d; --accent-soft: #fce7f3; --header-grad: linear-gradient(135deg, rgba(157, 23, 77, .82), rgba(190, 24, 93, .78), rgba(244, 63, 94, .84)); --logo-color: #fff1f2; --map-tint: rgba(210, 32, 92, .14); }
 /* 夜间模式：标题栏深蓝紫 + 全局暗色面板 + 符号换低刺激柔和色（深色地图上醒目但不刺眼） */
 body.theme-night {
     --plum: #818cf8; --rose: #a5b4fc; --rose-soft: rgba(129, 140, 248, .14); --accent: #818cf8; --accent-soft: rgba(129, 140, 248, .14);
@@ -43,6 +44,7 @@ body.theme-night {
     --header-grad: linear-gradient(135deg, rgba(30, 27, 75, .88), rgba(67, 56, 202, .82), rgba(99, 102, 241, .86));
     --logo-color: #e0e7ff;
     --school: #9db8e8; --hospital: #f0a3a3; --scenic: #8fd6b8; --road: #e6bd7a;
+    --map-tint: rgba(10, 16, 38, .45);
 }
 /* 夜间模式：地图瓦片整体反色变暗（只作用于瓦片层，POI/道路标记保持原色）；切夜间平滑过渡不闪白 */
 body.theme-night .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.96); }
@@ -2517,3 +2519,19 @@ body.theme-night .pw-t {
 }
 body.theme-night .pw-k { color: #a5b4fc !important; }
 body.theme-night .pw-v { color: #dbe7ff !important; }
+
+/* ================= v99 材质包→地图底图联动着色 =================
+   用户「地图还是其他材质的样子」：切换材质包只有 UI 变色、地图底图完全不变（只有夜间有遮罩）。
+   v99 给每套材质包定义 --map-tint：桃花粉 / 桂花暖黄 / 绿叶绿 / 玫瑰玫红为低透明主题色叠加，
+   夜间沿用 .45 深色遮罩，综合为透明。tile-pane 单层伪元素着色——纯 CSS 一次合成、
+   pointer-events none、z-index 10 只盖瓦片（POI/聚合/标注在上层不受影响）、零逐帧开销。
+   夜间特化规则（body.theme-night .leaflet-tile-pane::after，特异性更高）仍保证 .45 深色优先 */
+.leaflet-tile-pane::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--map-tint, transparent);
+    z-index: 10;
+    pointer-events: none;
+    transition: background .5s ease;
+}
