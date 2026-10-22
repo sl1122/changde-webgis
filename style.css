@@ -2429,7 +2429,63 @@ body.theme-night .mark-empty, body.theme-night .rp-time, body.theme-night .sr-no
 body.theme-night .mark-item .mi-meta, body.theme-night .pw-k {
     color: #dbe6ff;
 }
-/* ② 夜间遮罩降透明：保留暗化观感，切换底图时差异清晰可见 */
+/* ② 夜间遮罩：v96 .45 → v97 曾试 .28（地图暗化几乎消失被误判为夜间失效）→ 恢复 .45，
+   夜间地图保持明显暗化（观感显著区别于白天），同时地名仍可读 */
 body.theme-night .leaflet-tile-pane::after {
     background: rgba(10, 16, 38, .45);
 }
+/* ================= v97 修正：夜间「白底白字」彻底根治 =================
+   用户反馈两个问题：① 地图夜间暗化「突然丢失」（v97 试 .28 太淡，恢复 .45 明显暗化，见上）；
+   ② 夜间材质包下出现白底白字（看不见文字）——悬浮球展开后的收起按钮、设置面板若干按钮、
+   医院等设施详情卡。根因：部分控件未纳入夜间深底规则（保持白天浅色底），文字却随全局规则变白。
+   根治：夜间所有面板内按钮兜底深底亮字；收起按钮单独深底；信息卡实色深底强化 + 徽标主题色 */
+body.theme-night #fab-trigger,
+body.theme-night #fab-trigger .fab-collapse {
+    background: rgba(30, 41, 82, .96) !important;
+    color: #f8faff !important;
+    border: 1px solid #334155 !important;
+}
+/* 设置面板/底图面板/打点面板/图例/记录/日志内所有非主题色按钮：统一深底亮字，杜绝白底白字 */
+body.theme-night .settings-panel button:not(.pack-item),
+body.theme-night .settings-panel .set-toggle,
+body.theme-night .settings-panel .adv-toggle,
+body.theme-night #map .basemap-panel button,
+body.theme-night #map .mark-panel button,
+body.theme-night #map .legend-panel button,
+body.theme-night #map .records-panel button,
+body.theme-night #map .cl-card button {
+    background: rgba(30, 41, 82, .96) !important;
+    color: #f8faff !important;
+    border-color: #334155 !important;
+}
+body.theme-night .settings-panel button.active,
+body.theme-night .settings-panel button.sel,
+body.theme-night #map .basemap-panel .bm-item.sel {
+    background: #6366f1 !important;
+    color: #fff !important;
+    border-color: #a5b4fc !important;
+}
+/* 信息卡：实色深底强化（防任何子元素透出白底）+ 类型徽标用主题色，文字纯白 */
+body.theme-night .iw-card {
+    background: #0f1628 !important;
+    border-color: #334155 !important;
+}
+body.theme-night .iw-card .iw-title { color: #ffffff !important; }
+body.theme-night .iw-card .iw-row { color: #dbe7ff !important; }
+body.theme-night .iw-card .iw-label { color: #a5b4fc !important; }
+body.theme-night .iw-card .iw-type { background: var(--accent) !important; color: #fff !important; }
+/* 通用兜底：其余可能白底的控件（标题栏菜单钮/搜索项/图层操作钮/搜索框/下拉）夜间统一深底亮字 */
+body.theme-night .menu-btn,
+body.theme-night .sr-item,
+body.theme-night .layer-actions button {
+    background: rgba(30, 41, 82, .96) !important;
+    color: #f8faff !important;
+    border-color: #334155 !important;
+}
+body.theme-night .search-input,
+body.theme-night select,
+body.theme-night .mark-ops input {
+    background: rgba(15, 23, 42, .92) !important;
+    color: #eef2ff !important;
+}
+body.theme-night .search-input::placeholder { color: #a5b4fc !important; }
