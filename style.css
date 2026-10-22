@@ -2339,3 +2339,64 @@ body.theme-night .sidebar {
 body.theme-night .layer-tip, body.theme-night .tip-line, body.theme-night .set-hint,
 body.theme-night .rp-empty, body.theme-night .cl-row-points, body.theme-night .iw-card .iw-label,
 body.theme-night .search-input::placeholder { color: #c9d5f5; }
+
+/* ================= v94 流畅优先三改：夜间遮罩替代瓦片反色 + 悬浮球真透光 + 文字换表现 =================
+   ① 夜间瓦片不再 invert filter：每张瓦片逐帧 invert+hue-rotate 合成本是「整体卡顿」主源（拖动/缩放/底图切换时
+      几十张瓦片持续重算）。改为 tile-pane 伪元素深色遮罩——纯合成一次、pointer-events none、z-index 10 只盖
+      瓦片（overlay-pane/POI/聚合气泡在上层不受影响），夜间拖动缩放零 filter 成本，地图观感为暗色底+亮要素
+   ② 悬浮球真透光：v91 球基底 color-mix 只混 accent+白+黑（实际不透明，磨砂形同虚设）。v94 基底掺 transparent，
+      不透明度随 --glass-alpha 在 42%-74% 区间，透过玻璃真实见底图 + 磨砂 + 四层高光
+   ③ 夜间文字换表现形式：面板底色更实（alpha×1.1）+ 正文纯白 #f8faff + font-weight 500/600——磨砂透出地图
+      纹理造成的视觉噪声用「更实底+加粗纯白字」对冲，不再依赖提亮 */
+body.theme-night .leaflet-tile-pane { filter: none; }
+body.theme-night .leaflet-tile-pane::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(10, 16, 38, .62);
+    z-index: 10;
+    pointer-events: none;
+}
+/* 悬浮球：真透光玻璃（透明基底 + 更强磨砂） */
+#fab:not(.fab-open) {
+    background:
+        radial-gradient(circle at 50% 70%, rgba(255, 255, 255, calc(.32 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 46%),
+        radial-gradient(150% 80% at 22% 8%, rgba(255, 255, 255, calc(.95 * var(--glass-sheen))) 0%, rgba(255, 255, 255, calc(.45 * var(--glass-sheen))) 18%, rgba(255, 255, 255, 0) 46%),
+        radial-gradient(circle at 30% 22%, rgba(255, 255, 255, calc(.88 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 13%),
+        radial-gradient(120% 65% at 50% 105%, rgba(255, 255, 255, calc(.40 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 48%),
+        radial-gradient(circle at 50% 50%,
+            color-mix(in srgb, var(--accent) calc(56% + 18% * var(--glass-alpha)), transparent) 0%,
+            color-mix(in srgb, var(--accent) calc(44% + 14% * var(--glass-alpha)), transparent) 56%,
+            color-mix(in srgb, var(--accent) calc(34% + 10% * var(--glass-alpha)), black 32%) 100%);
+    backdrop-filter: blur(calc(var(--glass-blur) * .3)) saturate(150%);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .3)) saturate(150%);
+}
+body.theme-night #fab:not(.fab-open) {
+    backdrop-filter: blur(calc(var(--glass-blur) * .36)) saturate(165%);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .36)) saturate(165%);
+}
+/* 夜间面板：底色更实（防地图纹理透过干扰文字）+ 文字纯白加粗 */
+body.theme-night #map .toolbar,
+body.theme-night #map .settings-panel,
+body.theme-night #map .basemap-panel,
+body.theme-night #map .mark-panel,
+body.theme-night #map .legend-panel,
+body.theme-night #map .records-panel,
+body.theme-night .sidebar {
+    background: rgba(15, 20, 40, calc(min(.97, var(--glass-alpha) * 1.1)));
+}
+body.theme-night .sidebar, body.theme-night #map .toolbar, body.theme-night #map .settings-panel,
+body.theme-night #map .basemap-panel, body.theme-night #map .mark-panel, body.theme-night #map .legend-panel,
+body.theme-night #map .records-panel, body.theme-night #map .cl-card, body.theme-night .page-header,
+body.theme-night .iw-card { color: #f8faff; }
+body.theme-night .sidebar *, body.theme-night #map .toolbar *, body.theme-night #map .settings-panel *,
+body.theme-night #map .basemap-panel *, body.theme-night #map .mark-panel *, body.theme-night #map .legend-panel *,
+body.theme-night #map .records-panel *, body.theme-night #map .cl-card *, body.theme-night .page-header *,
+body.theme-night .iw-card * { font-weight: 500; }
+body.theme-night .panel-title, body.theme-night .legend-title, body.theme-night .settings-panel .settings-title,
+body.theme-night .cl-head, body.theme-night .rp-head, body.theme-night .iw-card .iw-title {
+    font-weight: 600; color: #ffffff;
+}
+/* 悬浮球展开动画减负：取消按钮 stagger（统一同弹）、过渡缩短到 0.22s 内，展开更跟手 */
+.toolbar.fab-open { transition: width .22s cubic-bezier(.34, 1.56, .64, 1), height .22s cubic-bezier(.34, 1.56, .64, 1), transform .22s cubic-bezier(.34, 1.56, .64, 1), opacity .2s ease !important; }
+.toolbar.fab-open button { transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), opacity .16s ease !important; transition-delay: 0s !important; }
