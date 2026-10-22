@@ -70,8 +70,10 @@
     var TILE_CHAIN = [
         { url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', name: '高德·矢量', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
         { url: 'https://wprd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}', name: '高德·栅格', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
-        { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
+        { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
+        { url: 'https://wprd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}&night=1', name: '高德·夜间', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' }
     ];
+    var NIGHT_TILE_IDX = 3, nightPrevIdx = 0; // v100：夜间材质包自动切 Carto Dark 真深色底图，切回恢复原底图
     // 标准 WGS-84 → GCJ-02（高德）加密转换
     function transformLat(x, y) {
         var ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
@@ -127,7 +129,7 @@
         var t = TILE_CHAIN[idx];
         var mz = t.maxZoom || 20;
         var newT = L.tileLayer(t.url, {
-            maxZoom: mz, maxNativeZoom: mz, subdomains: '1234',
+            maxZoom: mz, maxNativeZoom: mz, subdomains: t.subs || '1234',
             attribution: t.attr
         });
         var errN = 0;
@@ -1378,6 +1380,24 @@
         var cls = ['theme-peach', 'theme-osmanthus', 'theme-leaf', 'theme-rose', 'theme-night'];
         document.body.classList.remove.apply(document.body.classList, cls);
         document.body.classList.add('theme-' + packKey);
+        // v100：夜间材质包 → 底图真正切换为 Carto Dark 深色瓦片（底色整体变深，地名/道路为暗色设计），
+        // 非夜间切回用户原底图；用户手动锁定过底图时尊重其选择，不强制切换
+        try {
+            if (packKey === 'night') {
+                if (!basemapLocked && typeof tileIdx === 'number' && tileIdx !== NIGHT_TILE_IDX) {
+                    nightPrevIdx = tileIdx;
+                    activateTile(NIGHT_TILE_IDX, true);
+                    document.body.classList.add('night-dark-tiles');
+                } else {
+                    document.body.classList.remove('night-dark-tiles');
+                }
+            } else {
+                if (typeof tileIdx === 'number' && tileIdx === NIGHT_TILE_IDX) {
+                    activateTile(nightPrevIdx, true);
+                }
+                document.body.classList.remove('night-dark-tiles');
+            }
+        } catch (e) { }
         var root = document.documentElement;
         root.style.setProperty('--accent', p.accent);
         root.style.setProperty('--accent-dark', p.accentDark);
@@ -1702,7 +1722,8 @@
         { v: 'v96', t: '收敛过度渲染 + 精准提亮低对比辅助文字 + 夜间底图切换修复', pts: ['收到「看不清的是字体颜色和底色重合的颜色，其他能看见的文字别再过度渲染了；夜间地图不能切换」——① 过度渲染收敛：移除 v93 双层 text-shadow（重影感）与 v94 全局 font-weight:500（生硬感），正文回常规字重，仅标题保留层级加粗，已清楚的文字恢复朴素', '② 精准提亮「与底色重合」的文字：定位为 11-12px 辅助小字（提示/说明/计数/placeholder/图例标签/记录空态/滑杆数值等），统一提到 #dbe6ff（对实色底对比度 ≈ 14:1），不加粗、无发光，只解决低对比', '③ 夜间底图切换修复：排查确认切换逻辑本身正常，根因是 v94 夜间遮罩 rgba(10,16,38,.62) 把所有底图都暗化到接近，切换后观感几乎无变化导致「以为切不动」。遮罩降至 .45——保留夜间暗化观感，但底图差异清晰可见，切换有感知'] },
         { v: 'v97', t: '夜间暗化恢复 + 「白底白字」彻底根治', pts: ['收到「地图没有切换到夜间模式（突然丢失）+ 夜间材质包下避免白底白字：悬浮球收起按钮/设置若干按钮/医院等设施详情卡」——① 地图暗化丢失：v97 曾把夜间遮罩试降到 .28（透明度过低，暗化观感几乎消失被误判为夜间失效），恢复 .45——夜间地图保持明显暗化、区别于白天，同时瓦片地名仍可读', '② 白底白字根治：排查发现 .set-toggle（高级设置展开/收缩）、部分面板按钮、收起按钮等控件基础样式是白底（background:#fff），文字却随夜间全局规则变白 → 白底白字不可见。v97 统一兜底：悬浮球收起按钮（#fab-trigger）、设置面板全部按钮、底图/打点/图例/记录/日志按钮、标题栏菜单钮、搜索项、图层操作钮夜间一律深底（rgba(30,41,82,.96)）+ 亮字（#f8faff）；active/sel 保持主题色（#6366f1 白字）；信息卡实色深底强化 + 标题纯白 + 行亮字 + 标签提亮 + 类型徽标主题色——夜间不再存在任何白底白字', '③ 用户明确「不是字号的问题」——本轮不再动字号'] },
         { v: 'v98', t: '设施点详情卡（.pw-box）统一优化：白天玻璃化 + 夜间深色实底', pts: ['收到「图层设施点的详情卡片忘记优化了，所有设施点都要优化」——排查发现设施点/道路/用户标注详情卡用的是 .pw-box（bindPopup pointPopupHtml/roadPopupHtml/userRoadPopupHtml 生成），v95-v97 的夜间实色规则覆盖的是 .iw-card，从未命中 .pw-box——所以夜间仍是 Leaflet 默认白底卡片（石灰社区卫生室截图实证白底）', 'v98 统一：白天 .leaflet-popup-content-wrapper 对齐全局玻璃（半透明白 + 磨砂 + 尖角同步），夜间转 Apple 深色实底卡片（外层 popup 与尖角 #0f1628、标题纯白加粗、行亮字 #dbe7ff、标签提亮 #a5b4fc、描边/内高光/深阴影）——所有设施点（学校/医院/景点/诊所）、道路、用户标注详情卡全覆盖，不再有白底详情卡'] },
-        { v: 'v99', t: '材质包→地图底图联动着色（tile-pane 主题色叠加）', pts: ['收到「地图还是其他材质的样子」——切换材质包只有 UI 变色、地图底图完全不变（此前仅夜间有 .45 深色遮罩）。v99 给每套材质包定义 --map-tint：桃花 rgba(216,93,140,.16) / 桂花 rgba(214,128,26,.14) / 绿叶 rgba(34,130,80,.13) / 玫瑰 rgba(210,32,92,.14) 低透明主题色，夜间沿用 .45 深色遮罩，综合透明', '实现：tile-pane 单层伪元素 background:var(--map-tint)——纯 CSS 一次合成、pointer-events none、z-index 10 只盖瓦片（POI/聚合/标注在上层不受影响）、零逐帧开销、切换 0.5s 平滑过渡；夜间特化规则（特异性更高）仍保证 .45 深色优先——切换材质包时地图底图可见地随主题染色'] }
+        { v: 'v99', t: '材质包→地图底图联动着色（tile-pane 主题色叠加）', pts: ['收到「地图还是其他材质的样子」——切换材质包只有 UI 变色、地图底图完全不变（此前仅夜间有 .45 深色遮罩）。v99 给每套材质包定义 --map-tint：桃花 rgba(216,93,140,.16) / 桂花 rgba(214,128,26,.14) / 绿叶 rgba(34,130,80,.13) / 玫瑰 rgba(210,32,92,.14) 低透明主题色，夜间沿用 .45 深色遮罩，综合透明', '实现：tile-pane 单层伪元素 background:var(--map-tint)——纯 CSS 一次合成、pointer-events none、z-index 10 只盖瓦片（POI/聚合/标注在上层不受影响）、零逐帧开销、切换 0.5s 平滑过渡；夜间特化规则（特异性更高）仍保证 .45 深色优先——切换材质包时地图底图可见地随主题染色'] },
+        { v: 'v100', t: '夜间真深色底图（高德夜间瓦片 night=1）+ 设施点悬停标签深底亮字', pts: ['收到「夜间的时候地图底色还没更换 + 鼠标经过图层设施点显示的标签白底白字」——① 底色：实测免费暗色瓦片源（Carto Dark / Esri Dark Gray / OpenFreeMap）2026 已全部 API key 化或停服，高德暗色样式是 JS API 矢量渲染（瓦片 URL 无暗色参数）——最终找到高德栅格域 wprd0{s} 加 night=1 参数返回真正暗色瓦片（深底浅字、地名清晰，实测下载瓦片验证）。v100 切夜间材质包时自动切换为高德夜间瓦片 + 轻压暗遮罩 rgba(6,10,24,.18)，切回白天自动恢复原底图；手动锁定底图时保持高覆盖深色遮罩 .7', '② 悬停标签：.poi-tip 白天玻璃白底、夜间文字随全局规则变亮 → 白底白字看不清（v97 兜底漏了 tooltip）。v100 夜间 .leaflet-tooltip/.poi-tip 统一深底 rgba(15,22,40,.96)+亮字 #f8faff+描边 #334155+深阴影，箭头三角四向同步深色——设施点/道路悬停标签夜间全部深底亮字，无白底白字'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -2117,3 +2138,30 @@
     }, true);
 })();
 
+// ===== 临时测试钩子（验证用，推送前删除） =====
+(function () {
+    if (/v100b=1/.test(location.search)) {
+        setTimeout(function () {
+            var btn = document.querySelector('.pack-item[data-pack="night"]');
+            if (btn) { btn.click(); }
+            setTimeout(function () {
+                var tileImg = document.querySelector('.leaflet-tile-pane img.leaflet-tile');
+                var t = 'V100B|darkcls=' + document.body.classList.contains('night-dark-tiles') +
+                    '|tilesrc=' + (tileImg ? tileImg.src.substring(0, 60) : 'NO');
+                document.title = t;
+            }, 1600);
+        }, 900);
+    }
+    if (/v100c=1/.test(location.search)) {
+        setTimeout(function () {
+            var btn = document.querySelector('.pack-item[data-pack="night"]');
+            if (btn) { btn.click(); }
+            setTimeout(function () {
+                var ic = document.querySelector('.poi-icon-wrap .poi-icon') || document.querySelector('.poi-icon');
+                if (ic) { ic.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); }
+                document.title = 'V100C';
+            }, 1500);
+        }, 900);
+    }
+})();
+// ===== 临时钩子结束 =====

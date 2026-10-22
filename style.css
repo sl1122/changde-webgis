@@ -44,7 +44,7 @@ body.theme-night {
     --header-grad: linear-gradient(135deg, rgba(30, 27, 75, .88), rgba(67, 56, 202, .82), rgba(99, 102, 241, .86));
     --logo-color: #e0e7ff;
     --school: #9db8e8; --hospital: #f0a3a3; --scenic: #8fd6b8; --road: #e6bd7a;
-    --map-tint: rgba(10, 16, 38, .45);
+    --map-tint: rgba(10, 16, 38, .7);
 }
 /* 夜间模式：地图瓦片整体反色变暗（只作用于瓦片层，POI/道路标记保持原色）；切夜间平滑过渡不闪白 */
 body.theme-night .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.96); }
@@ -2434,7 +2434,7 @@ body.theme-night .mark-item .mi-meta, body.theme-night .pw-k {
 /* ② 夜间遮罩：v96 .45 → v97 曾试 .28（地图暗化几乎消失被误判为夜间失效）→ 恢复 .45，
    夜间地图保持明显暗化（观感显著区别于白天），同时地名仍可读 */
 body.theme-night .leaflet-tile-pane::after {
-    background: rgba(10, 16, 38, .45);
+    background: var(--map-tint, rgba(10, 16, 38, .45));
 }
 /* ================= v97 修正：夜间「白底白字」彻底根治 =================
    用户反馈两个问题：① 地图夜间暗化「突然丢失」（v97 试 .28 太淡，恢复 .45 明显暗化，见上）；
@@ -2519,6 +2519,27 @@ body.theme-night .pw-t {
 }
 body.theme-night .pw-k { color: #a5b4fc !important; }
 body.theme-night .pw-v { color: #dbe7ff !important; }
+
+/* ================= v100 夜间真深色底图 + 设施点悬停标签深底亮字 =================
+   ① 用户「夜间的时候地图底色还没更换」：此前夜间只是给亮瓦片罩 .45 暗色遮罩，底图本质还是亮色。
+      v100 切夜间材质包时 JS 自动换 Carto Dark 深色瓦片（底色整体真正变深、地名道路为暗色设计），
+      遮罩改为轻压暗（dark 瓦片本就深）；切回白天自动恢复原底图。手动锁底图时尊重用户选择
+   ② 用户「鼠标经过图层设施点显示的标签白底白字」：.poi-tip 白天玻璃白底 + 夜间文字变亮 →
+      白底白字。v100 夜间 tooltip 统一深底亮字（含箭头三角同步深色） */
+body.theme-night.night-dark-tiles { --map-tint: rgba(6, 10, 24, .18); }
+body.theme-night .leaflet-tooltip,
+body.theme-night .poi-tip {
+    background: rgba(15, 22, 40, .96) !important;
+    color: #f8faff !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 4px 14px rgba(2, 6, 23, .5) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+body.theme-night .leaflet-tooltip-top::before { border-top-color: rgba(15, 22, 40, .96) !important; }
+body.theme-night .leaflet-tooltip-bottom::before { border-bottom-color: rgba(15, 22, 40, .96) !important; }
+body.theme-night .leaflet-tooltip-left::before { border-left-color: rgba(15, 22, 40, .96) !important; }
+body.theme-night .leaflet-tooltip-right::before { border-right-color: rgba(15, 22, 40, .96) !important; }
 
 /* ================= v99 材质包→地图底图联动着色 =================
    用户「地图还是其他材质的样子」：切换材质包只有 UI 变色、地图底图完全不变（只有夜间有遮罩）。
