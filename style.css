@@ -1992,34 +1992,31 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     .pack-item { padding: 3px 9px; font-size: 11.5px; }
 }
 
-/* ================= v88 悬浮球：折叠态球面罗盘图案（直接画在球背景，清晰醒目） =================
-   不再依赖 ::before 伪元素层级——图案作为多层背景渐变直接合成在折叠球表面：
-   粗双环（中心留空给触发球图标）+ 8 个刻度点 + 顶部白色液态高光 + 半透明白玻璃底，
-   尺寸更大、对比更强，实机一眼可见；展开态（.fab-open）不受影响 */
+/* ================= v89 悬浮球：折叠态 Apple 液态玻璃球面 + 中央准星图案 =================
+   球面 = 半透明白玻璃基底 + 左上弧形主高光 + 下缘内反射 + 极淡品牌紫辉光（液态玻璃层次感）；
+   中央由精致的准星 SVG 图标（外圈 + 四向刻度 + 中心点）作为表面图案，与 WebGIS 风格协调；
+   展开态恢复「六点 + 功能」胶囊。全部为背景渐变 + 内嵌 SVG，零 JS 零性能开销 */
 #fab { border-radius: 50%; }
 #fab:not(.fab-open) {
     background:
-        /* 内粗环（图标外侧） */
-        radial-gradient(circle at 28px 28px, transparent 0 18px, rgba(109, 40, 217, .62) 18.5px 21.5px, transparent 22.5px),
-        /* 外细环（边缘带） */
-        radial-gradient(circle at 28px 28px, transparent 0 24px, rgba(109, 40, 217, .4) 24.5px 25.5px, transparent 26px),
-        /* 4 个主刻度点（上下左右） */
-        radial-gradient(circle at 28px 5px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
-        radial-gradient(circle at 28px 51px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
-        radial-gradient(circle at 5px 28px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
-        radial-gradient(circle at 51px 28px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
-        /* 4 个次刻度点（对角） */
-        radial-gradient(circle at 12px 12px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 44px 12px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 12px 44px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 44px 44px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
-        /* 顶部白色液态高光 */
-        radial-gradient(circle at 15px 11px, rgba(255, 255, 255, .95) 0 6px, rgba(255, 255, 255, 0) 14px),
-        /* 底部半透明白玻璃 */
-        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .78) 0 90%, rgba(255, 255, 255, .55) 100%);
+        /* 内部淡紫辉光（中心偏下，与品牌色呼应但不抢眼） */
+        radial-gradient(circle at 50% 68%, rgba(109, 40, 217, .09) 0 42%, rgba(109, 40, 217, 0) 64%),
+        /* 顶部主高光：左上弧形液态光泽 */
+        radial-gradient(130% 70% at 26% 12%, rgba(255, 255, 255, .95) 0%, rgba(255, 255, 255, .5) 24%, rgba(255, 255, 255, 0) 56%),
+        /* 下缘内反射光（玻璃折射感） */
+        radial-gradient(110% 60% at 50% 102%, rgba(255, 255, 255, .45) 0%, rgba(255, 255, 255, 0) 52%),
+        /* 基底半透明白玻璃 */
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .85) 0 60%, rgba(255, 255, 255, .6) 100%);
 }
 #fab:not(.fab-open)::before { display: none; }
 #fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* 仅折叠态隐藏功能按钮 */
+/* 折叠态：显示中央准星图案，隐藏六点与「功能」文字 */
+#fab:not(.fab-open) #fab-trigger .fab-dots,
+#fab:not(.fab-open) #fab-trigger span { display: none; }
+#fab:not(.fab-open) #fab-trigger .fab-compass { display: block; width: 30px; height: 30px; }
+/* 展开态：恢复六点 + 「功能」胶囊，隐藏准星 */
+#fab.fab-open #fab-trigger .fab-compass { display: none; }
+#fab.fab-open #fab-trigger .fab-dots { display: block; }
 #fab-trigger {
     width: 56px; height: 56px;
     display: flex; flex-direction: column;
