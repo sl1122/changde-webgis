@@ -1992,32 +1992,33 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     .pack-item { padding: 3px 9px; font-size: 11.5px; }
 }
 
-/* ================= v87 悬浮球：折叠态球面罗盘图案（高对比清晰版） =================
-   白球底上叠加深紫罗盘刻度：8 个刻度点 + 双细环 + 顶部白色液态高光，
-   中心留空给触发球图标；纯 CSS 多点径向渐变实现，无 mask / SVG 依赖，全浏览器兼容 */
+/* ================= v88 悬浮球：折叠态球面罗盘图案（直接画在球背景，清晰醒目） =================
+   不再依赖 ::before 伪元素层级——图案作为多层背景渐变直接合成在折叠球表面：
+   粗双环（中心留空给触发球图标）+ 8 个刻度点 + 顶部白色液态高光 + 半透明白玻璃底，
+   尺寸更大、对比更强，实机一眼可见；展开态（.fab-open）不受影响 */
 #fab { border-radius: 50%; }
-#fab::before {
-    content: '';
-    position: absolute; inset: 3px;
-    border-radius: 50%;
+#fab:not(.fab-open) {
     background:
+        /* 内粗环（图标外侧） */
+        radial-gradient(circle at 28px 28px, transparent 0 18px, rgba(109, 40, 217, .62) 18.5px 21.5px, transparent 22.5px),
+        /* 外细环（边缘带） */
+        radial-gradient(circle at 28px 28px, transparent 0 24px, rgba(109, 40, 217, .4) 24.5px 25.5px, transparent 26px),
         /* 4 个主刻度点（上下左右） */
-        radial-gradient(circle at 25px 6px, rgba(109, 40, 217, .8) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 25px 44px, rgba(109, 40, 217, .8) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 6px 25px, rgba(109, 40, 217, .8) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 44px 25px, rgba(109, 40, 217, .8) 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 28px 5px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
+        radial-gradient(circle at 28px 51px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
+        radial-gradient(circle at 5px 28px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
+        radial-gradient(circle at 51px 28px, rgba(109, 40, 217, .9) 0 3px, transparent 4px),
         /* 4 个次刻度点（对角） */
-        radial-gradient(circle at 13.5px 13.5px, rgba(109, 40, 217, .55) 0 2px, transparent 3px),
-        radial-gradient(circle at 36.5px 13.5px, rgba(109, 40, 217, .55) 0 2px, transparent 3px),
-        radial-gradient(circle at 13.5px 36.5px, rgba(109, 40, 217, .55) 0 2px, transparent 3px),
-        radial-gradient(circle at 36.5px 36.5px, rgba(109, 40, 217, .55) 0 2px, transparent 3px),
-        /* 双细环（中心留空给触发球图标） */
-        radial-gradient(circle at 25px 25px, transparent 0 17px, rgba(109, 40, 217, .5) 17.5px 19px, transparent 20px),
-        radial-gradient(circle at 25px 25px, transparent 0 22px, rgba(109, 40, 217, .3) 22.5px 23.5px, transparent 24px),
+        radial-gradient(circle at 12px 12px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 44px 12px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 12px 44px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 44px 44px, rgba(109, 40, 217, .65) 0 2.5px, transparent 3.5px),
         /* 顶部白色液态高光 */
-        radial-gradient(circle at 14px 10px, rgba(255, 255, 255, .9) 0 5px, rgba(255, 255, 255, 0) 11px);
-    pointer-events: none;
+        radial-gradient(circle at 15px 11px, rgba(255, 255, 255, .95) 0 6px, rgba(255, 255, 255, 0) 14px),
+        /* 底部半透明白玻璃 */
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .78) 0 90%, rgba(255, 255, 255, .55) 100%);
 }
+#fab:not(.fab-open)::before { display: none; }
 #fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* 仅折叠态隐藏功能按钮 */
 #fab-trigger {
     width: 56px; height: 56px;
