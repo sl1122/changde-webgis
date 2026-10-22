@@ -614,10 +614,13 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 @media (max-width: 768px) {
     .toolbar[data-anchor="top"].fab-open,
     .toolbar[data-anchor="bottom"].fab-open { padding: 4px 4px 4px 10px; }
+    /* v77：手机横向固定一排完整展示（31px 紧凑按钮，全功能按钮可全部容纳在 96vw 内，无需滚动） */
     .toolbar[data-anchor="top"].fab-open button,
-    .toolbar[data-anchor="bottom"].fab-open button { width: 36px; height: 40px; }
+    .toolbar[data-anchor="bottom"].fab-open button { width: 31px; height: 38px; }
     .toolbar[data-anchor="top"].fab-open button svg,
-    .toolbar[data-anchor="bottom"].fab-open button svg { width: 17px; height: 17px; }
+    .toolbar[data-anchor="bottom"].fab-open button svg { width: 15px; height: 15px; }
+    .toolbar[data-anchor="top"].fab-open button + button,
+    .toolbar[data-anchor="bottom"].fab-open button + button { margin-left: 3px; }
 }
 /* v76：收起方向动画——竖向向上 / 横向向左，与停靠边严格平行（配合 JS fab-closing） */
 .toolbar.fab-closing[data-anchor="left"] button,
@@ -736,18 +739,19 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 .toolbar button#btn-clear.fab-pop { color: #5b6474; background: rgba(226, 232, 240, .85); }
 .toolbar .petal-btn.active { background: var(--accent, var(--plum)); color: #fff; box-shadow: 0 6px 16px rgba(142, 42, 82, .35); }
 
-/* 自定义缩放按钮（更好用，Apple 玻璃质感；桌面位于悬浮球下方，手机右下） */
+/* 自定义缩放按钮（Apple 玻璃质感；v77：移至右下角、尺寸适当缩小——桌面 38px / 手机 34px） */
 .zoom-ctrl {
     position: absolute;
-    right: 10px;
-    top: 132px;
+    right: 12px;
+    bottom: 20px;
+    top: auto;
     z-index: 20;
     display: flex;
     flex-direction: column;
     background: rgba(255, 255, 255, .68);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
-    border-radius: 14px;
+    border-radius: 12px;
     overflow: hidden;
     box-shadow:
         0 6px 20px rgba(15, 23, 42, .12),
@@ -756,8 +760,8 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     border: 1px solid rgba(255, 255, 255, .6);
 }
 .zoom-ctrl button {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -765,7 +769,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     background: var(--card);
     color: var(--plum);
     cursor: pointer;
-    font-size: 20px;
+    font-size: 18px;
     transform-style: preserve-3d;
     transition: transform .4s cubic-bezier(.34, 1.56, .64, 1), background-color .25s ease, color .25s ease;
 }
@@ -1206,7 +1210,7 @@ body.theme-night .measure-result {
     .toolbar button.tilt-r { transform: translateY(-4px) rotate(3deg); }
     .toolbar button:active { transform: translateY(0) scale(.97); }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
-    .zoom-ctrl button { width: 38px; height: 38px; }
+    .zoom-ctrl button { width: 34px; height: 34px; font-size: 16px; }
     /* 比例尺放左下角（不遮挡缩放键），默认 Leaflet 位置微调 */
     #map .leaflet-bottom.leaflet-left { left: 0; pointer-events: none; }
     #map .leaflet-control-scale {
@@ -1619,8 +1623,8 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     display: none;
     position: fixed; inset: 0;
     background: rgba(15, 23, 42, .42);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    /* v77：移除全屏 backdrop-filter——全屏 blur 是打开日志时的主要卡顿源；
+       遮罩改用纯 rgba 暗化（日志卡自身仍是小面积玻璃 blur），视觉分层不变、性能大增 */
     z-index: 2000; /* 全局顶级弹窗层级：不被悬浮球/面板遮挡 */
     align-items: center;
     justify-content: center;

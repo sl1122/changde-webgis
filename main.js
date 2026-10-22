@@ -1505,7 +1505,8 @@
         { v: 'v73', t: '定向修复：弹窗关闭 / 折射偏转 / 悬浮球中点吸附', pts: ['更新日志关闭按钮修复：click + touchstart 双端直接绑定（不再依赖冒泡委托），弹出层 z-index 提升至全局顶级 2000，关闭 0.25s 平滑淡出 + 轻微缩放，无残留无遗留', '液态折射偏转修复：设置面板滤镜从面板本体移到 .settings-inner 外包盒并预留 8px 滤镜安全边距，滤镜仅作用视觉层不影响定位盒模型，开启折射面板位置不漂移、文字不错位', '悬浮球吸附规则重写：松手吸附最近边「中点」，四角区域按距离判定就近竖边/横边后吸该边中点；吸附果冻 0.3s，拖拽中透明度 70% 暂停滤镜仅位置跟随', '折叠方向严格双轨：竖向停靠折叠按钮置顶、向下竖向展开（图标+文字长胶囊）收起向上；横向停靠折叠按钮固定最左、向右横向展开纯图标，收起向左；过渡方向与停靠边严格平行', '竖向展开顶部内边距 12px 折叠按钮完全置顶，层级提升不被遮挡；展开尺寸边界：竖向 ≤ 视口 80%（超出自适应滚动），横向 ≤ 视口 60%', '吸附边界避让：停靠上下边时自动避开左下比例尺与右下缩放组，互不重叠', '测量卡片显示逻辑严格化：进入测量模式仅轻量 toast 提示，卡片仅在激活工具且已有绘制内容时显示；清除/切换/退出全链路隐藏', '测量卡片渲染层提升（translateZ），消除边缘斑块模糊，质感对齐全局玻璃标准'] },
         { v: 'v74', t: '日志关闭根治 + 高级设置折叠修复 + 横向全量展开', pts: ['更新日志叉号关闭根治：发现 removing 动画防抖残留会导致快速重开后再点叉号被误拦，openChangelog 现会清除残留；关闭按钮升级 click + touchstart + pointerdown 三通道直接绑定；面板拦截名单移除 cl-card，杜绝一切事件干扰', '高级设置折叠修复：展开/收起改为 hidden 与 open 类完全同步（去掉原无条件 add 类与 280ms 延时收起），杜绝展开后自动折叠与按钮状态错乱，折叠状态持久化保留', '悬浮球横向停靠升级：横向展开改为 flex-wrap 自动换行，一次性完整展示全部功能按钮，移除滚动条与拖动条遮挡，超宽自动两行排布；竖向展开保持长胶囊直显不变', '吸附/折叠方向/避让规则与 v73 保持一致，三通道绑定不影响正常关闭动效 0.25s 淡出缩放'] },
         { v: 'v75', t: '地图穿透终极守卫 + 日志关闭流畅化', pts: ['地图穿透终极修复：Leaflet 地图点击监听（测量加点 / 打点）增加 UI 命中守卫——事件来源落在任何玻璃面板/卡片/弹窗（设置/底图/打点/图例/测量卡/更新日志/悬浮球/缩放组/POI 弹窗）时一律忽略，不再依赖冒泡拦截顺序，杜绝卡片点击刺透到地图', '更新日志 cl-card 恢复面板拦截名单（叉号三通道直绑不受影响），卡内点击不冒泡到地图', '日志关闭卡顿优化：关闭动画期间移除全屏 backdrop-filter 模糊（动画结束自动恢复），消除大屏 blur 重排卡顿'] },
-        { v: 'v76', t: '测量斑块清理 + 悬浮球拖拽手感重构', pts: ['测量卡片显示严格化：未激活工具时完全不显示；点击测距/测面瞬间显示操作提示卡（实时数值随绘制更新，6s 自动消退不常驻）；清除测量同步清图形+隐藏卡+重置状态，无斑块残留', '悬浮球吸附回归沿边投影：取消"强制中点吸附"导致的拖拽后位置跳变，球停哪吸哪，仅做安全范围 clamp', '竖向停靠吸附上限收紧（视口高 - 展开面板高 - 边距）：保证竖向展开后功能栏完整显示在视口内，不被底部截断、无遮挡滚动条', '横向展开固定一排（nowrap）：桌面 44px 完整一排；移动端 36px 紧凑排布，超宽隐藏式横向滚动（滚动条不可见），杜绝两行换行与可见滚动条', '吸附避让规则保留：横向停靠避开左下比例尺与右下缩放组；展开方向/折叠方向与停靠边严格平行'] }
+        { v: 'v76', t: '测量斑块清理 + 悬浮球拖拽手感重构', pts: ['测量卡片显示严格化：未激活工具时完全不显示；点击测距/测面瞬间显示操作提示卡（实时数值随绘制更新，6s 自动消退不常驻）；清除测量同步清图形+隐藏卡+重置状态，无斑块残留', '悬浮球吸附回归沿边投影：取消"强制中点吸附"导致的拖拽后位置跳变，球停哪吸哪，仅做安全范围 clamp', '竖向停靠吸附上限收紧（视口高 - 展开面板高 - 边距）：保证竖向展开后功能栏完整显示在视口内，不被底部截断、无遮挡滚动条', '横向展开固定一排（nowrap）：桌面 44px 完整一排；移动端 36px 紧凑排布，超宽隐藏式横向滚动（滚动条不可见），杜绝两行换行与可见滚动条', '吸附避让规则保留：横向停靠避开左下比例尺与右下缩放组；展开方向/折叠方向与停靠边严格平行'] },
+        { v: 'v77', t: '双击卡片放大根治 + 全站性能提速 + 悬浮球/缩放组布局修正', pts: ['双击卡片放大根治：所有玻璃面板/卡片（设置/底图/打点/图例/测量卡/更新日志/提示）新增 dblclick 拦截，双击它们不再触发 Leaflet 地图双击缩放；viewport 禁用用户缩放（maximum-scale=1, user-scalable=no），手机端双击页面也不放大', '全站卡顿修复：更新日志遮罩移除全屏 backdrop-filter（纯 rgba 暗化遮罩，日志卡自身保留小面积玻璃模糊），打开/关闭日志不再触发全屏 blur 重排；侧边栏面板恢复按钮打开前统一清除关闭动画残留类，快速多次开合不再动画叠加卡顿', '悬浮球横向展开态禁用拖拽（停靠上/下边缘时）——该状态用于浏览功能列表，拖动不再把悬浮球吸走；竖向展开与折叠态仍可长按拖动', '悬浮球初始位置改为右上角（off 56px），anchor 持久化键升级 cd_fab_anchor77，旧位置作废强制复位右上', '缩放按钮组移至右下角（桌面/手机统一），按钮适当缩小（桌面 38px / 手机 34px），与右上悬浮球完全分离不重叠', '手机横向展开固定一排完整展示（31px 紧凑按钮全功能容纳在 96vw 内，无需滚动）'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1578,12 +1579,13 @@
             });
         }
         // —— 长按拖拽 + 智能吸附（quickLiquid 弹簧物理概念：拖拽结束果冻回弹吸附最近边缘） ——
+        // v77：anchor 键名升级为 cd_fab_anchor77（旧位置作废）→ 初始位置强制回到右上角
         function loadAnchor() {
             try {
-                var s = localStorage.getItem('cd_fab_anchor');
+                var s = localStorage.getItem('cd_fab_anchor77');
                 if (s) return JSON.parse(s);
             } catch (e) { /* ignore */ }
-            return { side: 'right', off: 64 };
+            return { side: 'right', off: 56 }; // 默认右上角
         }
         function applyAnchor(a) {
             if (!a || !a.side) return;
@@ -1598,6 +1600,10 @@
         var drag = { on: false, sx: 0, sy: 0, sx0: 0, sy0: 0, moved: false };
         fab.addEventListener('pointerdown', function (e) {
             if (e.target.closest && e.target.closest('button')) return;
+            // v77：横向展开（停靠上/下边缘）时禁用拖拽——该状态用于浏览横向功能列表，
+            // 拖动会误把悬浮球吸走（"稍微拖动就跑别处"根治）；竖向展开与折叠态仍可拖拽
+            if (fab.classList.contains('fab-open') &&
+                (fab.getAttribute('data-anchor') === 'top' || fab.getAttribute('data-anchor') === 'bottom')) return;
             drag.on = true; drag.moved = false;
             drag.sx = e.clientX; drag.sy = e.clientY;
             var r = fab.getBoundingClientRect(), mr = mapEl.getBoundingClientRect();
@@ -1631,7 +1637,7 @@
             else if (min === dT) a = { side: 'top', off: clampOff(r.left - mr.left, mr.width - 110, 150) };
             else a = { side: 'bottom', off: clampOff(r.left - mr.left, mr.width - 110, 150) }; // 避让左下比例尺(150)与右下缩放组(110)
             applyAnchor(a);
-            try { localStorage.setItem('cd_fab_anchor', JSON.stringify(a)); } catch (err) { /* ignore */ }
+            try { localStorage.setItem('cd_fab_anchor77', JSON.stringify(a)); } catch (err) { /* ignore */ }
         }
         function clampOff(v, max, min) { return Math.max(min, Math.min(v, Math.max(min, max))); }
         ['pointerup', 'pointercancel'].forEach(function (t) { fab.addEventListener(t, endDrag, { passive: true }); });
@@ -1692,6 +1698,8 @@
         });
         var restore = document.getElementById('panel-restore');
         if (restore) restore.addEventListener('click', function () {
+            // v77：打开前统一清除关闭动画残留类，杜绝快速多次开合时的动画叠加卡顿
+            document.querySelectorAll('.sidebar .panel.panel-removing').forEach(function (p) { p.classList.remove('panel-removing'); });
             document.querySelectorAll('.sidebar .panel').forEach(function (p) {
                 p.hidden = false;
             });
@@ -1859,10 +1867,11 @@
     // ---------------- 13.9 面板点击穿透拦截（玻璃弹层点击不触发地图 / 不误关悬浮球） ----------------
     (function initPanelGuard() {
         // v75：cl-card 恢复拦截（叉号三通道直绑不依赖冒泡，stopPropagation 无副作用；防止卡内点击冒泡到地图）
+        // v77：dblclick 一并拦截——双击任何玻璃面板/卡片不再触发 Leaflet 地图双击缩放（"双击卡片放大"根治），地图本体双击缩放保留
         ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'measure-result', 'cl-card', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
-            ['mousedown', 'pointerdown', 'click'].forEach(function (t) {
+            ['mousedown', 'pointerdown', 'click', 'dblclick'].forEach(function (t) {
                 el.addEventListener(t, function (e) { e.stopPropagation(); }, false);
             });
         });
