@@ -1992,39 +1992,53 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     .pack-item { padding: 3px 9px; font-size: 11.5px; }
 }
 
-/* ================= v89 悬浮球：折叠态 Apple 液态玻璃球面 + 中央准星图案 =================
-   球面 = 半透明白玻璃基底 + 左上弧形主高光 + 下缘内反射 + 极淡品牌紫辉光（液态玻璃层次感）；
-   中央由精致的准星 SVG 图标（外圈 + 四向刻度 + 中心点）作为表面图案，与 WebGIS 风格协调；
-   展开态恢复「六点 + 功能」胶囊。全部为背景渐变 + 内嵌 SVG，零 JS 零性能开销 */
+/* ================= v90 悬浮球：折叠态 = 材质包主题纯色液态玻璃球（随材质包 / 玻璃强度滑杆联动） =================
+   球面主色 = 材质包强调色 var(--accent)（桃花梅红 / 桂花金黄 / 绿叶绿 / 玫瑰粉 / 夜间蓝紫，body.theme-* 切换时整套自动过渡）；
+   立体球 = 左上→右下纯色球体渐变 + 左上弧形主高光 + 下缘内反射 + 中心白色玻璃环；
+   玻璃质感与强度滑杆联动：高光亮度随 --glass-sheen、立体阴影随 --glass-shadow、高光透明度随 --glass-alpha；
+   表面无内嵌图案——纯色球体 + 高光玻璃环本身即图案，与 Apple 液态玻璃语言一致 */
 #fab { border-radius: 50%; }
 #fab:not(.fab-open) {
     background:
-        /* 内部淡紫辉光（中心偏下，与品牌色呼应但不抢眼） */
-        radial-gradient(circle at 50% 68%, rgba(109, 40, 217, .09) 0 42%, rgba(109, 40, 217, 0) 64%),
-        /* 顶部主高光：左上弧形液态光泽 */
-        radial-gradient(130% 70% at 26% 12%, rgba(255, 255, 255, .95) 0%, rgba(255, 255, 255, .5) 24%, rgba(255, 255, 255, 0) 56%),
-        /* 下缘内反射光（玻璃折射感） */
-        radial-gradient(110% 60% at 50% 102%, rgba(255, 255, 255, .45) 0%, rgba(255, 255, 255, 0) 52%),
-        /* 基底半透明白玻璃 */
-        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .85) 0 60%, rgba(255, 255, 255, .6) 100%);
+        /* 立体球体：材质包纯色（左上亮面 → 右下暗面，球体体积感） */
+        radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--accent) 70%, white) 0%, var(--accent) 44%, color-mix(in srgb, var(--accent) 30%, black) 100%),
+        /* 顶部主高光：左上弧形液态光泽（强度随 --glass-sheen） */
+        radial-gradient(130% 72% at 26% 12%, rgba(255, 255, 255, calc(.95 * var(--glass-sheen))) 0%, rgba(255, 255, 255, calc(.5 * var(--glass-sheen))) 22%, rgba(255, 255, 255, 0) 54%),
+        /* 下缘内反射光（玻璃折射感，随 --glass-sheen） */
+        radial-gradient(115% 62% at 50% 103%, rgba(255, 255, 255, calc(.42 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 52%);
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, calc(.5 * var(--glass-sheen))),
+        inset 0 -4px 10px rgba(0, 0, 0, calc(.16 * var(--glass-shadow))),
+        0 8px 24px rgba(15, 23, 42, calc(.22 * var(--glass-shadow)));
 }
-#fab:not(.fab-open)::before { display: none; }
+/* 折叠态中心白色玻璃环（覆盖 v73 三点图标 mask；半透明白环 + 内柔光，纯色球上的玻璃气泡点睛） */
+#fab:not(.fab-open)::before {
+    content: '';
+    width: 18px; height: 18px;
+    margin-left: -9px; margin-top: -9px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, calc(.65 * var(--glass-sheen)));
+    box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, calc(.55 * var(--glass-sheen))),
+        0 0 9px rgba(255, 255, 255, calc(.4 * var(--glass-sheen)));
+    -webkit-mask: none; mask: none;
+}
 #fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* 仅折叠态隐藏功能按钮 */
-/* 折叠态：显示中央准星图案，隐藏六点与「功能」文字 */
-#fab:not(.fab-open) #fab-trigger .fab-dots,
+/* 折叠态：纯色玻璃球面无内嵌图标，隐藏「收起」图标与文字 */
+#fab:not(.fab-open) #fab-trigger .fab-collapse,
 #fab:not(.fab-open) #fab-trigger span { display: none; }
-#fab:not(.fab-open) #fab-trigger .fab-compass { display: block; width: 30px; height: 30px; }
-/* 展开态：恢复六点 + 「功能」胶囊，隐藏准星 */
-#fab.fab-open #fab-trigger .fab-compass { display: none; }
-#fab.fab-open #fab-trigger .fab-dots { display: block; }
+/* 展开态：顶部「收起」图标行（双上箭头 + 收起文字，明确收起语义，无畸变） */
+#fab.fab-open::before { display: none; }  /* v90：移除旧三点折叠图标（顶部收起行已替代，杜绝畸变重叠） */
+#fab.fab-open #fab-trigger .fab-collapse { display: block; }
+#fab.fab-open #fab-trigger span { display: inline-block; }
 #fab-trigger {
     width: 56px; height: 56px;
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 1px;
+    align-items: center; justify-content: center; gap: 2px;
     border: none; background: transparent; color: var(--plum); cursor: pointer;
 }
 #fab-trigger span { font-size: 9px; font-weight: 600; line-height: 1; }
-#fab-trigger svg { width: 20px; height: 20px; }
+#fab-trigger svg { width: 16px; height: 16px; }
 
 /* 展开态：双排矩形（2 列 × 6 行，v86 新增「记录」按钮共 11 个功能钮） */
 #fab.fab-open {
@@ -2042,12 +2056,16 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 #fab.fab-open #fab-trigger {
     position: static; transform: none;
     grid-column: 1 / -1;
-    width: 100%; height: 32px;
-    flex-direction: row; gap: 5px;
-    border-radius: 11px;
-    background: rgba(255, 255, 255, .55);
-    box-shadow: none;
+    width: 100%; height: 34px;
+    flex-direction: row; gap: 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .62);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, calc(.8 * var(--glass-sheen))),
+        0 1px 4px rgba(31, 45, 78, .08);
+    color: var(--plum);
 }
+#fab.fab-open #fab-trigger .fab-collapse { width: 16px; height: 16px; }
 #fab.fab-open #fab-trigger span { font-size: 11px; }
 #fab.fab-open button:not(#fab-trigger) {
     width: 84px; height: 40px;
