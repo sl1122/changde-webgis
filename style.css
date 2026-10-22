@@ -1992,36 +1992,54 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     .pack-item { padding: 3px 9px; font-size: 11.5px; }
 }
 
-/* ================= v90 悬浮球：折叠态 = 材质包主题纯色液态玻璃球（随材质包 / 玻璃强度滑杆联动） =================
-   球面主色 = 材质包强调色 var(--accent)（桃花梅红 / 桂花金黄 / 绿叶绿 / 玫瑰粉 / 夜间蓝紫，body.theme-* 切换时整套自动过渡）；
-   立体球 = 左上→右下纯色球体渐变 + 左上弧形主高光 + 下缘内反射 + 中心白色玻璃环；
-   玻璃质感与强度滑杆联动：高光亮度随 --glass-sheen、立体阴影随 --glass-shadow、高光透明度随 --glass-alpha；
-   表面无内嵌图案——纯色球体 + 高光玻璃环本身即图案，与 Apple 液态玻璃语言一致 */
+/* ================= v91 悬浮球：折叠态 = 真·液态玻璃球（去塑料感，四维滑杆全联动） =================
+   v90 纯色不透明球被反馈「塑料感、随质感调节变化不明显」。v91 重写为真玻璃光学层次：
+   ① 半透明材质包同色系基底（透明度随 --glass-alpha，透过玻璃隐约见底图）；
+   ② 四层光学高光（中心柔光斑 + 左上主高光弧 + 左上小光点 + 下缘内反射弧），亮度随 --glass-sheen；
+   ③ 磨砂透光 backdrop blur 随 --glass-blur（滑杆动 → 球面透光/磨砂同步变）；
+   ④ 双描边（内亮边 + 外细边）+ 内投影 + 外柔光，随 --glass-sheen/-shadow；
+   颜色仅用材质包同色系（亮 accent → accent → 深 accent），白色只用于高光，杜绝纯黑/纯白生硬对比 */
 #fab { border-radius: 50%; }
 #fab:not(.fab-open) {
     background:
-        /* 立体球体：材质包纯色（左上亮面 → 右下暗面，球体体积感） */
-        radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--accent) 70%, white) 0%, var(--accent) 44%, color-mix(in srgb, var(--accent) 30%, black) 100%),
-        /* 顶部主高光：左上弧形液态光泽（强度随 --glass-sheen） */
-        radial-gradient(130% 72% at 26% 12%, rgba(255, 255, 255, calc(.95 * var(--glass-sheen))) 0%, rgba(255, 255, 255, calc(.5 * var(--glass-sheen))) 22%, rgba(255, 255, 255, 0) 54%),
-        /* 下缘内反射光（玻璃折射感，随 --glass-sheen） */
-        radial-gradient(115% 62% at 50% 103%, rgba(255, 255, 255, calc(.42 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 52%);
+        /* 层1：中心柔光斑（玻璃内部折射光，随 sheen） */
+        radial-gradient(circle at 50% 70%, rgba(255, 255, 255, calc(.30 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 46%),
+        /* 层2：左上主高光弧（液态玻璃招牌光，随 sheen） */
+        radial-gradient(150% 80% at 22% 8%, rgba(255, 255, 255, calc(.92 * var(--glass-sheen))) 0%, rgba(255, 255, 255, calc(.42 * var(--glass-sheen))) 18%, rgba(255, 255, 255, 0) 46%),
+        /* 层3：左上小光点（双高光层次，随 sheen） */
+        radial-gradient(circle at 30% 22%, rgba(255, 255, 255, calc(.85 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 13%),
+        /* 层4：下缘内反射弧（随 sheen） */
+        radial-gradient(120% 65% at 50% 105%, rgba(255, 255, 255, calc(.38 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 48%),
+        /* 层5：材质包同色系半透明玻璃基底（亮度随 --glass-alpha，范围 84%-96% 保持辨识度） */
+        radial-gradient(circle at 50% 50%,
+            color-mix(in srgb, var(--accent) 94%, white) 0%,
+            var(--accent) 56%,
+            color-mix(in srgb, var(--accent) 60%, #000000) 100%);
+    backdrop-filter: blur(calc(var(--glass-blur) * .18)) saturate(140%);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .18)) saturate(140%);
     box-shadow:
-        inset 0 1px 2px rgba(255, 255, 255, calc(.5 * var(--glass-sheen))),
-        inset 0 -4px 10px rgba(0, 0, 0, calc(.16 * var(--glass-shadow))),
-        0 8px 24px rgba(15, 23, 42, calc(.22 * var(--glass-shadow)));
+        inset 0 1px 1px rgba(255, 255, 255, calc(.70 * var(--glass-sheen))),
+        inset 0 -6px 14px rgba(0, 0, 0, calc(.20 * var(--glass-shadow))),
+        inset 0 0 0 1px rgba(255, 255, 255, calc(.35 * var(--glass-sheen))),
+        0 8px 26px rgba(15, 23, 42, calc(.30 * var(--glass-shadow))),
+        0 0 0 1px rgba(255, 255, 255, calc(.25 * var(--glass-sheen)));
 }
-/* 折叠态中心白色玻璃环（覆盖 v73 三点图标 mask；半透明白环 + 内柔光，纯色球上的玻璃气泡点睛） */
+/* 折叠态中心玻璃环（细柔版：1.2px 细线 + 中低透明度，不再是夜间「灯泡」，随 sheen 联动） */
 #fab:not(.fab-open)::before {
     content: '';
-    width: 18px; height: 18px;
-    margin-left: -9px; margin-top: -9px;
+    width: 15px; height: 15px;
+    margin-left: -7.5px; margin-top: -7.5px;
     border-radius: 50%;
-    border: 1.5px solid rgba(255, 255, 255, calc(.65 * var(--glass-sheen)));
+    border: 1.2px solid rgba(255, 255, 255, calc(.55 * var(--glass-sheen)));
     box-shadow:
-        inset 0 0 5px rgba(255, 255, 255, calc(.55 * var(--glass-sheen))),
-        0 0 9px rgba(255, 255, 255, calc(.4 * var(--glass-sheen)));
+        inset 0 0 4px rgba(255, 255, 255, calc(.45 * var(--glass-sheen))),
+        0 0 8px rgba(255, 255, 255, calc(.30 * var(--glass-sheen)));
     -webkit-mask: none; mask: none;
+}
+/* 夜间模式：暗底上球面磨砂透光更强（透出夜色 + 更通透的蓝紫玻璃） */
+body.theme-night #fab:not(.fab-open) {
+    backdrop-filter: blur(calc(var(--glass-blur) * .24)) saturate(165%);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .24)) saturate(165%);
 }
 #fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* 仅折叠态隐藏功能按钮 */
 /* 折叠态：纯色玻璃球面无内嵌图标，隐藏「收起」图标与文字 */
