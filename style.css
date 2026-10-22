@@ -2302,3 +2302,40 @@ body.refraction .sidebar {
         drop-shadow(0 0 26px rgba(255, 255, 255, calc(.10 * var(--glass-halo) * var(--glass-sheen))))
         drop-shadow(0 6px 20px rgba(15, 23, 42, calc(.16 * var(--glass-shadow))));
 }
+
+/* ================= v93 三修：夜间字体再提亮 + 瓦片反色闪亮根治 + 卡片动画减负 =================
+   ① 夜间瓦片反色闪亮根治：L49 的 `transition: filter .7s ease` 是元凶——放大/缩小时新瓦片 DOM
+      加入后 filter 从 none 渐变到 invert，浅色原图以半过滤状态闪现即「突然变亮」；移除渐变，
+      filter 立即应用，zoom 全程无原色闪现（主题切换瞬间反色，可接受）
+   ② 卡片过渡动画减负：面板/弹窗 open-close 动画期间（JS 加 .anim-nobf 类 340ms）临时移除
+      backdrop-filter 与光晕 drop-shadow，动画退化为纯 transform/opacity 合成，杜绝逐帧重算卡顿
+   ③ 夜间字体再提亮：正文 #f5f8ff / 辅助 #c9d5f5 + 双层同色系深色微投影，磨砂背景下边缘更清晰 */
+.leaflet-tile-pane { transition: none; }
+.anim-nobf, .anim-nobf * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+}
+body.theme-night {
+    --text: #f5f8ff;
+    --text-2: #c9d5f5;
+}
+body.theme-night .sidebar, body.theme-night #map .toolbar, body.theme-night #map .settings-panel,
+body.theme-night #map .basemap-panel, body.theme-night #map .mark-panel, body.theme-night #map .legend-panel,
+body.theme-night #map .records-panel, body.theme-night #map .measure-result, body.theme-night #map .map-toast,
+body.theme-night #map .cl-card, body.theme-night .page-header, body.theme-night .iw-card,
+body.theme-night .sidebar *, body.theme-night #map .toolbar *, body.theme-night #map .settings-panel *,
+body.theme-night #map .basemap-panel *, body.theme-night #map .mark-panel *, body.theme-night #map .legend-panel *,
+body.theme-night #map .records-panel *, body.theme-night #map .measure-result *, body.theme-night #map .map-toast *,
+body.theme-night #map .cl-card *, body.theme-night .iw-card * {
+    text-shadow: 0 1px 2px rgba(6, 10, 24, .65), 0 0 2px rgba(6, 10, 24, .4);
+}
+/* 夜间侧边栏磨砂微降（blur 系数 .6），文字在磨砂背景上更清晰 */
+body.theme-night .sidebar {
+    backdrop-filter: blur(calc(var(--glass-blur) * .6));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .6));
+}
+/* 夜间小字号辅助文字（提示/计数/说明/placeholder）单独提亮 */
+body.theme-night .layer-tip, body.theme-night .tip-line, body.theme-night .set-hint,
+body.theme-night .rp-empty, body.theme-night .cl-row-points, body.theme-night .iw-card .iw-label,
+body.theme-night .search-input::placeholder { color: #c9d5f5; }
