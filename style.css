@@ -1992,12 +1992,12 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     .pack-item { padding: 3px 9px; font-size: 11.5px; }
 }
 
-/* ================= v80 悬浮球双排最终方案 =================
-   点击折叠触发球 → 果冻弹性展开双排功能栏（图标 + 文字，不区分横/竖向，随停靠边自动避让）
-   再次点击触发球 → 收缩回圆球；折叠态长按可拖、沿边吸附；展开态禁拖 */
+/* ================= v83 悬浮球「球面图案」展开 =================
+   点击折叠触发球 → 果冻弹性膨胀为 252px 圆形玻璃球，功能图标直接铺在球面（2 列网格圆钮 + 文字）
+   再次点击顶部「功能」触发球 → 收缩回 56px 圆球；折叠态长按可拖、沿边吸附；展开态禁拖 */
 #fab { border-radius: 50%; }
 #fab::before { display: none; }                              /* 弃用旧三点伪元素 */
-#fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* v82：仅折叠态隐藏功能按钮（修复优先级压制导致展开后按钮不可见） */
+#fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* 仅折叠态隐藏功能按钮 */
 #fab-trigger {
     width: 56px; height: 56px;
     display: flex; flex-direction: column;
@@ -2007,37 +2007,45 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 #fab-trigger span { font-size: 9px; font-weight: 600; line-height: 1; }
 #fab-trigger svg { width: 20px; height: 20px; }
 
-/* 展开态：双排网格（2 列 × 5 行），触发球置顶作收缩开关；v81 收紧尺寸降低地图遮挡 */
+/* 展开态：圆形玻璃球面，触发球置顶，功能按钮圆形铺在球面 */
 #fab.fab-open {
-    width: 180px; height: auto;
+    width: 252px; height: 252px;
     display: grid;
-    grid-template-columns: repeat(2, 84px);
-    gap: 7px;
-    padding: 7px;
-    border-radius: 18px;
+    grid-template-columns: repeat(2, 92px);
+    grid-template-rows: repeat(5, 42px);
+    place-content: center;
+    gap: 0;
+    padding: 40px 12px 10px;
+    border-radius: 50%;
     cursor: default;
+    background: rgba(255, 255, 255, .42);
+    box-shadow:
+        inset 0 2px 14px rgba(255, 255, 255, .6),
+        inset 0 -8px 22px rgba(255, 255, 255, .25),
+        0 14px 40px rgba(31, 45, 78, .24);
 }
 #fab.fab-open > button { display: flex; }
 #fab.fab-open #fab-trigger {
-    grid-column: 1 / -1;
-    width: 100%; height: 32px;
-    flex-direction: row; gap: 5px;
-    border-radius: 11px;
-    background: rgba(255, 255, 255, .55);
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 50px; height: 30px;
+    flex-direction: row; gap: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .62);
+    box-shadow: 0 3px 10px rgba(31, 45, 78, .18);
 }
-#fab.fab-open #fab-trigger span { font-size: 11px; }
+#fab.fab-open #fab-trigger span { font-size: 10px; }
 #fab.fab-open button:not(#fab-trigger) {
-    width: 84px; height: 40px;
-    justify-content: flex-start; gap: 6px;
-    padding: 0 9px;
-    border-radius: 11px;
+    width: 42px; height: 42px;
+    flex-direction: column; justify-content: center; align-items: center; gap: 1px;
+    margin: 0 auto;
+    border-radius: 50%;
 }
 #fab.fab-open button:not(#fab-trigger) span {
-    display: inline-block; font-size: 11px; font-weight: 600;
-    color: var(--text); line-height: 1;
+    display: inline-block; font-size: 9px; font-weight: 600;
+    color: var(--text); line-height: 1; margin-top: 1px;
 }
-#fab.fab-open button:not(#fab-trigger) svg { width: 16px; height: 16px; }
-/* 停靠边不再改变展开形态（双排统一）；位置吸附保留 */
+#fab.fab-open button:not(#fab-trigger) svg { width: 15px; height: 15px; }
+/* 停靠边不再改变展开形态（球面统一）；位置吸附保留 */
 #fab.fab-open[data-anchor] { max-height: none; overflow: visible; }
 /* 展开态已有文字说明，隐藏 hover tooltip */
 #fab.fab-open button::before { display: none; }
