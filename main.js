@@ -1491,7 +1491,8 @@
         { v: 'v70', t: '悬浮球 + 玻璃液体调节', pts: ['右侧功能区升级为 Apple 悬浮球：点击展开果冻列表，按钮依次弹性弹出；再点/点外收起；手机端保持常驻窄条', '悬浮球与放大缩小键分离：缩放键独立玻璃胶囊，移到悬浮球下方保持间距', '按钮 hover 上浮 9px 回弹 + 按鼠标靠近方向左右倾斜 2-5° + 液态光泽扫过 + 按压压缩', 'hover 显示玻璃 tooltip 文字标签（定位/复位/测距/测面等），离开消失', '侧边栏三个面板统一关闭按钮（圆形 ×，hover 放大旋转 + 压缩反馈），可逐一面板关闭并一键恢复', '测量结果卡片非常驻：清除/切换工具/关闭即自动隐藏，关闭按钮 ×', '设置新增 glassliquid 调节：液态光泽 / 阴影强度 / 反射高光滑杆，全面板实时预览', '测量完成保留双击 + 绿色完成按钮双触发'] },
         { v: 'v71', t: '悬浮球拖拽 + 全量液态玻璃', pts: ['悬浮球支持长按拖拽（桌面鼠标 / 手机手指），松手果冻吸附最近边缘，位置持久化记忆', '智能自适应展开方向：停靠左/右边缘竖向展开，停靠上/下边缘横向展开，自动避让缩放控件', '外部收起防误触：展开动画未完成不收起 + 200ms 延时 + 面板附近点击不收起，面板内新增收起按钮', '移动端窄条可点击展开详情：图标旁同步显示精简文字标签，不再纯图标盲操作', '全 UI 液态玻璃统一层：磨砂基底 + 内高光 + 细描边 + 外阴影全由 CSS 变量管控', '设置面板滑杆重构：磨砂模糊度 / 面板透明度 / 边框高光强度 / 阴影柔和度，滑杆 rAF 节流', '可读性边界保护：低模糊度自动提升背景不透明度，避免文字不可读', '新增液态折射增强开关：SVG 位移滤镜仅作用于侧边栏与设置面板，桌面默认开、移动端自动关', '清除测量全链路清零 + 切换底图/关闭面板/关闭设置自动隐藏测量卡', '移动端动效降幅：弹性上浮 4px、按压 0.97，渐进增强保性能'] },
         { v: 'v72', t: '玻璃单轴调节 + 交互误触修复', pts: ['玻璃质感改为 Apple 式单轴主滑杆：0-100% 预设联动磨砂模糊 / 面板透明 / 边框高光 / 阴影柔和 4 维变量，轻薄半透→中等通透→厚重磨砂连续渐变，调节差异显著', '高级设置折叠区：默认收起，展开可微调 4 项细分参数，与主滑杆双向联动（拖主滑杆同步高级值，微调高级参数自动反推主滑杆强度）', '液态折射增强落地：SVG 位移滤镜 + 错位折射层叠加，开启前后视觉差异明确，仅作用于侧边栏与设置面板', '全玻璃组件统一复用同一套 CSS 变量，单滑杆调节全量同步，杜绝质感脱节', '面板点击穿透修复：设置 / 底图 / 测量等玻璃弹层点击空白不再触发地图点位选择', '取消悬浮球「点击外部自动关闭」：仅面板收起按钮 / 再次点击球体收起，彻底解决误收起', '设置面板仅通过右上角 × / 再点设置按钮关闭，不随悬浮球收起自动关闭', '竖向停靠展开升级：按钮改胶囊长条「图标+文字」直显，48px 触控高，缩放组独立物理分离', '横向停靠保持纯图标 + hover tooltip，拖拽吸附与持久化保留'] },
-        { v: 'v73', t: '定向修复：弹窗关闭 / 折射偏转 / 悬浮球中点吸附', pts: ['更新日志关闭按钮修复：click + touchstart 双端直接绑定（不再依赖冒泡委托），弹出层 z-index 提升至全局顶级 2000，关闭 0.25s 平滑淡出 + 轻微缩放，无残留无遗留', '液态折射偏转修复：设置面板滤镜从面板本体移到 .settings-inner 外包盒并预留 8px 滤镜安全边距，滤镜仅作用视觉层不影响定位盒模型，开启折射面板位置不漂移、文字不错位', '悬浮球吸附规则重写：松手吸附最近边「中点」，四角区域按距离判定就近竖边/横边后吸该边中点；吸附果冻 0.3s，拖拽中透明度 70% 暂停滤镜仅位置跟随', '折叠方向严格双轨：竖向停靠折叠按钮置顶、向下竖向展开（图标+文字长胶囊）收起向上；横向停靠折叠按钮固定最左、向右横向展开纯图标，收起向左；过渡方向与停靠边严格平行', '竖向展开顶部内边距 12px 折叠按钮完全置顶，层级提升不被遮挡；展开尺寸边界：竖向 ≤ 视口 80%（超出自适应滚动），横向 ≤ 视口 60%', '吸附边界避让：停靠上下边时自动避开左下比例尺与右下缩放组，互不重叠', '测量卡片显示逻辑严格化：进入测量模式仅轻量 toast 提示，卡片仅在激活工具且已有绘制内容时显示；清除/切换/退出全链路隐藏', '测量卡片渲染层提升（translateZ），消除边缘斑块模糊，质感对齐全局玻璃标准'] }
+        { v: 'v73', t: '定向修复：弹窗关闭 / 折射偏转 / 悬浮球中点吸附', pts: ['更新日志关闭按钮修复：click + touchstart 双端直接绑定（不再依赖冒泡委托），弹出层 z-index 提升至全局顶级 2000，关闭 0.25s 平滑淡出 + 轻微缩放，无残留无遗留', '液态折射偏转修复：设置面板滤镜从面板本体移到 .settings-inner 外包盒并预留 8px 滤镜安全边距，滤镜仅作用视觉层不影响定位盒模型，开启折射面板位置不漂移、文字不错位', '悬浮球吸附规则重写：松手吸附最近边「中点」，四角区域按距离判定就近竖边/横边后吸该边中点；吸附果冻 0.3s，拖拽中透明度 70% 暂停滤镜仅位置跟随', '折叠方向严格双轨：竖向停靠折叠按钮置顶、向下竖向展开（图标+文字长胶囊）收起向上；横向停靠折叠按钮固定最左、向右横向展开纯图标，收起向左；过渡方向与停靠边严格平行', '竖向展开顶部内边距 12px 折叠按钮完全置顶，层级提升不被遮挡；展开尺寸边界：竖向 ≤ 视口 80%（超出自适应滚动），横向 ≤ 视口 60%', '吸附边界避让：停靠上下边时自动避开左下比例尺与右下缩放组，互不重叠', '测量卡片显示逻辑严格化：进入测量模式仅轻量 toast 提示，卡片仅在激活工具且已有绘制内容时显示；清除/切换/退出全链路隐藏', '测量卡片渲染层提升（translateZ），消除边缘斑块模糊，质感对齐全局玻璃标准'] },
+        { v: 'v74', t: '日志关闭根治 + 高级设置折叠修复 + 横向全量展开', pts: ['更新日志叉号关闭根治：发现 removing 动画防抖残留会导致快速重开后再点叉号被误拦，openChangelog 现会清除残留；关闭按钮升级 click + touchstart + pointerdown 三通道直接绑定；面板拦截名单移除 cl-card，杜绝一切事件干扰', '高级设置折叠修复：展开/收起改为 hidden 与 open 类完全同步（去掉原无条件 add 类与 280ms 延时收起），杜绝展开后自动折叠与按钮状态错乱，折叠状态持久化保留', '悬浮球横向停靠升级：横向展开改为 flex-wrap 自动换行，一次性完整展示全部功能按钮，移除滚动条与拖动条遮挡，超宽自动两行排布；竖向展开保持长胶囊直显不变', '吸附/折叠方向/避让规则与 v73 保持一致，三通道绑定不影响正常关闭动效 0.25s 淡出缩放'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1509,6 +1510,7 @@
     function openChangelog() {
         renderChangelog();
         clBackdrop.hidden = false;
+        clBackdrop.classList.remove('removing'); // v74：清除上一次关闭动画残留，避免 closing 防抖误拦
         // 强制重排后加 .show，触发果冻弹入动画
         void clBackdrop.offsetWidth;
         clBackdrop.classList.add('show');
@@ -1522,11 +1524,12 @@
             clBackdrop.classList.remove('removing');
         }, 260);
     }
-    // v73：关闭按钮 click + touchstart 双端直接绑定，不依赖冒泡委托（13.9 面板拦截会阻断冒泡到 backdrop）
+    // v74：关闭按钮 click + touchstart + pointerdown 三通道直接绑定（pointerdown 最即时，杜绝任何拦截路径）
     var clCloseBtn = document.getElementById('cl-close');
     if (clCloseBtn) {
         clCloseBtn.addEventListener('click', function (e) { e.stopPropagation(); closeChangelog(); });
         clCloseBtn.addEventListener('touchstart', function (e) { e.stopPropagation(); e.preventDefault(); closeChangelog(); }, { passive: false });
+        clCloseBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); closeChangelog(); });
     }
     var verTag = document.getElementById('ver-tag');
     if (verTag) verTag.addEventListener('click', openChangelog);
@@ -1769,17 +1772,13 @@
             if (satVal) satVal.textContent = sat + '%';
             try { var g = JSON.parse(localStorage.getItem('cd_glass') || 'null'); if (!g) g = {}; g.sat = sat; localStorage.setItem('cd_glass', JSON.stringify(g)); } catch (e) { }
         }
-        // 高级设置折叠区
+        // 高级设置折叠区（v74：hidden 与 open 类完全同步，去掉无条件 add 与延时收起，杜绝展开后自动折叠/状态错乱）
         if (advArea && advToggle) {
             advToggle.addEventListener('click', function () {
-                var open = advArea.classList.toggle('open');
-                advArea.hidden = false;
-                advArea.classList.add('open');
-                if (!open) {
-                    setTimeout(function () { advArea.hidden = true; }, 280);
-                }
-                advToggle.textContent = open ? '收起' : '展开';
-                try { localStorage.setItem('cd_adv_open', open ? '1' : '0'); } catch (e) { }
+                var on = advArea.classList.toggle('open');
+                advArea.hidden = !on;
+                advToggle.textContent = on ? '收起' : '展开';
+                try { localStorage.setItem('cd_adv_open', on ? '1' : '0'); } catch (e) { }
             });
             try {
                 if (localStorage.getItem('cd_adv_open') === '1') {
@@ -1845,7 +1844,8 @@
 
     // ---------------- 13.9 面板点击穿透拦截（玻璃弹层点击不触发地图 / 不误关悬浮球） ----------------
     (function initPanelGuard() {
-        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'measure-result', 'cl-card', 'map-toast'].forEach(function (id) {
+        // v74：cl-card 移除拦截（更新日志关闭按钮三通道直接绑定已足够，且 backdrop 关闭只认自身空白）
+        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'measure-result', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
             ['mousedown', 'pointerdown', 'click'].forEach(function (t) {
