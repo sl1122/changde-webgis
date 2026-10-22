@@ -2056,3 +2056,10 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 #fab.fab-open[data-anchor] { max-height: none; overflow: visible; }
 /* 展开态已有文字说明，隐藏 hover tooltip */
 #fab.fab-open button::before { display: none; }
+
+/* ================= v85 修复：显式 display 覆盖 hidden 属性（隐藏失效根因） =================
+   .measure-result / .cl-card 显式声明 display:flex，优先级高于 UA 样式 [hidden]{display:none}，
+   导致 el.hidden=true 后卡片仍显示——清除测量后底部还显示数据、日志关闭后残留均由此引起。
+   统一兜底：任何时刻 hidden 存在即强制 display:none（!important 压过所有作者 display 声明）。 */
+#map .measure-result[hidden],
+#map .cl-card[hidden] { display: none !important; }
