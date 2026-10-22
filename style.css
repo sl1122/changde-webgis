@@ -1615,8 +1615,13 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     padding: 20px;
 }
 .cl-backdrop.show { display: flex; animation: cl-fade .3s ease; }
-/* 关闭：0.25s 平滑淡出 + 轻微缩放（与全局面板关闭逻辑对齐） */
-.cl-backdrop.removing { animation: cl-out .25s ease forwards; }
+/* 关闭：0.25s 平滑淡出 + 轻微缩放（与全局面板关闭逻辑对齐）；
+   v75：动画期间移除全屏 backdrop-filter，避免大屏 blur 重排卡顿 */
+.cl-backdrop.removing {
+    animation: cl-out .25s ease forwards;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
 @keyframes cl-out {
     from { opacity: 1; }
     to { opacity: 0; }
