@@ -2007,36 +2007,36 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 #fab-trigger span { font-size: 9px; font-weight: 600; line-height: 1; }
 #fab-trigger svg { width: 20px; height: 20px; }
 
-/* 展开态：双排网格（2 列 × 5 行），触发球置顶作收缩开关 */
+/* 展开态：双排网格（2 列 × 5 行），触发球置顶作收缩开关；v81 收紧尺寸降低地图遮挡 */
 #fab.fab-open {
-    width: 200px; height: auto;
+    width: 180px; height: auto;
     display: grid;
-    grid-template-columns: repeat(2, 92px);
-    gap: 8px;
-    padding: 8px;
-    border-radius: 20px;
+    grid-template-columns: repeat(2, 84px);
+    gap: 7px;
+    padding: 7px;
+    border-radius: 18px;
     cursor: default;
 }
 #fab.fab-open > button { display: flex; }
 #fab.fab-open #fab-trigger {
     grid-column: 1 / -1;
-    width: 100%; height: 36px;
-    flex-direction: row; gap: 6px;
-    border-radius: 12px;
+    width: 100%; height: 32px;
+    flex-direction: row; gap: 5px;
+    border-radius: 11px;
     background: rgba(255, 255, 255, .55);
 }
 #fab.fab-open #fab-trigger span { font-size: 11px; }
 #fab.fab-open button:not(#fab-trigger) {
-    width: 92px; height: 44px;
-    justify-content: flex-start; gap: 7px;
-    padding: 0 10px;
-    border-radius: 12px;
+    width: 84px; height: 40px;
+    justify-content: flex-start; gap: 6px;
+    padding: 0 9px;
+    border-radius: 11px;
 }
 #fab.fab-open button:not(#fab-trigger) span {
     display: inline-block; font-size: 11px; font-weight: 600;
     color: var(--text); line-height: 1;
 }
-#fab.fab-open button:not(#fab-trigger) svg { width: 17px; height: 17px; }
+#fab.fab-open button:not(#fab-trigger) svg { width: 16px; height: 16px; }
 /* 停靠边不再改变展开形态（双排统一）；位置吸附保留 */
 #fab.fab-open[data-anchor] { max-height: none; overflow: visible; }
 /* 展开态已有文字说明，隐藏 hover tooltip */

@@ -40,6 +40,8 @@
     function showMeasure(msg, persist) {
         var el = document.getElementById('measure-result');
         if (!el) return;
+        // v81：空消息不显示卡片——杜绝只剩关闭按钮的空壳残留
+        if (!msg) { el.hidden = true; return; }
         var txt = document.getElementById('measure-text');
         if (txt) txt.textContent = msg; else el.textContent = msg;
         var done = document.getElementById('measure-done');
@@ -584,7 +586,12 @@
     }
     map.on('click', function (e) {
         if (uiHit(e)) return; // v75：卡片/面板内点击不触发测量
-        if (!measure.mode) return;
+        if (!measure.mode) {
+            // v81：非测量模式下点击地图任意处 → 隐藏测量结果卡（看完即走；打点面板打开时不打扰）
+            var mp = document.getElementById('mark-panel');
+            if (!(mp && !mp.hidden)) { try { hideMeasureCard(); } catch (err) { } }
+            return;
+        }
         // 双击结束时的第二次 click（detail>1）不添加测量点，避免距离/面积多算
         if (e.originalEvent && e.originalEvent.detail > 1) return;
         var ll = [e.latlng.lat, e.latlng.lng];
@@ -1547,7 +1554,8 @@
         { v: 'v77', t: '双击卡片放大根治 + 全站性能提速 + 悬浮球/缩放组布局修正', pts: ['双击卡片放大根治：所有玻璃面板/卡片（设置/底图/打点/图例/测量卡/更新日志/提示）新增 dblclick 拦截，双击它们不再触发 Leaflet 地图双击缩放；viewport 禁用用户缩放（maximum-scale=1, user-scalable=no），手机端双击页面也不放大', '全站卡顿修复：更新日志遮罩移除全屏 backdrop-filter（纯 rgba 暗化遮罩，日志卡自身保留小面积玻璃模糊），打开/关闭日志不再触发全屏 blur 重排；侧边栏面板恢复按钮打开前统一清除关闭动画残留类，快速多次开合不再动画叠加卡顿', '悬浮球横向展开态禁用拖拽（停靠上/下边缘时）——该状态用于浏览功能列表，拖动不再把悬浮球吸走；竖向展开与折叠态仍可长按拖动', '悬浮球初始位置改为右上角（off 56px），anchor 持久化键升级 cd_fab_anchor77，旧位置作废强制复位右上', '缩放按钮组移至右下角（桌面/手机统一），按钮适当缩小（桌面 38px / 手机 34px），与右上悬浮球完全分离不重叠', '手机横向展开固定一排完整展示（31px 紧凑按钮全功能容纳在 96vw 内，无需滚动）'] },
         { v: 'v78', t: '移动端从0适应性配置（底部导航 + 信息密度分级 + dvh + 触控审计）', pts: ['手机端功能入口重构：右侧 46px 常驻窄条改为全宽玻璃底部导航条（我的位置/测距/测面/清除/底图/图例/设置 7 项，44px 触控高、图标+文字、safe-area 避让、底部玻璃胶囊外壳），右侧地图彻底清爽；缩放组上移至导航上方；手机端悬浮球隐藏', '信息密度分级（dense-data）：手机默认只显示聚合气泡，地名标签在地图放大 ≥13 级浮现、道路标签 ≥14 级浮现，三重文字叠压问题根治；桌面端不受影响', '页面壳层（page-layout）：顶部 title 精简为「常德公共服务WebGIS」；地图容器高度 100dvh 优先 + 100vh 兜底，浏览器地址栏收起/展开不再导致地图跳变；全局 touch-action: manipulation 消除触摸点击延迟', '抽屉侧边栏补齐：Esc 键关闭、打开时锁定背景滚动；抽屉底部新增快捷功能区（定位常德/复位/打点），手机端全功能保留', '学习成果落地：本版按 responsive-design（先分类 dense-data+page-layout 再写 CSS）、mobile-ux-optimizer（底部导航/dvh/44px/safe-area）、layout-system（内容驱动断点）、apple-hig-expert（触控≥44pt 审计）五组 skill 原则执行'] },
         { v: 'v79', t: '测量结果卡彻底常驻化 + 手机端层级修复 + title 保真', pts: ['底部测量结果卡彻底改对：双击结束测量后结果卡持续显示（总距离/面积），只在点击「清除测量」、退出测量模式、切换测距↔测面、切换底图时隐藏——不再 6s 自动消失；操作提示类文案（单击添加测量点/已添加 N 个顶点/双击结束）改为 3s 短显不常驻，界面干净', '手机端抽屉层级修复：侧边栏抽屉 z-index 提升至 1260（底部导航 1250 之上），打开抽屉时全屏接管、底部快捷区不再被导航遮挡；遮罩 1255、菜单按钮 1270，点按永不穿透', '手机端 title 保真：作者名「- 佘磊」手机端隐藏，标题文字加大 13.5px 且始终完整可见，不再消失/截断', '手机端测量结果卡上移（底部导航上方 72px），不被导航遮挡'] },
-        { v: 'v80', t: '测量卡叉号根治 + 悬浮球双排最终方案（果冻展开/触发球收缩/折叠态拖拽）', pts: ['底部测量结果卡「×」彻底修复：关闭按钮三通道直绑（pointerdown + click + touchstart，按下立即清除并退出测量），面板守卫对测量卡放行 pointerdown/mousedown（仅拦 click/dblclick 防地图穿透），杜绝点击无效', '悬浮球双排最终方案：点击折叠触发球 → 果冻弹性过渡展开双排功能栏（2 列网格、图标+文字直显、交错弹性出现），不再区分横/竖向展开形态，停靠边仅决定位置避让', '再次点击触发球 → 丝滑收缩回 56px 圆球（原「收起」键已优化掉，面板内无冗余按键）', '拖动规则：折叠态长按可拖、沿边果冻吸附、位置持久化；展开态（双排浏览时）一律禁拖，不再误吸走'] }
+        { v: 'v80', t: '测量卡叉号根治 + 悬浮球双排最终方案（果冻展开/触发球收缩/折叠态拖拽）', pts: ['底部测量结果卡「×」彻底修复：关闭按钮三通道直绑（pointerdown + click + touchstart，按下立即清除并退出测量），面板守卫对测量卡放行 pointerdown/mousedown（仅拦 click/dblclick 防地图穿透），杜绝点击无效', '悬浮球双排最终方案：点击折叠触发球 → 果冻弹性过渡展开双排功能栏（2 列网格、图标+文字直显、交错弹性出现），不再区分横/竖向展开形态，停靠边仅决定位置避让', '再次点击触发球 → 丝滑收缩回 56px 圆球（原「收起」键已优化掉，面板内无冗余按键）', '拖动规则：折叠态长按可拖、沿边果冻吸附、位置持久化；展开态（双排浏览时）一律禁拖，不再误吸走'] },
+        { v: 'v81', t: '测量卡不再常驻（点地图即消失）+ 悬浮球展开加固 + 双排面板收紧', pts: ['底部测量结果卡彻底不常驻：测量完成后结果卡短暂显示，非测量模式下点击地图任意处立即消失（看完即走）；空内容绝不渲染卡片——杜绝只剩关闭按钮的「× 空壳」残留', '悬浮球展开可靠性加固：折叠/展开统一为单一事件委托（折叠态任意点击含触发球即展开；展开态点触发球或空白处收缩、点功能按钮正常执行），杜绝双绑定时序歧义', '双排面板收紧尺寸（180px 宽 / 84×40 按钮 / 更小内边距），展开后更轻盈，减少对地图的遮挡影响'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1680,16 +1688,12 @@
         }
         function clampOff(v, max, min) { return Math.max(min, Math.min(v, Math.max(min, max))); }
         ['pointerup', 'pointercancel'].forEach(function (t) { fab.addEventListener(t, endDrag, { passive: true }); });
-        // —— 展开/收起 ——
+        // —— 展开/收起（v81 统一事件委托：折叠态任意点击含触发球即展开；展开态点触发球/空白收缩、点功能按钮执行功能） ——
         fab.addEventListener('click', function (e) {
-            if (e.target.closest && e.target.closest('button')) return; // 按钮点击不折叠（功能优先）
             if (drag.moved) { drag.moved = false; return; } // 拖拽后的 click 不触发展开
-            layout(!open);
-        });
-        // v80：折叠触发球——点击果冻展开/收缩双排功能栏（原「收起」键已优化掉）
-        var triggerBtn = document.getElementById('fab-trigger');
-        if (triggerBtn) triggerBtn.addEventListener('click', function (e) {
-            e.stopPropagation();
+            var t = e.target.closest && e.target.closest('button');
+            if (t && t.id === 'fab-trigger') { layout(!open); return; }
+            if (t) return; // 功能按钮：执行功能，不折叠
             layout(!open);
         });
         // 触屏果冻跳跃 + 方向倾斜（react-tilt-button 方向逻辑）
