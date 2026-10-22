@@ -37,7 +37,7 @@
         clearTimeout(toast._t);
         toast._t = setTimeout(function () { el.hidden = true; }, isErr ? 7000 : 4000);
     }
-    function showMeasure(msg) {
+    function showMeasure(msg, persist) {
         var el = document.getElementById('measure-result');
         if (!el) return;
         var txt = document.getElementById('measure-text');
@@ -46,7 +46,10 @@
         if (done) done.hidden = !measure || !measure.mode;
         el.hidden = false;
         clearTimeout(showMeasure._t);
-        showMeasure._t = setTimeout(function () { el.hidden = true; }, 6000);
+        // v79：结果卡常驻（清除测量 / 退出模式 / 切换工具时隐藏）；操作提示卡 3s 自动消退
+        if (!persist) {
+            showMeasure._t = setTimeout(function () { el.hidden = true; }, 3000);
+        }
     }
 
     // ---------------- 3. 地图（Leaflet + 多源开源底图，默认高德瓦片） ----------------
@@ -556,6 +559,7 @@
     // ---------------- 8. 测距 / 测面 ----------------
     var measure = { mode: null, pts: [], line: null, poly: null, dots: [], segs: [], total: 0 };
     function hideMeasureCard() {
+        clearTimeout(showMeasure._t);
         var mr = document.getElementById('measure-result');
         if (mr) mr.hidden = true;
     }
@@ -594,14 +598,14 @@
                 measure.segs.push(seg); map.addLayer(seg);
                 measure.total += havMeters(measure.pts[n - 2][0], measure.pts[n - 2][1], measure.pts[n - 1][0], measure.pts[n - 1][1]);
             }
-            showMeasure('距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）');
+            showMeasure('距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）', false);
         } else {
             if (measure.pts.length >= 2) {
                 if (measure.line) map.removeLayer(measure.line);
                 measure.line = L.polyline(measure.pts, { color: '#059669', weight: 2.5, dashArray: '6 6' });
                 map.addLayer(measure.line);
             }
-            showMeasure('已添加 ' + measure.pts.length + ' 个顶点（双击闭合求面积）');
+            showMeasure('已添加 ' + measure.pts.length + ' 个顶点（双击闭合求面积）', false);
         }
     });
     map.on('dblclick', function (e) {
@@ -636,7 +640,7 @@
         measure.mode = 'dist';
         this.classList.add('active');
         // v76：激活测量工具即显示测量卡片（操作提示），默认不显示；清除/退出自动隐藏
-        showMeasure('单击地图添加测量点，双击结束并显示总距离');
+        showMeasure('单击地图添加测量点，双击结束并显示总距离', false);
     });
     document.getElementById('btn-area').addEventListener('click', function () {
         if (measure.mode) { clearMeasure(); return; }
@@ -644,7 +648,7 @@
         measure.mode = 'area';
         this.classList.add('active');
         // v76：激活测量工具即显示测量卡片（操作提示），默认不显示；清除/退出自动隐藏
-        showMeasure('单击地图添加顶点，双击闭合计算面积');
+        showMeasure('单击地图添加顶点，双击闭合计算面积', false);
     });
     document.getElementById('btn-clear').addEventListener('click', clearMeasure);
     // 「完成测量」按钮（手机端无法双击结束，必须有明确结束入口）
@@ -990,14 +994,14 @@
                 for (var k = 1; k < measure.pts.length; k++) {
                     measure.total += havMeters(measure.pts[k - 1][0], measure.pts[k - 1][1], measure.pts[k][0], measure.pts[k][1]);
                 }
-                showMeasure(measure.pts.length >= 2 ? '距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）' : '单击地图添加测量点（双击结束）');
+                showMeasure(measure.pts.length >= 2 ? '距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）' : '单击地图添加测量点（双击结束）', false);
             } else {
                 if (measure.line) { map.removeLayer(measure.line); measure.line = null; }
                 if (measure.pts.length >= 2) {
                     measure.line = L.polyline(measure.pts, { color: '#059669', weight: 2.5, dashArray: '6 6' });
                     map.addLayer(measure.line);
                 }
-                showMeasure('已添加 ' + measure.pts.length + ' 个顶点（双击闭合求面积）');
+                showMeasure('已添加 ' + measure.pts.length + ' 个顶点（双击闭合求面积）', false);
             }
             toast('已撤销一个测量点（Ctrl+Z）');
         }
@@ -1536,7 +1540,8 @@
         { v: 'v75', t: '地图穿透终极守卫 + 日志关闭流畅化', pts: ['地图穿透终极修复：Leaflet 地图点击监听（测量加点 / 打点）增加 UI 命中守卫——事件来源落在任何玻璃面板/卡片/弹窗（设置/底图/打点/图例/测量卡/更新日志/悬浮球/缩放组/POI 弹窗）时一律忽略，不再依赖冒泡拦截顺序，杜绝卡片点击刺透到地图', '更新日志 cl-card 恢复面板拦截名单（叉号三通道直绑不受影响），卡内点击不冒泡到地图', '日志关闭卡顿优化：关闭动画期间移除全屏 backdrop-filter 模糊（动画结束自动恢复），消除大屏 blur 重排卡顿'] },
         { v: 'v76', t: '测量斑块清理 + 悬浮球拖拽手感重构', pts: ['测量卡片显示严格化：未激活工具时完全不显示；点击测距/测面瞬间显示操作提示卡（实时数值随绘制更新，6s 自动消退不常驻）；清除测量同步清图形+隐藏卡+重置状态，无斑块残留', '悬浮球吸附回归沿边投影：取消"强制中点吸附"导致的拖拽后位置跳变，球停哪吸哪，仅做安全范围 clamp', '竖向停靠吸附上限收紧（视口高 - 展开面板高 - 边距）：保证竖向展开后功能栏完整显示在视口内，不被底部截断、无遮挡滚动条', '横向展开固定一排（nowrap）：桌面 44px 完整一排；移动端 36px 紧凑排布，超宽隐藏式横向滚动（滚动条不可见），杜绝两行换行与可见滚动条', '吸附避让规则保留：横向停靠避开左下比例尺与右下缩放组；展开方向/折叠方向与停靠边严格平行'] },
         { v: 'v77', t: '双击卡片放大根治 + 全站性能提速 + 悬浮球/缩放组布局修正', pts: ['双击卡片放大根治：所有玻璃面板/卡片（设置/底图/打点/图例/测量卡/更新日志/提示）新增 dblclick 拦截，双击它们不再触发 Leaflet 地图双击缩放；viewport 禁用用户缩放（maximum-scale=1, user-scalable=no），手机端双击页面也不放大', '全站卡顿修复：更新日志遮罩移除全屏 backdrop-filter（纯 rgba 暗化遮罩，日志卡自身保留小面积玻璃模糊），打开/关闭日志不再触发全屏 blur 重排；侧边栏面板恢复按钮打开前统一清除关闭动画残留类，快速多次开合不再动画叠加卡顿', '悬浮球横向展开态禁用拖拽（停靠上/下边缘时）——该状态用于浏览功能列表，拖动不再把悬浮球吸走；竖向展开与折叠态仍可长按拖动', '悬浮球初始位置改为右上角（off 56px），anchor 持久化键升级 cd_fab_anchor77，旧位置作废强制复位右上', '缩放按钮组移至右下角（桌面/手机统一），按钮适当缩小（桌面 38px / 手机 34px），与右上悬浮球完全分离不重叠', '手机横向展开固定一排完整展示（31px 紧凑按钮全功能容纳在 96vw 内，无需滚动）'] },
-        { v: 'v78', t: '移动端从0适应性配置（底部导航 + 信息密度分级 + dvh + 触控审计）', pts: ['手机端功能入口重构：右侧 46px 常驻窄条改为全宽玻璃底部导航条（我的位置/测距/测面/清除/底图/图例/设置 7 项，44px 触控高、图标+文字、safe-area 避让、底部玻璃胶囊外壳），右侧地图彻底清爽；缩放组上移至导航上方；手机端悬浮球隐藏', '信息密度分级（dense-data）：手机默认只显示聚合气泡，地名标签在地图放大 ≥13 级浮现、道路标签 ≥14 级浮现，三重文字叠压问题根治；桌面端不受影响', '页面壳层（page-layout）：顶部 title 精简为「常德公共服务WebGIS」；地图容器高度 100dvh 优先 + 100vh 兜底，浏览器地址栏收起/展开不再导致地图跳变；全局 touch-action: manipulation 消除触摸点击延迟', '抽屉侧边栏补齐：Esc 键关闭、打开时锁定背景滚动；抽屉底部新增快捷功能区（定位常德/复位/打点），手机端全功能保留', '学习成果落地：本版按 responsive-design（先分类 dense-data+page-layout 再写 CSS）、mobile-ux-optimizer（底部导航/dvh/44px/safe-area）、layout-system（内容驱动断点）、apple-hig-expert（触控≥44pt 审计）五组 skill 原则执行'] }
+        { v: 'v78', t: '移动端从0适应性配置（底部导航 + 信息密度分级 + dvh + 触控审计）', pts: ['手机端功能入口重构：右侧 46px 常驻窄条改为全宽玻璃底部导航条（我的位置/测距/测面/清除/底图/图例/设置 7 项，44px 触控高、图标+文字、safe-area 避让、底部玻璃胶囊外壳），右侧地图彻底清爽；缩放组上移至导航上方；手机端悬浮球隐藏', '信息密度分级（dense-data）：手机默认只显示聚合气泡，地名标签在地图放大 ≥13 级浮现、道路标签 ≥14 级浮现，三重文字叠压问题根治；桌面端不受影响', '页面壳层（page-layout）：顶部 title 精简为「常德公共服务WebGIS」；地图容器高度 100dvh 优先 + 100vh 兜底，浏览器地址栏收起/展开不再导致地图跳变；全局 touch-action: manipulation 消除触摸点击延迟', '抽屉侧边栏补齐：Esc 键关闭、打开时锁定背景滚动；抽屉底部新增快捷功能区（定位常德/复位/打点），手机端全功能保留', '学习成果落地：本版按 responsive-design（先分类 dense-data+page-layout 再写 CSS）、mobile-ux-optimizer（底部导航/dvh/44px/safe-area）、layout-system（内容驱动断点）、apple-hig-expert（触控≥44pt 审计）五组 skill 原则执行'] },
+        { v: 'v79', t: '测量结果卡彻底常驻化 + 手机端层级修复 + title 保真', pts: ['底部测量结果卡彻底改对：双击结束测量后结果卡持续显示（总距离/面积），只在点击「清除测量」、退出测量模式、切换测距↔测面、切换底图时隐藏——不再 6s 自动消失；操作提示类文案（单击添加测量点/已添加 N 个顶点/双击结束）改为 3s 短显不常驻，界面干净', '手机端抽屉层级修复：侧边栏抽屉 z-index 提升至 1260（底部导航 1250 之上），打开抽屉时全屏接管、底部快捷区不再被导航遮挡；遮罩 1255、菜单按钮 1270，点按永不穿透', '手机端 title 保真：作者名「- 佘磊」手机端隐藏，标题文字加大 13.5px 且始终完整可见，不再消失/截断', '手机端测量结果卡上移（底部导航上方 72px），不被导航遮挡'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');

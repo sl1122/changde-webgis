@@ -1129,15 +1129,15 @@ body.theme-night .measure-result {
 
 /* ===== 响应式：手机（≤768px）：侧边栏变抽屉 + 紧凑控件 ===== */
 @media (max-width: 768px) {
-    .menu-btn { display: flex !important; position: relative; z-index: 22; }
+    .menu-btn { display: flex !important; position: relative; z-index: 1270; }
     .page-header { padding: 0 12px; gap: 10px; }
     .page-header h1 { font-size: 15px; letter-spacing: .5px; gap: 5px; }
-    .page-header .author { font-size: 13px; }
+    /* v79：手机端作者名隐藏（title 更精简），标题文字始终完整可见 */
+    .page-header .author { display: none; }
     /* 顶部标题防丢失：固定高度 + 文字溢出省略，防止标题栏变形/侧边栏错位 */
     .page-header { height: var(--header-h); min-height: var(--header-h); overflow: hidden; }
     .page-header h1, .page-header .author { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .page-header h1 { flex: 1; min-width: 0; max-width: calc(100% - 58px); font-size: 12.5px; }
-    .page-header .author { font-size: 11px; }
+    .page-header h1 { flex: 1; min-width: 0; max-width: calc(100% - 58px); font-size: 13.5px; }
     .blossom-logo { width: 16px; height: 16px; }
     .subtitle { display: none; }
 
@@ -1152,7 +1152,8 @@ body.theme-night .measure-result {
         bottom: 0;
         width: 280px;
         max-width: 84vw;
-        z-index: 30;
+        /* v79：抽屉层级提升——覆盖底部导航与全部地图 UI（打开抽屉时全屏接管，导航不再遮挡快捷区） */
+        z-index: 1260;
         border-right: none;
         border-radius: 0 14px 14px 0;
         box-shadow: 0 10px 40px rgba(15, 23, 42, .28);
@@ -1162,6 +1163,7 @@ body.theme-night .measure-result {
     }
     .sidebar.open { transform: translateX(0); }
     .sidebar-backdrop.show { display: block; }
+    .sidebar-backdrop { z-index: 1255; }
 
     /* 右侧功能区（手机端）：46px 常驻图标窄条（不折叠，触屏直接可见可点） */
     .toolbar {
@@ -1333,7 +1335,7 @@ body.theme-night .measure-result {
         line-height: 1.45;
         border-radius: 12px;
     }
-    .measure-result { bottom: 24px; font-size: 12px; max-width: 90%; white-space: normal; line-height: 1.4; }
+    .measure-result { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); font-size: 12px; max-width: 90%; white-space: normal; line-height: 1.4; }
     .iw-card { max-width: 210px; min-width: 175px; }
 }
 
