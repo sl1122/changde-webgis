@@ -585,19 +585,23 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 .toolbar[data-anchor="left"].fab-open button::before,
 .toolbar[data-anchor="right"].fab-open button::before { display: none; }
 /* 停靠上/下边缘：折叠按钮固定于最左侧，向右横向展开纯图标列表，收起向左折叠（与停靠边平行）；
-   v74：flex-wrap 换行一次展示全部功能按钮，移除滚动条，杜绝拖动条遮挡 */
+   v76：固定一排（nowrap），桌面 44px 完整一排；移动端 36px 紧凑排布，超宽隐藏式滚动（滚动条不可见，无遮挡） */
 .toolbar[data-anchor="top"].fab-open,
 .toolbar[data-anchor="bottom"].fab-open {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-start;
-    align-content: flex-start;
     width: auto;
     min-height: 56px;
     height: auto;
     padding: 6px 6px 6px 12px;
-    max-width: 90vw;
+    max-width: 96vw;
+    overflow-x: auto;
+    scrollbar-width: none;            /* Firefox：隐藏滚动条 */
+    -ms-overflow-style: none;
 }
+.toolbar[data-anchor="top"].fab-open::-webkit-scrollbar,
+.toolbar[data-anchor="bottom"].fab-open::-webkit-scrollbar { display: none; }  /* Chrome/Safari：隐藏滚动条 */
 .toolbar[data-anchor="top"].fab-open::before,
 .toolbar[data-anchor="bottom"].fab-open::before {
     margin: 0 10px 0 0;
@@ -607,7 +611,15 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 }
 .toolbar[data-anchor="top"].fab-open button,
 .toolbar[data-anchor="bottom"].fab-open button { width: 44px; flex-shrink: 0; }
-/* v74：收起方向动画——竖向向上 / 横向向左，与停靠边严格平行（配合 JS fab-closing） */
+@media (max-width: 768px) {
+    .toolbar[data-anchor="top"].fab-open,
+    .toolbar[data-anchor="bottom"].fab-open { padding: 4px 4px 4px 10px; }
+    .toolbar[data-anchor="top"].fab-open button,
+    .toolbar[data-anchor="bottom"].fab-open button { width: 36px; height: 40px; }
+    .toolbar[data-anchor="top"].fab-open button svg,
+    .toolbar[data-anchor="bottom"].fab-open button svg { width: 17px; height: 17px; }
+}
+/* v76：收起方向动画——竖向向上 / 横向向左，与停靠边严格平行（配合 JS fab-closing） */
 .toolbar.fab-closing[data-anchor="left"] button,
 .toolbar.fab-closing[data-anchor="right"] button { transform: translateY(-12px); opacity: 0; }
 .toolbar.fab-closing[data-anchor="top"] button,
