@@ -781,16 +781,17 @@ body.theme-night .panel-close, body.theme-night .measure-close {
             0 0 0 1.5px rgba(244, 114, 182, calc(.05 * var(--cell-disperse)));
     }
     50% {
-        transform: scale(1.02);
+        transform: scale(1.03);
         box-shadow:
-            inset 0 1px 1px rgba(255, 255, 255, calc(.78 * var(--glass-sheen))),
+            inset 0 1px 1px rgba(255, 255, 255, calc(.80 * var(--glass-sheen))),
             inset 0 -6px 14px rgba(0, 0, 0, calc(.24 * var(--glass-shadow))),
-            inset 0 0 0 1px rgba(255, 255, 255, calc(.40 * var(--glass-sheen))),
-            0 12px 30px rgba(15, 23, 42, calc(.34 * var(--glass-shadow))),
-            0 0 0 1px rgba(255, 255, 255, calc(.30 * var(--glass-sheen))),
-            0 0 0 1px rgba(129, 140, 248, calc(.13 * var(--cell-disperse))),
-            0 0 0 1.5px rgba(244, 114, 182, calc(.10 * var(--cell-disperse))),
-            0 0 12px 2px rgba(129, 140, 248, calc(.12 * var(--cell-disperse)));
+            inset 0 0 0 1px rgba(255, 255, 255, calc(.42 * var(--glass-sheen))),
+            0 14px 32px rgba(15, 23, 42, calc(.36 * var(--glass-shadow))),
+            0 0 0 1px rgba(255, 255, 255, calc(.32 * var(--glass-sheen))),
+            0 0 0 1px rgba(129, 140, 248, calc(.14 * var(--cell-disperse))),
+            0 0 0 1.5px rgba(244, 114, 182, calc(.11 * var(--cell-disperse))),
+            0 0 14px 3px rgba(129, 140, 248, calc(.14 * var(--cell-disperse))),
+            0 0 24px 6px rgba(255, 255, 255, calc(.18 * var(--glass-sheen)));
     }
 }
 /* —— 细胞核：液态折射气泡（v103 重做：透明气泡而非实心色块）—— */
@@ -834,11 +835,35 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     0%   { opacity: .5; transform: translate(-50%, -50%) scale(.88); }
     100% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
 }
+/* —— v104 波纹感：细胞膜涟漪环（细环自球缘向外周期性扩散，模拟水面涟漪；与呼吸错相 2.6s/2.2s 双层节奏） —— */
+#fab:not(.fab-open)::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 52px; height: 52px;
+    margin-left: -26px; margin-top: -26px;
+    border-radius: 50%;
+    border: 1.2px solid rgba(255, 255, 255, calc(.50 * var(--glass-sheen)));
+    box-shadow:
+        0 0 8px 1px rgba(129, 140, 248, calc(.16 * var(--cell-disperse))),
+        inset 0 0 6px rgba(129, 140, 248, calc(.12 * var(--cell-disperse)));
+    pointer-events: none;
+    z-index: 1;
+    animation: fabRipple 2.6s cubic-bezier(.22, .61, .36, 1) infinite;
+    will-change: transform, opacity;
+}
+@keyframes fabRipple {
+    0%   { transform: translate(-50%, -50%) scale(.88); opacity: .55; }
+    40%  { transform: translate(-50%, -50%) scale(1.12); opacity: .32; }
+    70%  { transform: translate(-50%, -50%) scale(1.34); opacity: .15; }
+    100% { transform: translate(-50%, -50%) scale(1.55); opacity: 0; }
+}
 /* —— 交互暂停：拖拽 / 展开 / 收起过程全停动画，仅保留基础玻璃与半透底色 —— */
 .toolbar.fab-dragging, .toolbar.fab-open, .toolbar.fab-closing { animation: none !important; }
 .toolbar.fab-dragging .fab-cell-core, .toolbar.fab-open .fab-cell-core,
 .toolbar.fab-dragging .fab-cell-glow, .toolbar.fab-open .fab-cell-glow { animation: none !important; opacity: .35; }
 .toolbar.fab-closing .fab-cell-core, .toolbar.fab-closing .fab-cell-glow { animation: none !important; opacity: .5; }
+.toolbar.fab-dragging::after, .toolbar.fab-open::after, .toolbar.fab-closing::after { animation: none !important; opacity: 0; }
 /* 展开态隐藏装饰层，避免干扰功能按钮辨识 */
 .toolbar.fab-open .fab-cell-core, .toolbar.fab-open .fab-cell-glow { opacity: 0; }
 /* —— 夜间适配：细胞核气泡蓝紫散色更通透（保留气泡结构，仅增强折射光晕），呼吸光晕随玻璃强度联动 —— */
@@ -853,15 +878,23 @@ body.theme-night #fab:not(.fab-open) .fab-cell-core {
 body.theme-night #fab:not(.fab-open) .fab-cell-glow {
     background: radial-gradient(circle, rgba(129, 140, 248, calc(.22 * var(--cell-disperse))), rgba(56, 189, 248, calc(.1 * var(--cell-disperse))) 46%, transparent 72%);
 }
+body.theme-night #fab:not(.fab-open)::after {
+    border-color: rgba(165, 180, 252, calc(.55 * var(--glass-sheen)));
+    box-shadow:
+        0 0 10px 2px rgba(129, 140, 248, calc(.22 * var(--cell-disperse))),
+        inset 0 0 8px rgba(56, 189, 248, calc(.16 * var(--cell-disperse)));
+}
 /* —— 移动端降级：关闭连续形变与细胞核漂移，仅保留静态玻璃（优先地图流畅度） —— */
 @media (max-width: 768px) {
     #fab:not(.fab-open) { animation: none !important; }
     #fab .fab-cell-core, #fab .fab-cell-glow { display: none !important; }
+    #fab::after { display: none !important; }
 }
 /* —— 系统「减弱动态效果」偏好降级 —— */
 @media (prefers-reduced-motion: reduce) {
     #fab:not(.fab-open) { animation: none !important; }
     #fab .fab-cell-core, #fab .fab-cell-glow { animation: none !important; }
+    #fab::after { animation: none !important; }
 }
 
 /* 自定义缩放按钮（Apple 玻璃质感；v77：移至右下角、尺寸适当缩小——桌面 38px / 手机 34px） */
