@@ -576,13 +576,14 @@
         document.getElementById('btn-area').classList.remove('active');
         measure.mode = null;
         hideMeasureCard();
+        if (window._recordsClearEcho) window._recordsClearEcho(); // v86：清除测量同时清掉记录回显
     }
     // v75：UI 命中守卫——Leaflet 地图点击监听收到事件时，若来源是任何玻璃面板/卡片/弹窗，
     // 一律忽略（彻底杜绝卡片点击"刺透"到地图触发打点/测量/选点，不依赖冒泡拦截顺序）
     function uiHit(ev) {
         var t = ev && ev.originalEvent && ev.originalEvent.target;
         if (!t || !t.closest) return false;
-        return !!t.closest('.settings-panel, .basemap-panel, .mark-panel, .legend-panel, .measure-result, .cl-card, .map-toast, .toolbar, .zoom-ctrl, .leaflet-popup');
+        return !!t.closest('.settings-panel, .basemap-panel, .mark-panel, .legend-panel, .measure-result, .records-panel, .cl-card, .map-toast, .toolbar, .zoom-ctrl, .leaflet-popup');
     }
     map.on('click', function (e) {
         if (uiHit(e)) return; // v75：卡片/面板内点击不触发测量
@@ -616,16 +617,19 @@
         }
     });
     map.on('dblclick', function (e) {
+        if (uiHit(e)) return; // v86：双击任何玻璃面板/卡片不再触发地图测量结束/多边形闭合（防穿透），地图本体双击缩放保留
         if (!measure.mode) return;
         e.originalEvent.preventDefault();
         if (measure.mode === 'dist') {
             showMeasure('总距离：' + (measure.total / 1000).toFixed(3) + ' 公里');
+            if (window._recordsAdd) window._recordsAdd('dist', '总距离', (measure.total / 1000).toFixed(3) + ' 公里', measure.pts.slice());
         } else if (measure.pts.length >= 3) {
             if (measure.line) map.removeLayer(measure.line);
             measure.poly = L.polygon(measure.pts, { color: '#059669', weight: 2, fillColor: '#059669', fillOpacity: 0.15 });
             map.addLayer(measure.poly);
             var area = polygonAreaM2(measure.pts);
             showMeasure('面积：' + (area / 1000000).toFixed(3) + ' 平方公里');
+            if (window._recordsAdd) window._recordsAdd('area', '面积', (area / 1000000).toFixed(3) + ' 平方公里', measure.pts.slice());
         }
         measure.mode = null;
         document.getElementById('btn-distance').classList.remove('active');
@@ -663,12 +667,14 @@
     if (measureDoneBtn) measureDoneBtn.addEventListener('click', function () {
         if (measure.mode === 'dist') {
             showMeasure('总距离：' + (measure.total / 1000).toFixed(3) + ' 公里');
+            if (window._recordsAdd) window._recordsAdd('dist', '总距离', (measure.total / 1000).toFixed(3) + ' 公里', measure.pts.slice());
         } else if (measure.mode === 'area' && measure.pts.length >= 3) {
             if (measure.line) map.removeLayer(measure.line);
             measure.poly = L.polygon(measure.pts, { color: '#059669', weight: 2, fillColor: '#059669', fillOpacity: 0.15 });
             map.addLayer(measure.poly);
             var area = polygonAreaM2(measure.pts);
             showMeasure('面积：' + (area / 1000000).toFixed(3) + ' 平方公里');
+            if (window._recordsAdd) window._recordsAdd('area', '面积', (area / 1000000).toFixed(3) + ' 平方公里', measure.pts.slice());
         }
         measure.mode = null;
         document.getElementById('btn-distance').classList.remove('active');
@@ -676,6 +682,138 @@
         measureDoneBtn.hidden = true;
     });
     // v83：「×」关闭按钮已彻底移除——测量结果卡靠点地图任意处 / 清除测量 / 退出测量模式自动隐藏
+
+    // ---------------- 8.7 测量历史记录（导出 / 导入 / 点击回显点线面）v86 ----------------
+    (function initRecords() {
+        var records = [];
+        try { records = JSON.parse(localStorage.getItem('cd_records_v1') || '[]'); } catch (e) { records = []; }
+        var echoId = null, echoLayers = [];
+        function fmtNow() {
+            try { return new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'); } catch (e) { return ''; }
+        }
+        function saveRec() { try { localStorage.setItem('cd_records_v1', JSON.stringify(records)); } catch (e) { } }
+        // 记录坐标统一存 WGS-84 标准（跨底图不偏移）；回显时按当前底图坐标系转回
+        function stdPt(ll) { return gcjMode ? gcj2wgs(ll) : ll.slice(); }
+        function wgsToDisp(ll) { return gcjMode ? wgs2gcj(ll) : ll.slice(); }
+        function addRecord(type, label, value, pts) {
+            records.push({ id: Date.now() + Math.floor(Math.random() * 999), type: type, label: label, value: String(value), pts: pts.map(stdPt), time: fmtNow() });
+            saveRec(); renderRec();
+        }
+        function clearRecordEcho() {
+            echoLayers.forEach(function (l) { try { map.removeLayer(l); } catch (e) { } });
+            echoLayers = []; echoId = null;
+            document.querySelectorAll('.rp-item.echo').forEach(function (el) { el.classList.remove('echo'); });
+        }
+        function renderRec() {
+            var list = document.getElementById('records-list');
+            var empty = document.getElementById('records-empty');
+            if (!list) return;
+            list.innerHTML = '';
+            if (!records.length) { if (empty) empty.hidden = false; return; }
+            if (empty) empty.hidden = true;
+            records.forEach(function (r) {
+                var item = document.createElement('div');
+                item.className = 'rp-item' + (r.id === echoId ? ' echo' : '');
+                item.innerHTML =
+                    '<span class="rp-type ' + (r.type === 'area' ? 'area' : 'dist') + '">' + (r.type === 'area' ? '面' : '距') + '</span>' +
+                    '<span class="rp-val">' + esc(r.label) + '：' + esc(r.value) + '</span>' +
+                    '<span class="rp-time">' + esc(r.time || '') + '</span>' +
+                    '<button class="rp-del" data-id="' + r.id + '" title="删除该记录">×</button>';
+                item.addEventListener('click', function (ev) {
+                    if (ev.target.classList.contains('rp-del')) return;
+                    echoRecord(r.id);
+                });
+                list.appendChild(item);
+            });
+            list.querySelectorAll('.rp-del').forEach(function (b) {
+                b.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    var id = Number(b.getAttribute('data-id'));
+                    records = records.filter(function (x) { return x.id !== id; });
+                    if (echoId === id) clearRecordEcho();
+                    saveRec(); renderRec();
+                });
+            });
+        }
+        function echoRecord(id) {
+            var r = null;
+            records.forEach(function (x) { if (x.id === id) r = x; });
+            if (!r || !r.pts || !r.pts.length) return;
+            clearRecordEcho(); echoId = id;
+            var disp = r.pts.map(wgsToDisp);
+            var col = r.type === 'area' ? '#059669' : '#2563eb';
+            r.pts.forEach(function (ll) {
+                var dot = L.circleMarker(wgsToDisp(ll), { radius: 4, color: col, weight: 1.5, fillColor: col, fillOpacity: .9 });
+                echoLayers.push(dot); map.addLayer(dot);
+            });
+            if (r.type === 'area' && disp.length >= 3) {
+                var poly = L.polygon(disp, { color: col, weight: 2, fillColor: col, fillOpacity: .12 });
+                echoLayers.push(poly); map.addLayer(poly);
+            } else if (disp.length >= 2) {
+                var line = L.polyline(disp, { color: col, weight: 2.5, dashArray: '6 6' });
+                echoLayers.push(line); map.addLayer(line);
+            }
+            try { map.fitBounds(L.latLngBounds(disp).pad(0.2)); } catch (e) { }
+            showMeasure(r.label + '：' + r.value, true);
+            renderRec();
+        }
+        function exportRec() {
+            if (!records.length) { toast('暂无测量记录可导出', true); return; }
+            var payload = { app: 'changde-webgis', version: 86, exportedAt: new Date().toISOString(), records: records };
+            var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = '常德WebGIS测量记录_' + Date.now() + '.json';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+            toast('已导出 ' + records.length + ' 条测量记录');
+        }
+        function importRec(file) {
+            var reader = new FileReader();
+            reader.onload = function () {
+                try {
+                    var data = JSON.parse(reader.result);
+                    var arr = Array.isArray(data) ? data : (data.records || []);
+                    var added = 0;
+                    arr.forEach(function (x) {
+                        if (x && x.pts && Array.isArray(x.pts) && x.pts.length >= 2 && (x.type === 'dist' || x.type === 'area')) {
+                            records.push({ id: Date.now() + added++, type: x.type, label: x.label || (x.type === 'area' ? '面积' : '总距离'), value: String(x.value || ''), pts: x.pts, time: x.time || fmtNow() });
+                        }
+                    });
+                    if (added) { saveRec(); renderRec(); toast('导入 ' + added + ' 条测量记录'); }
+                    else toast('文件中没有有效测量记录', true);
+                } catch (e) { toast('导入文件解析失败，请选择有效的 JSON 文件', true); }
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+        var panel = document.getElementById('records-panel');
+        var btnRec = document.getElementById('btn-records');
+        if (btnRec && panel) {
+            btnRec.addEventListener('click', function () {
+                panel.hidden = !panel.hidden;
+                if (!panel.hidden) renderRec(); else clearRecordEcho();
+            });
+            var closeBtn = document.getElementById('records-close');
+            if (closeBtn) closeBtn.addEventListener('click', function () { panel.hidden = true; clearRecordEcho(); });
+            var expBtn = document.getElementById('records-export');
+            if (expBtn) expBtn.addEventListener('click', exportRec);
+            var impBtn = document.getElementById('records-import');
+            var fileInput = document.getElementById('records-file');
+            if (impBtn && fileInput) impBtn.addEventListener('click', function () { fileInput.click(); });
+            if (fileInput) fileInput.addEventListener('change', function () {
+                if (fileInput.files && fileInput.files[0]) importRec(fileInput.files[0]);
+                fileInput.value = '';
+            });
+            var clrBtn = document.getElementById('records-clear');
+            if (clrBtn) clrBtn.addEventListener('click', function () {
+                if (!records.length) return;
+                records = []; clearRecordEcho(); saveRec(); renderRec();
+                toast('已清空全部测量记录');
+            });
+        }
+        window._recordsAdd = addRecord;
+        window._recordsClearEcho = clearRecordEcho;
+    })();
 
     // ---------------- 8.5 手动底图切换 ----------------
     var btnBasemap = document.getElementById('btn-basemap');
@@ -1550,7 +1688,8 @@
         { v: 'v82', t: '悬浮球展开真根因修复（CSS 优先级压制）+ 触发球置顶', pts: ['悬浮球「展开不了 / 展开影响地图」真根因：折叠态隐藏功能按钮的规则（#fab > button:not(#fab-trigger)）优先级高于展开态显示规则，导致点击展开后功能按钮仍被隐藏、只剩透明空壳面板盖在地图上——已改为「仅折叠态隐藏」（#fab:not(.fab-open)），展开后双排 2×5 功能按钮完整可见，空壳遮挡消失', '折叠触发球移至功能面板首行（grid 第一行置顶），点击任意位置果冻展开/收缩，视觉层级正确', '测量结果卡渲染复验：卡片主体与数值文字清晰可见（白底 0.78 不透明 + 玻璃模糊），不再出现「只剩关闭按钮的空壳」', '双排面板 180px 收紧、84×40 按钮、触发球置顶 32px，展开形态经桌面 1280 视口截图验证完整无缺'] },
         { v: 'v83', t: '测量卡「×」彻底移除（无空壳可残留）+ 悬浮球改球面图案展开', pts: ['底部测量结果卡的「×」关闭按钮已彻底删除——再没有任何「红框空壳 ×」残留的可能；结果卡只在测量进行中 / 双击结束显示结果时出现，点地图任意处 / 清除测量 / 退出测量模式即自动消失', '悬浮球展开改「球面图案」：点击折叠球 → 果冻弹性膨胀为 252px 圆形玻璃球，10 个功能按钮以圆形小钮（图标+文字）直接铺在球面，顶部「功能」触发球作收缩开关；再次点击收缩回 56px 圆球', '球面高光：圆球内顶部高光 + 底部阴影渐变，液态玻璃质感统一；停靠边不改变形态，展开态禁拖，折叠态长按拖拽吸附与位置持久化保留'] },
         { v: 'v84', t: '悬浮球回退：展开改回双排矩形，折叠球面加刻度环图案', pts: ['收到「这个好丑啊」反馈——v83 的 252px 大圆球展开被圆边裁切按钮（如「清除测」缺字）、排列拥挤，已整体回退', '展开形态回退为 v82 双排矩形（180px、2 列 × 5 行、按钮 84×40 图文完整无裁切、触发球置顶）', '「悬浮球表面的图案」落地在折叠态：56px 圆球表面新增同心刻度环 + 顶部液态高光图案（伪元素实现，零 JS、零性能开销），点击展开后图案层隐藏不影响浏览', '测量卡无「×」保持（v83 已移除，杜绝空壳）；拖拽吸附 / 位置持久化 / 展开禁拖全部保留'] },
-        { v: 'v85', t: '修复「清除测量后底部仍显示测量数据」——hidden 属性被 display 覆盖的根因修复', pts: ['根因定位：测量结果卡 CSS 显式声明 display:flex，优先级高于浏览器对 HTML hidden 属性的默认隐藏（[hidden]{display:none}）——所以 JS 执行 el.hidden=true 后卡片依然显示，清除测量、退出测量、点地图隐藏全部失效，且历次「空壳卡片残留」同源', '修复：新增统一兜底规则 #map .measure-result[hidden]{display:none!important}（更新日志卡片 .cl-card 同为 display:flex，一并兜底）——hidden 存在即强制隐藏，压过一切作者 display 声明', '影响面：清除测量 / 退出测量模式 / 点地图任意处 / 底图切换 / 关闭面板时，底部测量卡即刻消失，无残留、无空壳'] }
+        { v: 'v85', t: '修复「清除测量后底部仍显示测量数据」——hidden 属性被 display 覆盖的根因修复', pts: ['根因定位：测量结果卡 CSS 显式声明 display:flex，优先级高于浏览器对 HTML hidden 属性的默认隐藏（[hidden]{display:none}）——所以 JS 执行 el.hidden=true 后卡片依然显示，清除测量、退出测量、点地图隐藏全部失效，且历次「空壳卡片残留」同源', '修复：新增统一兜底规则 #map .measure-result[hidden]{display:none!important}（更新日志卡片 .cl-card 同为 display:flex，一并兜底）——hidden 存在即强制隐藏，压过一切作者 display 声明', '影响面：清除测量 / 退出测量模式 / 点地图任意处 / 底图切换 / 关闭面板时，底部测量卡即刻消失，无残留、无空壳'] },
+        { v: 'v86', t: '悬浮球罗盘图案 + 全卡片双击防穿透 + 测量历史记录（导出/导入/回显）', pts: ['悬浮球折叠态球面图案重新设计：罗盘刻度样式（中心定位点 + 双环 + 放射刻度线 + 顶部液态高光），纯 CSS 渐变实现，视觉清晰、零性能开销', '防穿透：地图双击监听新增 UI 命中守卫——双击任何玻璃面板/卡片（设置/底图/图例/打点/测量记录/更新日志/测量卡）不再触发地图双击缩放或测量结束/多边形闭合；测量记录面板加入全部穿透拦截名单（mousedown/pointerdown/click/dblclick）', '新增「测量记录」功能按钮与面板：完成测距/测面（双击结束或完成按钮）自动归档进历史，localStorage 持久化；面板支持导出全部记录为 JSON 文件、从 JSON 文件导入、清空、单条删除', '点击任意测量记录 → 地图回显对应点线面（顶点圆点 + 距离虚线/面积填充多边形）并自动适配视野，底部玻璃卡显示数值；记录坐标统一存 WGS-84 标准，切换底图后回显不偏移；清除测量同步清掉回显', '记录面板玻璃质感与动画：与设置/底图面板共用同一套 CSS 变量（玻璃强度滑杆实时联动），列表项果冻滑入动画，夜间模式与材质包自动适配'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1906,7 +2045,7 @@
     (function initPanelGuard() {
         // v75：cl-card 恢复拦截（叉号三通道直绑不依赖冒泡，stopPropagation 无副作用；防止卡内点击冒泡到地图）
         // v77：dblclick 一并拦截——双击任何玻璃面板/卡片不再触发 Leaflet 地图双击缩放（"双击卡片放大"根治），地图本体双击缩放保留
-        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'cl-card', 'map-toast'].forEach(function (id) {
+        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'records-panel', 'cl-card', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
             ['mousedown', 'pointerdown', 'click', 'dblclick'].forEach(function (t) {

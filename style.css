@@ -1992,20 +1992,23 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     .pack-item { padding: 3px 9px; font-size: 11.5px; }
 }
 
-/* ================= v84 悬浮球：折叠态球面图案 + 展开回退双排 =================
-   折叠 56px 圆球表面带同心刻度环图案（液态高光，回应「悬浮球表面的图案」）；
-   点击展开为 180px 双排功能栏（2 列 × 5 行，触发球置顶）；再点触发球收缩；
-   折叠态长按可拖、沿边吸附、位置持久化；展开态禁拖 */
+/* ================= v86 悬浮球：折叠态球面罗盘图案 + 展开双排（2×6） =================
+   折叠 56px 圆球表面为「罗盘刻度」图案：中心定位点 + 双环 + 放射刻度线 + 顶部液态高光
+   （纯 CSS 渐变实现，零 JS 零性能开销）；点击展开为 180px 双排功能栏；再点触发球收缩 */
 #fab { border-radius: 50%; }
 #fab::before {
     content: '';
-    position: absolute; inset: 4px;
+    position: absolute; inset: 3px;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, .4);
-    box-shadow:
-        inset 0 0 0 4px rgba(255, 255, 255, .1),
-        inset 0 0 14px rgba(255, 255, 255, .28);
-    background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, .75), rgba(255, 255, 255, 0) 38%);
+    background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .95) 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 50% 50%, transparent 0 12px, rgba(255, 255, 255, .5) 12.5px 13.5px, transparent 14px),
+        radial-gradient(circle at 50% 50%, transparent 0 19px, rgba(255, 255, 255, .28) 19.5px 20px, transparent 20.5px),
+        repeating-conic-gradient(rgba(255, 255, 255, .85) 0deg 4deg, rgba(255, 255, 255, 0) 4deg 15deg),
+        radial-gradient(circle at 32% 28%, rgba(255, 255, 255, .9) 0 6px, rgba(255, 255, 255, 0) 12px),
+        radial-gradient(circle at 72% 76%, rgba(255, 255, 255, .45) 0 4px, rgba(255, 255, 255, 0) 9px);
+    -webkit-mask: radial-gradient(circle, transparent 34%, #000 40% 64%, transparent 70%);
+    mask: radial-gradient(circle, transparent 34%, #000 40% 64%, transparent 70%);
     pointer-events: none;
 }
 #fab:not(.fab-open) > button:not(#fab-trigger) { display: none; }  /* 仅折叠态隐藏功能按钮 */
@@ -2018,7 +2021,7 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 #fab-trigger span { font-size: 9px; font-weight: 600; line-height: 1; }
 #fab-trigger svg { width: 20px; height: 20px; }
 
-/* 展开态：双排矩形（回退 v82 形态，按钮完整无裁切） */
+/* 展开态：双排矩形（2 列 × 6 行，v86 新增「记录」按钮共 11 个功能钮） */
 #fab.fab-open {
     width: 180px; height: auto;
     display: grid;
@@ -2063,3 +2066,104 @@ body.theme-night .cl-row-points { color: #94a3b8; }
    统一兜底：任何时刻 hidden 存在即强制 display:none（!important 压过所有作者 display 声明）。 */
 #map .measure-result[hidden],
 #map .cl-card[hidden] { display: none !important; }
+
+/* ================= v86 测量记录面板（玻璃质感 + 动画 + 材质包适配） =================
+   面板样式与设置/底图面板同一套 CSS 变量（--glass-alpha/--glass-blur/--glass-sat），
+   玻璃强度滑杆实时联动；夜间/材质包主题自动适配 */
+#map .records-panel {
+    position: absolute; top: 14px; right: 70px; z-index: 1270;
+    width: 292px; max-height: 58vh;
+    display: flex; flex-direction: column;
+    padding: 13px 15px;
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .95));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    border-radius: 18px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .8),
+        inset 0 0 0 .5px rgba(255, 255, 255, .6),
+        0 10px 32px rgba(15, 23, 42, .18);
+    color: var(--text);
+    transition: backdrop-filter .35s ease, background-color .35s ease, opacity .25s ease, transform .25s ease;
+}
+#map .records-panel[hidden] { display: none !important; }   /* v86：兜底（防穿透 + 隐藏彻底） */
+.rp-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px; margin-bottom: 9px;
+    font-size: 13px; font-weight: 700; color: var(--text);
+}
+.rp-actions { display: flex; gap: 5px; align-items: center; }
+.rp-actions button, .rp-close {
+    border: none; border-radius: 999px;
+    background: rgba(255, 255, 255, .6);
+    color: var(--text);
+    font-size: 11px; font-weight: 600;
+    padding: 4px 9px; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(31, 45, 78, .12), inset 0 1px 0 rgba(255, 255, 255, .7);
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, box-shadow .2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.rp-actions button:hover, .rp-close:hover { transform: translateY(-1px) scale(1.05); box-shadow: 0 4px 12px rgba(31, 45, 78, .18), inset 0 1px 0 rgba(255, 255, 255, .7); }
+.rp-actions button:active, .rp-close:active { transform: scale(.94); transition-duration: .1s; }
+.rp-close { width: 24px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1; }
+.rp-list {
+    display: flex; flex-direction: column; gap: 6px;
+    overflow-y: auto; max-height: 42vh;
+    padding-right: 2px;
+}
+.rp-list::-webkit-scrollbar { width: 5px; }
+.rp-list::-webkit-scrollbar-thumb { background: rgba(31, 45, 78, .25); border-radius: 4px; }
+.rp-item {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 9px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .5);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 2px 8px rgba(31, 45, 78, .08);
+    cursor: pointer;
+    font-size: 12px;
+    transition: transform .28s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, box-shadow .2s ease;
+    animation: rp-in .3s cubic-bezier(.34, 1.56, .64, 1) both;
+    -webkit-tap-highlight-color: transparent;
+}
+@keyframes rp-in {
+    from { opacity: 0; transform: translateX(-10px) scale(.96); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.rp-item:hover { transform: translateY(-1px); background: rgba(255, 255, 255, .72); }
+.rp-item.echo {
+    background: rgba(52, 199, 89, .16);
+    box-shadow: inset 0 0 0 1px rgba(52, 199, 89, .45), 0 2px 10px rgba(52, 199, 89, .2);
+}
+.rp-type {
+    flex-shrink: 0; width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-size: 11px; font-weight: 700; color: #fff;
+}
+.rp-type.dist { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.rp-type.area { background: linear-gradient(135deg, #10b981, #059669); }
+.rp-val { flex: 1; min-width: 0; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-time { flex-shrink: 0; font-size: 10px; color: var(--text-2, #64748b); }
+.rp-del {
+    flex-shrink: 0; width: 20px; height: 20px;
+    border: none; border-radius: 50%;
+    background: rgba(148, 163, 184, .25);
+    color: var(--text-2, #475569);
+    font-size: 12px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), background-color .15s ease, color .15s ease;
+}
+.rp-del:hover { background: rgba(239, 68, 68, .2); color: #dc2626; transform: scale(1.1); }
+.rp-del:active { transform: scale(.9); }
+.rp-empty { margin: 10px 2px 2px; font-size: 11.5px; color: var(--text-2, #64748b); line-height: 1.6; }
+body.theme-night #map .records-panel {
+    background: rgba(15, 23, 42, .88);
+    box-shadow: inset 0 1px 0 rgba(148, 163, 212, .25), 0 10px 32px rgba(2, 6, 23, .5);
+}
+body.theme-night .rp-item { background: rgba(30, 41, 59, .6); }
+body.theme-night .rp-item.echo { background: rgba(5, 150, 105, .22); box-shadow: inset 0 0 0 1px rgba(52, 211, 153, .5); }
+body.theme-night .rp-actions button, body.theme-night .rp-close { background: rgba(51, 65, 85, .7); color: #e2e8f0; }
+@media (max-width: 480px) {
+    #map .records-panel { width: calc(100vw - 24px); max-width: 292px; right: 12px; top: 10px; max-height: 60vh; }
+    .rp-list { max-height: 44vh; }
+}
