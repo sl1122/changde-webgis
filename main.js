@@ -1944,25 +1944,3 @@
         console.log('常德市城市公共服务WebGIS系统（Leaflet + OpenStreetMap）初始化完成');
     });
 })();
-
-// ===== 临时测试钩子（验证用，推送前删除） =====
-(function () {
-    var q = location.search || '';
-    if (/fabmsg=1/.test(q)) {
-        setTimeout(function () {
-            var mr = document.getElementById('measure-result');
-            var txt = document.getElementById('measure-text');
-            if (mr && txt) { mr.hidden = false; txt.textContent = '面积：2.384 平方公里'; }
-            setTimeout(function () {
-                var f = document.getElementById('btn-clear');
-                if (f) f.click();
-                setTimeout(function () {
-                    var el = document.getElementById('measure-result');
-                    var d = el ? getComputedStyle(el).display : 'nocard';
-                    document.title = 'HIDDEN-' + d;
-                }, 200);
-            }, 3500);
-        }, 1200);
-    }
-})();
-// ===== 临时钩子结束 =====
