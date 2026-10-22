@@ -2208,3 +2208,97 @@ body.theme-night .rp-actions button, body.theme-night .rp-close { background: rg
     #map .records-panel { width: calc(100vw - 24px); max-width: 292px; right: 12px; top: 10px; max-height: 60vh; }
     .rp-list { max-height: 44vh; }
 }
+
+/* ================= v92 夜间可读性专项 + 敷贴式玻璃光晕层 =================
+   一、夜间文字可读性：全局提亮（正文/辅助文字）+ 1px 同色系深色微投影强化边缘 +
+       控件/分隔线/滑杆/复选框描边提亮 + 语义色提亮 + 面板背景通透度纳入玻璃调节体系；
+   二、敷贴式玻璃光晕：drop-shadow 外发光（跟随圆角形状，不冲突 box-shadow / 伪元素），
+       光晕强度由全局变量 --glass-halo 暴露、并随主滑杆 --glass-sheen/-shadow 联动；
+       桌面端完整光晕，移动端自动降级仅保留轻微光晕。全部纯 CSS 增量，零 JS、零 DOM 改动 */
+:root, body {
+    --glass-halo: .55;   /* 玻璃外发光光晕强度 0-1（敷贴式光晕全局强度，可独立微调） */
+    --glass-edge: .5;    /* 玻璃边缘高光/厚度强度 0-1（顶部弧形高光边，备用可独立调） */
+}
+
+/* —— 一、敷贴式玻璃光晕（桌面完整版：三层弥散外发光 + 柔外投影，随 sheen/shadow 联动） —— */
+.sidebar, #map .toolbar, #map .settings-panel, #map .basemap-panel, #map .mark-panel,
+#map .legend-panel, #map .records-panel, #map .measure-result, #map .map-toast,
+#map .cl-card, .page-header, .leaflet-popup-content-wrapper {
+    filter:
+        drop-shadow(0 0 10px rgba(255, 255, 255, calc(.22 * var(--glass-halo) * var(--glass-sheen))))
+        drop-shadow(0 0 26px rgba(255, 255, 255, calc(.10 * var(--glass-halo) * var(--glass-sheen))))
+        drop-shadow(0 6px 20px rgba(15, 23, 42, calc(.16 * var(--glass-shadow))));
+}
+/* 移动端降级：仅保留轻微光晕，保障地图渲染帧率 */
+@media (max-width: 768px) {
+    .sidebar, #map .toolbar, #map .settings-panel, #map .basemap-panel, #map .mark-panel,
+    #map .legend-panel, #map .records-panel, #map .measure-result, #map .map-toast,
+    #map .cl-card, .page-header, .leaflet-popup-content-wrapper {
+        filter: drop-shadow(0 0 6px rgba(255, 255, 255, calc(.10 * var(--glass-halo) * var(--glass-sheen))));
+    }
+}
+
+/* —— 二、夜间模式文字可读性专项 —— */
+/* 1) 全局变量提亮：正文、辅助文字、边框、语义色（图层分类/图例/POI 辨识度） */
+body.theme-night {
+    --text: #eef2ff;
+    --text-2: #b6c2e0;
+    --border: #3d4c74;
+    --school: #aecbff; --hospital: #ffb6b6; --scenic: #9ce6c4; --road: #f4cf92;
+}
+/* 2) 文字轮廓强化：全部玻璃组件文字 + 1px 同色系深色微投影（磨砂模糊不发虚，不破坏通透感） */
+body.theme-night .sidebar, body.theme-night #map .toolbar, body.theme-night #map .settings-panel,
+body.theme-night #map .basemap-panel, body.theme-night #map .mark-panel, body.theme-night #map .legend-panel,
+body.theme-night #map .records-panel, body.theme-night #map .measure-result, body.theme-night #map .map-toast,
+body.theme-night #map .cl-card, body.theme-night .page-header, body.theme-night .iw-card,
+body.theme-night .sidebar *, body.theme-night #map .toolbar *, body.theme-night #map .settings-panel *,
+body.theme-night #map .basemap-panel *, body.theme-night #map .mark-panel *, body.theme-night #map .legend-panel *,
+body.theme-night #map .records-panel *, body.theme-night #map .measure-result *, body.theme-night #map .map-toast *,
+body.theme-night #map .cl-card *, body.theme-night .iw-card * {
+    text-shadow: 0 1px 2px rgba(6, 10, 24, .5);
+}
+/* 3) 控件与分隔线适配：搜索框/下拉/输入描边提亮，滑杆/复选框主题色，面板分隔线统一提亮 */
+body.theme-night .search-input, body.theme-night select, body.theme-night .mark-ops input {
+    border-color: #4a5a88;
+}
+body.theme-night input[type='range'], body.theme-night input[type='checkbox'] { accent-color: #818cf8; }
+body.theme-night .panel-title, body.theme-night .rp-head, body.theme-night .legend-title,
+body.theme-night .settings-panel .settings-title, body.theme-night .cl-head,
+body.theme-night .iw-card .iw-title { border-bottom-color: rgba(165, 180, 252, .35); }
+body.theme-night .count { background: #1e293b; color: #dbe7ff; }
+body.theme-night .rp-item { border-color: rgba(148, 163, 212, .28); }
+/* 4) 背景通透度适配：夜间玻璃面板底色加深（保留磨砂质感，避免地图过亮透出干扰阅读），参数纳入玻璃调节体系 */
+body.theme-night #map .toolbar,
+body.theme-night #map .settings-panel,
+body.theme-night #map .basemap-panel,
+body.theme-night #map .mark-panel,
+body.theme-night #map .legend-panel,
+body.theme-night .sidebar {
+    background: rgba(19, 26, 48, calc(min(.97, var(--glass-alpha) * 1.02)));
+}
+/* 5) 全组件补亮：悬浮球按钮/图例/弹窗正文/比例尺刻度/记录面板文字等硬编码色值统一提亮一档 */
+body.theme-night .toolbar button, body.theme-night .zoom-ctrl button { color: #e6edff; }
+body.theme-night .toolbar button span { color: inherit; }
+body.theme-night .legend-panel { color: #dbe7ff; }
+body.theme-night .legend-panel .legend-title, body.theme-night .cl-row-title,
+body.theme-night .settings-panel .set-row label, body.theme-night .settings-panel .set-title,
+body.theme-night .iw-card .iw-title, body.theme-night .rp-actions button, body.theme-night .rp-close { color: #eef2ff; }
+body.theme-night .cl-row-points, body.theme-night .iw-card .iw-label,
+body.theme-night .rp-empty, body.theme-night .set-hint { color: #b6c2e0; }
+body.theme-night .iw-card .iw-row { color: #dbe7ff; }
+body.theme-night #map .leaflet-control-scale-line { color: #dbe7ff; border-bottom-color: rgba(165, 180, 252, .85); }
+body.theme-night .search-input::placeholder { color: #8195bd; }
+body.theme-night .pack-item { background: rgba(15, 23, 42, .92); color: #dbe7ff; border-color: #4a5a88; }
+body.theme-night .pack-item.sel { background: #6366f1; color: #fff; border-color: #a5b4fc; }
+body.theme-night .rp-item.echo { background: rgba(5, 150, 105, .26); box-shadow: inset 0 0 0 1px rgba(110, 231, 183, .6); }
+body.theme-night .map-toast { color: #eef2ff; }
+
+/* —— 三、折射组件光晕兼容：sidebar 已有液态折射 SVG filter（L1588），filter 无法叠加，
+   追加同 specificity 链式规则 —— 折射滤镜 + drop-shadow 光晕并存，覆盖 v92 基础光晕组 */
+body.refraction .sidebar {
+    filter:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E")
+        drop-shadow(0 0 10px rgba(255, 255, 255, calc(.22 * var(--glass-halo) * var(--glass-sheen))))
+        drop-shadow(0 0 26px rgba(255, 255, 255, calc(.10 * var(--glass-halo) * var(--glass-sheen))))
+        drop-shadow(0 6px 20px rgba(15, 23, 42, calc(.16 * var(--glass-shadow))));
+}
