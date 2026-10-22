@@ -507,10 +507,10 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     -webkit-user-select: none;
     touch-action: none;
 }
-/* 拖拽中：禁用过渡 + 降低不透明度，避免拉扯感 */
+/* 拖拽中：禁用过渡 + 降低不透明度（暂停重排与滤镜，仅位置跟随，减少卡顿） */
 .toolbar.fab-dragging {
     transition: none;
-    opacity: .82;
+    opacity: .7;
     transform: scale(1.06);
     cursor: grabbing;
 }
@@ -518,14 +518,14 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 .toolbar[data-anchor="left"] { left: 10px; right: auto; }
 .toolbar[data-anchor="top"] { top: 10px; bottom: auto; }
 .toolbar[data-anchor="bottom"] { bottom: 10px; top: auto; }
-/* 折叠态六点图标 */
+/* 折叠态三点图标（v73：单行三点，展开后作为置顶/置左折叠触发按钮） */
 .toolbar::before {
     content: '';
     width: 22px;
-    height: 22px;
+    height: 14px;
     background: var(--plum);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='5' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.4' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='5' r='2.4' fill='%23000'/%3E%3Ccircle cx='5' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.4' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.4' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.6' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.6' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
     transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s ease;
 }
 .toolbar:hover { transform: translateY(-4px) scale(1.04); background: rgba(255, 255, 255, .66); }
@@ -545,12 +545,22 @@ body.theme-night .panel-close, body.theme-night .measure-close {
         0 0 0 .5px rgba(255, 255, 255, .55);
     cursor: default;
 }
-.toolbar.fab-open::before { transform: rotate(180deg) scale(.6); opacity: .35; }
-/* 竖向停靠（左/右边缘）展开：按钮改胶囊长条，「图标 + 功能文字」横向排列，默认显示文字（提升辨识度、消除空白冗余） */
+/* v73：展开后折叠按钮保持可见可点（置顶/置左），不再缩小旋转 */
+.toolbar.fab-open::before { opacity: .6; }
+/* 竖向停靠（左/右边缘）展开：折叠按钮置顶显示，向下竖向展开「图标 + 文字」长胶囊；
+   收起时向上折叠，过渡方向与停靠边平行；高度边界 ≤ 视口 80% */
 .toolbar[data-anchor="left"].fab-open,
 .toolbar[data-anchor="right"].fab-open {
     width: 138px;
-    padding: 8px;
+    padding: 12px 8px 8px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.toolbar[data-anchor="left"].fab-open::before,
+.toolbar[data-anchor="right"].fab-open::before {
+    margin: 0 auto 10px;   /* 完全置顶 + 与首个按钮充足间距，不被面板内容/屏幕边缘遮挡 */
+    flex-shrink: 0;
+    z-index: 2;
 }
 .toolbar[data-anchor="left"].fab-open button,
 .toolbar[data-anchor="right"].fab-open button {
@@ -574,17 +584,32 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 /* 竖向停靠已有文字说明，不再叠加 hover tooltip */
 .toolbar[data-anchor="left"].fab-open button::before,
 .toolbar[data-anchor="right"].fab-open button::before { display: none; }
-/* 停靠上/下边缘：横向展开功能列表（智能自适应方向，避让缩放控件与地图核心区） */
+/* 停靠上/下边缘：折叠按钮固定于最左侧，向右横向展开纯图标列表；
+   收起时向左折叠，过渡方向与停靠边平行；宽度边界 ≤ 视口 60% */
 .toolbar[data-anchor="top"].fab-open,
 .toolbar[data-anchor="bottom"].fab-open {
     flex-direction: row;
     justify-content: flex-start;
     width: auto;
     height: 56px;
-    padding: 6px;
+    padding: 6px 6px 6px 12px;
+    max-width: 60vw;
+    overflow-x: auto;
+}
+.toolbar[data-anchor="top"].fab-open::before,
+.toolbar[data-anchor="bottom"].fab-open::before {
+    margin: 0 10px 0 0;
+    flex-shrink: 0;
+    align-self: center;
+    z-index: 2;
 }
 .toolbar[data-anchor="top"].fab-open button,
-.toolbar[data-anchor="bottom"].fab-open button { width: 44px; }
+.toolbar[data-anchor="bottom"].fab-open button { width: 44px; flex-shrink: 0; }
+/* v73：收起方向动画——竖向向上 / 横向向左，与停靠边严格平行（配合 JS fab-closing） */
+.toolbar.fab-closing[data-anchor="left"] button,
+.toolbar.fab-closing[data-anchor="right"] button { transform: translateY(-12px); opacity: 0; }
+.toolbar.fab-closing[data-anchor="top"] button,
+.toolbar.fab-closing[data-anchor="bottom"] button { transform: translateX(-12px); opacity: 0; }
 /* 面板内收起按钮（主动关闭路径） */
 .toolbar .fab-collapse { color: var(--text-2); }
 .toolbar.fab-open .fab-collapse { opacity: 1; }
@@ -742,7 +767,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     position: absolute;
     bottom: 30px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateZ(0); /* 提升渲染层，消除边缘斑块/模糊 */
     z-index: 1300;
     display: flex;
     align-items: center;
@@ -1439,15 +1464,22 @@ body.theme-night .adv-area { border-top-color: rgba(148, 163, 212, .25); }
 
 /* 液态折射增强（参考 liquid-glass SVG 位移滤镜 + 多层背景错位叠加，形成真实背景形变折射）
    桌面默认开、移动端自动关，仅作用于侧边栏与设置面板两大核心面板；
-   性能说明：filter 只在上层覆盖 DOM 启用，不触及地图容器/瓦片/聚合层 */
-body.refraction .sidebar,
-body.refraction .settings-panel {
+   性能说明：filter 只在上层覆盖 DOM 启用，不触及地图容器/瓦片/聚合层
+   v73 修复：设置面板的滤镜从面板本体移到 .settings-inner（外包盒预留安全边距），
+   滤镜只作用于视觉层，面板定位盒模型不变 → 开启折射后面板位置不漂移、文字不错位 */
+body.refraction .sidebar {
     position: relative;
+    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+}
+body.refraction .settings-inner {
+    position: relative;
+    margin: -8px;  /* 滤镜安全边距：补偿位移滤镜外扩，防止面板视觉偏移/边缘裁剪 */
+    padding: 8px;
     filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
 }
 /* 错位折射层：伪元素复制背景并以 SVG 滤镜位移 3px，与主层叠加产生液态通透感 */
 body.refraction .sidebar::after,
-body.refraction .settings-panel::after {
+body.refraction .settings-inner::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -1458,7 +1490,7 @@ body.refraction .settings-panel::after {
     transform: translate(3px, 3px);
 }
 body.refraction.theme-night .sidebar::after,
-body.theme-night.refraction .settings-panel::after { background: rgba(129, 140, 248, .05); }
+body.theme-night.refraction .settings-inner::after { background: rgba(129, 140, 248, .05); }
 
 /* 夜间主题：悬浮球 + 展开面板深色玻璃 */
 body.theme-night .toolbar {
@@ -1575,12 +1607,23 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     background: rgba(15, 23, 42, .42);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    z-index: 1300;
+    z-index: 2000; /* 全局顶级弹窗层级：不被悬浮球/面板遮挡 */
     align-items: center;
     justify-content: center;
     padding: 20px;
 }
 .cl-backdrop.show { display: flex; animation: cl-fade .3s ease; }
+/* 关闭：0.25s 平滑淡出 + 轻微缩放（与全局面板关闭逻辑对齐） */
+.cl-backdrop.removing { animation: cl-out .25s ease forwards; }
+@keyframes cl-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+.cl-backdrop.removing .cl-card { animation: cl-card-out .25s cubic-bezier(.4, 0, .6, 1) forwards; }
+@keyframes cl-card-out {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(.96); }
+}
 .cl-card {
     width: min(560px, 100%);
     max-height: 78vh;
