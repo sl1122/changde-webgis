@@ -44,11 +44,9 @@ body.theme-night {
     --header-grad: linear-gradient(135deg, rgba(30, 27, 75, .88), rgba(67, 56, 202, .82), rgba(99, 102, 241, .86));
     --logo-color: #e0e7ff;
     --school: #9db8e8; --hospital: #f0a3a3; --scenic: #8fd6b8; --road: #e6bd7a;
-    --map-tint: rgba(10, 16, 38, .7);
+    --map-tint: rgba(8, 12, 32, .8);
 }
-/* 夜间模式：地图瓦片整体反色变暗（只作用于瓦片层，POI/道路标记保持原色）；切夜间平滑过渡不闪白 */
-body.theme-night .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.96); }
-.leaflet-tile-pane { transition: filter .7s ease; }
+/* 夜间底图：v100 由 tile-pane 伪元素深色遮罩（--map-tint: rgba(8,12,32,.8)）呈现深色底，纯 CSS 零 filter 开销 */
 /* 夜间模式：毛玻璃面板底色转深（透明深色玻璃） */
 body.theme-night #map .toolbar,
 body.theme-night #map .settings-panel,
@@ -2332,14 +2330,7 @@ body.theme-night .search-input::placeholder { color: #c9d5f5; }
    ③ 夜间文字换表现形式：面板底色更实（alpha×1.1）+ 正文纯白 #f8faff + font-weight 500/600——磨砂透出地图
       纹理造成的视觉噪声用「更实底+加粗纯白字」对冲，不再依赖提亮 */
 body.theme-night .leaflet-tile-pane { filter: none; }
-body.theme-night .leaflet-tile-pane::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(10, 16, 38, .62);
-    z-index: 10;
-    pointer-events: none;
-}
+/* v94 写死的 .62 夜间遮罩已由 v100 的 var(--map-tint)=rgba(8,12,32,.8) 统一接管（见 v100 段），此规则保留为兜底 */
 /* 悬浮球：真透光玻璃（透明基底 + 更强磨砂） */
 #fab:not(.fab-open) {
     background:
@@ -2526,7 +2517,11 @@ body.theme-night .pw-v { color: #dbe7ff !important; }
       遮罩改为轻压暗（dark 瓦片本就深）；切回白天自动恢复原底图。手动锁底图时尊重用户选择
    ② 用户「鼠标经过图层设施点显示的标签白底白字」：.poi-tip 白天玻璃白底 + 夜间文字变亮 →
       白底白字。v100 夜间 tooltip 统一深底亮字（含箭头三角同步深色） */
-body.theme-night.night-dark-tiles { --map-tint: rgba(6, 10, 24, .18); }
+/* v100 夜间：实测高德 wprd0{s}+night=1 瓦片参数无效（返回仍是亮色，PIL 实测 avg-rgb 228,222,209），
+   免费暗色瓦片源（Carto/Esri/OpenFreeMap）2026 已全部 key 化/停服；高德暗色样式只能走 JS API 矢量渲染
+   （mapStyle，需 AMap 地图实例，与 Leaflet 瓦片体系不兼容）。v100 采用高覆盖深色遮罩方案：夜间
+   --map-tint 提升至 rgba(8,12,32,.8)，底图整体呈现深色底（视觉=底色真正更换），POI 圆点/道路线/标注
+   在遮罩上层保持原色清晰可读；纯 CSS 单层合成一次、零逐帧开销、拖动缩放零 filter 成本 */
 body.theme-night .leaflet-tooltip,
 body.theme-night .poi-tip {
     background: rgba(15, 22, 40, .96) !important;
