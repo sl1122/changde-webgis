@@ -668,11 +668,16 @@
         document.getElementById('btn-area').classList.remove('active');
         measureDoneBtn.hidden = true;
     });
-    // 「关闭测量结果」×：隐藏卡片并退出测量
+    // 「关闭测量结果」×：隐藏卡片并退出测量（v80 三通道直绑，pointerdown 立即生效，杜绝点击无效）
     var measureCloseBtn = document.getElementById('measure-close');
-    if (measureCloseBtn) measureCloseBtn.addEventListener('click', function () {
-        clearMeasure();
-    });
+    if (measureCloseBtn) {
+        ['pointerdown', 'click', 'touchstart'].forEach(function (t) {
+            measureCloseBtn.addEventListener(t, function (e) {
+                e.preventDefault(); e.stopPropagation();
+                clearMeasure();
+            }, { passive: false });
+        });
+    }
 
     // ---------------- 8.5 手动底图切换 ----------------
     var btnBasemap = document.getElementById('btn-basemap');
@@ -1541,7 +1546,8 @@
         { v: 'v76', t: '测量斑块清理 + 悬浮球拖拽手感重构', pts: ['测量卡片显示严格化：未激活工具时完全不显示；点击测距/测面瞬间显示操作提示卡（实时数值随绘制更新，6s 自动消退不常驻）；清除测量同步清图形+隐藏卡+重置状态，无斑块残留', '悬浮球吸附回归沿边投影：取消"强制中点吸附"导致的拖拽后位置跳变，球停哪吸哪，仅做安全范围 clamp', '竖向停靠吸附上限收紧（视口高 - 展开面板高 - 边距）：保证竖向展开后功能栏完整显示在视口内，不被底部截断、无遮挡滚动条', '横向展开固定一排（nowrap）：桌面 44px 完整一排；移动端 36px 紧凑排布，超宽隐藏式横向滚动（滚动条不可见），杜绝两行换行与可见滚动条', '吸附避让规则保留：横向停靠避开左下比例尺与右下缩放组；展开方向/折叠方向与停靠边严格平行'] },
         { v: 'v77', t: '双击卡片放大根治 + 全站性能提速 + 悬浮球/缩放组布局修正', pts: ['双击卡片放大根治：所有玻璃面板/卡片（设置/底图/打点/图例/测量卡/更新日志/提示）新增 dblclick 拦截，双击它们不再触发 Leaflet 地图双击缩放；viewport 禁用用户缩放（maximum-scale=1, user-scalable=no），手机端双击页面也不放大', '全站卡顿修复：更新日志遮罩移除全屏 backdrop-filter（纯 rgba 暗化遮罩，日志卡自身保留小面积玻璃模糊），打开/关闭日志不再触发全屏 blur 重排；侧边栏面板恢复按钮打开前统一清除关闭动画残留类，快速多次开合不再动画叠加卡顿', '悬浮球横向展开态禁用拖拽（停靠上/下边缘时）——该状态用于浏览功能列表，拖动不再把悬浮球吸走；竖向展开与折叠态仍可长按拖动', '悬浮球初始位置改为右上角（off 56px），anchor 持久化键升级 cd_fab_anchor77，旧位置作废强制复位右上', '缩放按钮组移至右下角（桌面/手机统一），按钮适当缩小（桌面 38px / 手机 34px），与右上悬浮球完全分离不重叠', '手机横向展开固定一排完整展示（31px 紧凑按钮全功能容纳在 96vw 内，无需滚动）'] },
         { v: 'v78', t: '移动端从0适应性配置（底部导航 + 信息密度分级 + dvh + 触控审计）', pts: ['手机端功能入口重构：右侧 46px 常驻窄条改为全宽玻璃底部导航条（我的位置/测距/测面/清除/底图/图例/设置 7 项，44px 触控高、图标+文字、safe-area 避让、底部玻璃胶囊外壳），右侧地图彻底清爽；缩放组上移至导航上方；手机端悬浮球隐藏', '信息密度分级（dense-data）：手机默认只显示聚合气泡，地名标签在地图放大 ≥13 级浮现、道路标签 ≥14 级浮现，三重文字叠压问题根治；桌面端不受影响', '页面壳层（page-layout）：顶部 title 精简为「常德公共服务WebGIS」；地图容器高度 100dvh 优先 + 100vh 兜底，浏览器地址栏收起/展开不再导致地图跳变；全局 touch-action: manipulation 消除触摸点击延迟', '抽屉侧边栏补齐：Esc 键关闭、打开时锁定背景滚动；抽屉底部新增快捷功能区（定位常德/复位/打点），手机端全功能保留', '学习成果落地：本版按 responsive-design（先分类 dense-data+page-layout 再写 CSS）、mobile-ux-optimizer（底部导航/dvh/44px/safe-area）、layout-system（内容驱动断点）、apple-hig-expert（触控≥44pt 审计）五组 skill 原则执行'] },
-        { v: 'v79', t: '测量结果卡彻底常驻化 + 手机端层级修复 + title 保真', pts: ['底部测量结果卡彻底改对：双击结束测量后结果卡持续显示（总距离/面积），只在点击「清除测量」、退出测量模式、切换测距↔测面、切换底图时隐藏——不再 6s 自动消失；操作提示类文案（单击添加测量点/已添加 N 个顶点/双击结束）改为 3s 短显不常驻，界面干净', '手机端抽屉层级修复：侧边栏抽屉 z-index 提升至 1260（底部导航 1250 之上），打开抽屉时全屏接管、底部快捷区不再被导航遮挡；遮罩 1255、菜单按钮 1270，点按永不穿透', '手机端 title 保真：作者名「- 佘磊」手机端隐藏，标题文字加大 13.5px 且始终完整可见，不再消失/截断', '手机端测量结果卡上移（底部导航上方 72px），不被导航遮挡'] }
+        { v: 'v79', t: '测量结果卡彻底常驻化 + 手机端层级修复 + title 保真', pts: ['底部测量结果卡彻底改对：双击结束测量后结果卡持续显示（总距离/面积），只在点击「清除测量」、退出测量模式、切换测距↔测面、切换底图时隐藏——不再 6s 自动消失；操作提示类文案（单击添加测量点/已添加 N 个顶点/双击结束）改为 3s 短显不常驻，界面干净', '手机端抽屉层级修复：侧边栏抽屉 z-index 提升至 1260（底部导航 1250 之上），打开抽屉时全屏接管、底部快捷区不再被导航遮挡；遮罩 1255、菜单按钮 1270，点按永不穿透', '手机端 title 保真：作者名「- 佘磊」手机端隐藏，标题文字加大 13.5px 且始终完整可见，不再消失/截断', '手机端测量结果卡上移（底部导航上方 72px），不被导航遮挡'] },
+        { v: 'v80', t: '测量卡叉号根治 + 悬浮球双排最终方案（果冻展开/触发球收缩/折叠态拖拽）', pts: ['底部测量结果卡「×」彻底修复：关闭按钮三通道直绑（pointerdown + click + touchstart，按下立即清除并退出测量），面板守卫对测量卡放行 pointerdown/mousedown（仅拦 click/dblclick 防地图穿透），杜绝点击无效', '悬浮球双排最终方案：点击折叠触发球 → 果冻弹性过渡展开双排功能栏（2 列网格、图标+文字直显、交错弹性出现），不再区分横/竖向展开形态，停靠边仅决定位置避让', '再次点击触发球 → 丝滑收缩回 56px 圆球（原「收起」键已优化掉，面板内无冗余按键）', '拖动规则：折叠态长按可拖、沿边果冻吸附、位置持久化；展开态（双排浏览时）一律禁拖，不再误吸走'] }
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -1635,10 +1641,8 @@
         var drag = { on: false, sx: 0, sy: 0, sx0: 0, sy0: 0, moved: false };
         fab.addEventListener('pointerdown', function (e) {
             if (e.target.closest && e.target.closest('button')) return;
-            // v77：横向展开（停靠上/下边缘）时禁用拖拽——该状态用于浏览横向功能列表，
-            // 拖动会误把悬浮球吸走（"稍微拖动就跑别处"根治）；竖向展开与折叠态仍可拖拽
-            if (fab.classList.contains('fab-open') &&
-                (fab.getAttribute('data-anchor') === 'top' || fab.getAttribute('data-anchor') === 'bottom')) return;
+            // v80：展开态（双排功能栏）一律禁用拖拽——浏览功能时不误吸走；折叠态长按可拖、沿边吸附
+            if (fab.classList.contains('fab-open')) return;
             drag.on = true; drag.moved = false;
             drag.sx = e.clientX; drag.sy = e.clientY;
             var r = fab.getBoundingClientRect(), mr = mapEl.getBoundingClientRect();
@@ -1682,11 +1686,11 @@
             if (drag.moved) { drag.moved = false; return; } // 拖拽后的 click 不触发展开
             layout(!open);
         });
-        // 面板内收起按钮（主动关闭路径）
-        var collapseBtn = document.getElementById('fab-collapse');
-        if (collapseBtn) collapseBtn.addEventListener('click', function (e) {
+        // v80：折叠触发球——点击果冻展开/收缩双排功能栏（原「收起」键已优化掉）
+        var triggerBtn = document.getElementById('fab-trigger');
+        if (triggerBtn) triggerBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            layout(false);
+            layout(!open);
         });
         // 触屏果冻跳跃 + 方向倾斜（react-tilt-button 方向逻辑）
         btns.forEach(function (b) {
@@ -1903,12 +1907,17 @@
     (function initPanelGuard() {
         // v75：cl-card 恢复拦截（叉号三通道直绑不依赖冒泡，stopPropagation 无副作用；防止卡内点击冒泡到地图）
         // v77：dblclick 一并拦截——双击任何玻璃面板/卡片不再触发 Leaflet 地图双击缩放（"双击卡片放大"根治），地图本体双击缩放保留
-        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'measure-result', 'cl-card', 'map-toast'].forEach(function (id) {
+        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'cl-card', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
             ['mousedown', 'pointerdown', 'click', 'dblclick'].forEach(function (t) {
                 el.addEventListener(t, function (e) { e.stopPropagation(); }, false);
             });
+        });
+        // v80：measure-result 仅拦 click/dblclick（防地图穿透/双击放大），放行 pointerdown/mousedown——叉号三通道立即响应
+        ['click', 'dblclick'].forEach(function (t) {
+            var el = document.getElementById('measure-result');
+            if (el) el.addEventListener(t, function (e) { e.stopPropagation(); }, false);
         });
         var fab = document.getElementById('fab');
         if (fab) fab.addEventListener('mousedown', function (e) {

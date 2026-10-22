@@ -1991,3 +1991,53 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     .pack-switch { flex-wrap: wrap; gap: 5px; }
     .pack-item { padding: 3px 9px; font-size: 11.5px; }
 }
+
+/* ================= v80 悬浮球双排最终方案 =================
+   点击折叠触发球 → 果冻弹性展开双排功能栏（图标 + 文字，不区分横/竖向，随停靠边自动避让）
+   再次点击触发球 → 收缩回圆球；折叠态长按可拖、沿边吸附；展开态禁拖 */
+#fab { border-radius: 50%; }
+#fab::before { display: none; }                              /* 弃用旧三点伪元素 */
+#fab > button:not(#fab-trigger) { display: none; }           /* 折叠只显示触发球 */
+#fab-trigger {
+    width: 56px; height: 56px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1px;
+    border: none; background: transparent; color: var(--plum); cursor: pointer;
+}
+#fab-trigger span { font-size: 9px; font-weight: 600; line-height: 1; }
+#fab-trigger svg { width: 20px; height: 20px; }
+
+/* 展开态：双排网格（2 列 × 5 行），触发球置顶作收缩开关 */
+#fab.fab-open {
+    width: 200px; height: auto;
+    display: grid;
+    grid-template-columns: repeat(2, 92px);
+    gap: 8px;
+    padding: 8px;
+    border-radius: 20px;
+    cursor: default;
+}
+#fab.fab-open > button { display: flex; }
+#fab.fab-open #fab-trigger {
+    grid-column: 1 / -1;
+    width: 100%; height: 36px;
+    flex-direction: row; gap: 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .55);
+}
+#fab.fab-open #fab-trigger span { font-size: 11px; }
+#fab.fab-open button:not(#fab-trigger) {
+    width: 92px; height: 44px;
+    justify-content: flex-start; gap: 7px;
+    padding: 0 10px;
+    border-radius: 12px;
+}
+#fab.fab-open button:not(#fab-trigger) span {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    color: var(--text); line-height: 1;
+}
+#fab.fab-open button:not(#fab-trigger) svg { width: 17px; height: 17px; }
+/* 停靠边不再改变展开形态（双排统一）；位置吸附保留 */
+#fab.fab-open[data-anchor] { max-height: none; overflow: visible; }
+/* 展开态已有文字说明，隐藏 hover tooltip */
+#fab.fab-open button::before { display: none; }
