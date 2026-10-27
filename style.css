@@ -65,7 +65,7 @@ body.theme-night .panel-title { color: #a5b4fc; border-left-color: #818cf8; }
 body.theme-night .toolbar button { background: rgba(30, 41, 82, .92); color: #dbeafe; }
 body.theme-night .toolbar button:hover { background: rgba(129, 140, 248, .2); color: #e0e7ff; }
 /* v106：夜间悬浮球 hover 保持深色玻璃（原全局 hover 白色半透明覆盖夜间深底 → 夜间 hover 白底跳变） */
-body.theme-night #map .toolbar:hover { background: rgba(19, 26, 48, calc(var(--glass-alpha) * .96)); }
+body.theme-night #map .toolbar:hover { background-color: rgba(19, 26, 48, calc(var(--glass-alpha) * .96)); }
 body.theme-night .toolbar button.active,
 body.theme-night .toolbar .petal-btn.active { background: #6366f1; color: #fff; }
 body.theme-night .zoom-ctrl button { background: rgba(30, 41, 82, .92); color: #a5b4fc; }
@@ -509,8 +509,8 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     width: 56px;
     height: 56px;
     border-radius: 20px;
-    /* v106：背景接入 --glass-alpha（原硬编码 .58 不随滑杆——「透明度调节不够有效」根因之一）；默认 alpha .85 → .578 与原观感一致 */
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .68));
+    /* v106：背景接入 --glass-alpha（原硬编码 .58 不随滑杆——「透明度调节不够有效」根因之一）；默认 alpha .85 → .578 与原观感一致。v107 子属性化规避简写+过渡冻结 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .68));
     backdrop-filter: blur(18px) saturate(150%);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     box-shadow:
@@ -548,8 +548,8 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s ease;
 }
 /* v106：hover 背景接入 --glass-alpha（原硬编码 .66 与折叠 .58 相差 0.08 → 鼠标进出「透明度跳变」）；展开态 hover 完全稳定（背景/位移均不变，消除点击面板按钮时的跳变感） */
-.toolbar:hover { transform: translateY(-4px) scale(1.04); background: rgba(255, 255, 255, calc(var(--glass-alpha) * .72)); }
-.toolbar.fab-open:hover { transform: none; background: rgba(255, 255, 255, calc(var(--glass-alpha) * .78)); }
+.toolbar:hover { transform: translateY(-4px) scale(1.04); background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .72)); }
+.toolbar.fab-open:hover { transform: none; background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .78)); }
 .toolbar:active { transform: scale(.97); transition-duration: .12s; }
 /* 展开：120px 竖列果冻列表 */
 .toolbar.fab-open {
@@ -559,7 +559,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     justify-content: flex-start;
     padding: 8px;
     border-radius: 18px;
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
     box-shadow:
         0 16px 40px rgba(15, 23, 42, calc(.2 * var(--glass-shadow))),
         inset 0 1px 0 rgba(255, 255, 255, calc(.85 * var(--glass-sheen))),
@@ -1692,9 +1692,9 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
     outline: 2px solid var(--rose); outline-offset: 1px;
 }
 
-/* 侧边栏 / 悬浮控件玻璃化（Apple Liquid Glass 风格，可调） */
+/* 侧边栏 / 悬浮控件玻璃化（Apple Liquid Glass 风格，可调）；v107 背景子属性化（规避简写+过渡冻结） */
 .sidebar {
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .98));
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .98));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     box-shadow:
@@ -1763,23 +1763,23 @@ body.theme-night.refraction .settings-inner::after { background: rgba(129, 140, 
 
 /* 夜间主题：悬浮球 + 展开面板深色玻璃 */
 body.theme-night .toolbar {
-    background: rgba(15, 23, 42, .9);
+    background-color: rgba(15, 23, 42, .9);
     box-shadow:
         0 12px 32px rgba(2, 6, 23, .5),
         inset 0 1px 0 rgba(148, 163, 212, .3);
 }
 body.theme-night .toolbar::before { background: #a5b4fc; }
 body.theme-night .toolbar.fab-open {
-    background: rgba(15, 23, 42, .96);
+    background-color: rgba(15, 23, 42, .96);
     box-shadow: 0 16px 40px rgba(2, 6, 23, .6), inset 0 1px 0 rgba(148, 163, 212, .3);
 }
 /* v106：夜间展开面板 ID 级深色特化——#fab.fab-open 特异性 (1,1,0) 高于 .toolbar.fab-open (0,2,0)，须用 ID 规则压回深色（原白色半透明覆盖夜间深底 = 夜间展开白底白字；背景接入 --glass-alpha，夜间地板 0.55 保证可读） */
 body.theme-night #fab.fab-open {
-    background: rgba(15, 23, 42, calc(var(--glass-alpha) * 1.05));
+    background-color: rgba(15, 23, 42, calc(var(--glass-alpha) * 1.05));
     box-shadow: 0 16px 40px rgba(2, 6, 23, .6), inset 0 1px 0 rgba(148, 163, 212, .3);
 }
 body.theme-night #fab.fab-open #fab-trigger {
-    background: rgba(30, 41, 82, calc(var(--glass-alpha) * .95));
+    background-color: rgba(30, 41, 82, calc(var(--glass-alpha) * .95));
     color: #a5b4fc;
     box-shadow: inset 0 1px 0 rgba(148, 163, 212, .3), 0 1px 4px rgba(2, 6, 23, .3);
 }
@@ -1793,9 +1793,9 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
         0 10px 32px rgba(15, 23, 42, .16);
     transition: backdrop-filter .35s ease, background-color .35s ease;
 }
-#map .legend-panel { background: rgba(255, 255, 255, calc(var(--glass-alpha) * .97)); }
-#map .measure-result { background: rgba(255, 255, 255, calc(var(--glass-alpha) * .94)); }
-#map .map-toast { background: rgba(255, 255, 255, calc(var(--glass-alpha) * .95)); }
+#map .legend-panel { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .97)); }
+#map .measure-result { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94)); }
+#map .map-toast { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .95)); }
 
 /* 图例动态过渡：随图层勾选淡入淡出 */
 .legend-row {
@@ -1815,7 +1815,9 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     right: 70px;
     z-index: 1250;
     width: 286px;
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
+    /* v107：改用 background-color 子属性——与 transition: background-color 精确匹配，
+       规避「background 简写 + 过渡」在 Chrome 的级联冻结（背景被卡在半透明白 = 点击时透明度异常） */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
     border: 1px solid rgba(255, 255, 255, .6);
     border-radius: 16px;
     box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
@@ -2027,7 +2029,8 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 .basemap-panel {
     position: absolute; top: 14px; right: 70px; z-index: 1260;
     width: 236px; padding: 13px 15px;
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
+    /* v107 子属性化 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
     border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
     box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
     font-size: 13px; color: var(--text);
@@ -2048,7 +2051,8 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 .mark-panel {
     position: absolute; top: 14px; right: 70px; z-index: 1265;
     width: 292px; padding: 13px 15px;
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
+    /* v107 子属性化 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
     border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
     box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
     font-size: 13px; color: var(--text);
@@ -2107,7 +2111,7 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 
 /* 点位名称悬停提示（玻璃质感小气泡） */
 .poi-tip {
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .96)) !important;
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .96)) !important;
     color: var(--text) !important;
     font-size: 11.5px !important;
     border: 1px solid rgba(255, 255, 255, .8) !important;
@@ -2220,8 +2224,8 @@ body.theme-night #fab:not(.fab-open) {
     padding: 7px;
     border-radius: 18px;
     cursor: default;
-    /* v106：接入 --glass-alpha（原硬编码 .6 不随滑杆且覆盖前面 .toolbar.fab-open 规则——悬浮球展开面板透明度恒 0.6 的根因） */
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
+    /* v106：接入 --glass-alpha（原硬编码 .6 不随滑杆且覆盖前面 .toolbar.fab-open 规则——悬浮球展开面板透明度恒 0.6 的根因）；v107 子属性化 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
     box-shadow: 0 14px 40px rgba(31, 45, 78, .24);
 }
 #fab.fab-open > button { display: flex; }
@@ -2231,8 +2235,8 @@ body.theme-night #fab:not(.fab-open) {
     width: 100%; height: 34px;
     flex-direction: row; gap: 6px;
     border-radius: 12px;
-    /* v106：接入 --glass-alpha（原硬编码 .62——展开态收起按钮白底不随滑杆） */
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .74));
+    /* v106：接入 --glass-alpha（原硬编码 .62——展开态收起按钮白底不随滑杆）；v107 子属性化 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .74));
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, calc(.8 * var(--glass-sheen))),
         0 1px 4px rgba(31, 45, 78, .08);
@@ -2271,7 +2275,8 @@ body.theme-night #fab:not(.fab-open) {
     width: 292px; max-height: 58vh;
     display: flex; flex-direction: column;
     padding: 13px 15px;
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .95));
+    /* v107 子属性化 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .95));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border-radius: 18px;
@@ -2512,7 +2517,7 @@ body.theme-night #map .mark-panel,
 body.theme-night #map .legend-panel,
 body.theme-night #map .records-panel,
 body.theme-night .sidebar {
-    background: rgba(15, 20, 40, calc(min(.97, var(--glass-alpha) * 1.1)));
+    background-color: rgba(15, 20, 40, calc(min(.97, var(--glass-alpha) * 1.1)));
 }
 body.theme-night .sidebar, body.theme-night #map .toolbar, body.theme-night #map .settings-panel,
 body.theme-night #map .basemap-panel, body.theme-night #map .mark-panel, body.theme-night #map .legend-panel,
@@ -2550,7 +2555,10 @@ body.theme-night .page-header,
 body.theme-night .iw-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background: #121a2e !important;
+    /* v107：子属性化（background-color + background-image），规避 background 简写与
+       transition: background-color 的级联冻结——夜间实色卡片稳定应用 */
+    background-color: #121a2e !important;
+    background-image: none !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 12px 30px rgba(2, 6, 23, .55) !important;
 }
 /* 信息卡：实色底 + 行距微调（易读性再 +） */
@@ -2589,7 +2597,8 @@ body.theme-night .leaflet-tile-pane::after {
    根治：夜间所有面板内按钮兜底深底亮字；收起按钮单独深底；信息卡实色深底强化 + 徽标主题色 */
 body.theme-night #fab-trigger,
 body.theme-night #fab-trigger .fab-collapse {
-    background: rgba(30, 41, 82, .96) !important;
+    /* v107 子属性化 */
+    background-color: rgba(30, 41, 82, .96) !important;
     color: #f8faff !important;
     border: 1px solid #334155 !important;
 }
@@ -2602,7 +2611,7 @@ body.theme-night #map .mark-panel button,
 body.theme-night #map .legend-panel button,
 body.theme-night #map .records-panel button,
 body.theme-night #map .cl-card button {
-    background: rgba(30, 41, 82, .96) !important;
+    background-color: rgba(30, 41, 82, .96) !important;
     color: #f8faff !important;
     border-color: #334155 !important;
 }
@@ -2626,7 +2635,7 @@ body.theme-night .iw-card .iw-type { background: var(--accent) !important; color
 body.theme-night .menu-btn,
 body.theme-night .sr-item,
 body.theme-night .layer-actions button {
-    background: rgba(30, 41, 82, .96) !important;
+    background-color: rgba(30, 41, 82, .96) !important;
     color: #f8faff !important;
     border-color: #334155 !important;
 }
@@ -2644,14 +2653,15 @@ body.theme-night .search-input::placeholder { color: #a5b4fc !important; }
    白天 .pw-box 对齐全局玻璃（外层 popup 半透明白 + 磨砂），夜间转 Apple 深色实底卡片
    （外层 popup 透明、尖角同步深色、标题纯白、行亮字、标签提亮）——所有设施点详情卡全覆盖 */
 .leaflet-popup-content-wrapper {
-    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .92)) !important;
+    /* v107 子属性化 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .92)) !important;
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
 }
-.leaflet-popup-tip { background: rgba(255, 255, 255, .92) !important; }
+.leaflet-popup-tip { background-color: rgba(255, 255, 255, .92) !important; }
 body.theme-night .leaflet-popup-content-wrapper,
 body.theme-night .leaflet-popup-tip {
-    background: #0f1628 !important;
+    background-color: #0f1628 !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-color: #334155 !important;
