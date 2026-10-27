@@ -1517,8 +1517,12 @@
         var blur = setBlur.value, alpha = setAlpha.value, sat = setSat ? setSat.value : 150;
         // 可读性边界保护：低模糊度时自动提升背景不透明度，避免文字无法识别
         if (blur < 6 && alpha < 60) alpha = 60;
+        // v106 美学地板：alpha 映射下限 0.18（最透仍可辨），夜间提升至 0.55 保文字可读；与 initGlassSystem writeVars 同构，杜绝双写不一致
+        var night = document.body.classList.contains('theme-night');
+        var aFloor = night ? 55 : 18;
+        var aVal = Math.max(aFloor, alpha) / 100;
         document.documentElement.style.setProperty('--glass-blur', blur + 'px');
-        document.documentElement.style.setProperty('--glass-alpha', (alpha / 100).toFixed(2));
+        document.documentElement.style.setProperty('--glass-alpha', aVal.toFixed(2));
         document.documentElement.style.setProperty('--glass-sat', (sat / 100).toFixed(2));
         document.getElementById('set-blur-val').textContent = blur + 'px';
         document.getElementById('set-alpha-val').textContent = alpha + '%';
@@ -1574,9 +1578,11 @@
             toggleSettingsBackdrop(false);
             try { hideMeasureCard(); } catch (e) { }
         });
-        setBlur.addEventListener('input', function () { applyGlass(); if (!isMobileDevice) jellyPulse(); });
-        setAlpha.addEventListener('input', function () { applyGlass(); if (!isMobileDevice) jellyPulse(); });
-        if (setSat) setSat.addEventListener('input', function () { applyGlass(); if (!isMobileDevice) jellyPulse(); });
+        // v106：高级滑杆 input 统一由 initGlassSystem（applyAdv/applySat）驱动——此前 set-blur/set-alpha/set-sat 在此与 applyAdv 双绑定，
+        // 同一滑杆一次拖动写两次 --glass-alpha（clamp 逻辑不同），是「透明度短暂跳变、不稳定」的根因；现移除旧绑定，仅保留滑杆值与 UI 文案同步
+        setBlur.addEventListener('input', function () { var el = document.getElementById('set-blur-val'); if (el) el.textContent = setBlur.value + 'px'; });
+        setAlpha.addEventListener('input', function () { var el = document.getElementById('set-alpha-val'); if (el) el.textContent = setAlpha.value + '%'; });
+        if (setSat) setSat.addEventListener('input', function () { var el = document.getElementById('set-sat-val'); if (el) el.textContent = setSat.value + '%'; });
         settingsPanel.addEventListener('animationend', function () { settingsPanel.classList.remove('jelly'); });
         // 材质包切换
         var autoCycleTimer = null;
@@ -1725,6 +1731,7 @@
         { v: 'v102', t: '悬浮球「细胞形态+液态折射」动态化：细胞膜呼吸浮动+边缘色散+细胞核布朗漂移+色散光晕', pts: ['三层细胞级液态结构落地：外层细胞膜 = border-radius 低频呼吸浮动（0.45Hz/2.2s 周期，±2px 幅度）+ 多层冷暖半透描边错位色散（棱镜感）；中层细胞质 = 沿用 backdrop 磨砂透光玻璃；内层细胞核 = 珍珠白高光核心（15px，左上聚光渐变）+ 蓝紫/粉双色散光晕 + 12s 缓慢布朗漂移（±5px 安全区，不触碰按钮图标）', '参数可调：--cell-breathe（膜呼吸周期 2.2s）/ --cell-drift（核漂移周期 12s）/ --cell-disperse（色散强度 .5）三组 CSS 变量，色散随玻璃质感滑杆（--glass-sheen/--glass-shadow）联动，夜间蓝紫散色更通透；装饰层由 main.js 注入（.fab-cell-core/.fab-cell-glow，pointer-events:none）', '性能与分级：纯 transform/border-radius/box-shadow/opacity 合成层动画、零重排；拖拽/展开/收起（.fab-dragging/.fab-open/.fab-closing）全停动画仅留基础玻璃；移动端（≤768px）关闭全部连续形变与漂移、隐藏装饰层；prefers-reduced-motion 自动降级——桌面端完整细胞液态效果，移动端零额外开销'] },
         { v: 'v103', t: '悬浮球专项修正：轮廓恒正圆 + 移除中心色块 + 细胞核气泡化 + 基底透光折射', pts: ['收到「都不圆了 / 细胞核没采用原来的 / 没折射透光感 / 去掉中间色块」四项反馈——① 不圆根因：v102 膜呼吸动画改 border-radius 各角非对称值（22/18/24/19），动画中帧视觉变形。v103 废弃角变化，改纯 scale(1↔1.02) 微呼吸 + 边缘色散光晕同步呼吸，几何永远正圆、轮廓不破形', '② 中间色块根因：v90 遗留的「中心白色玻璃环」（#fab:not(.fab-open)::before 15px 白环）与 v102 细胞核叠成两个核——v103 移除该环（display:none），细胞核成为唯一核心；③ 细胞核由实心珍珠白点重做为透明液态折射气泡（聚光高光点+半透渐变+1px 细折射环+底部微内阴影+蓝紫/粉双色散光晕），像液体中悬浮的气泡/晶核', '④ 折射透光：折叠球基底由完全不透明材质包纯色改为 color-mix 掺 transparent 的半透明（透出底图）+ 顶部透光带折射光路层，边缘冷暖双色描边保留；夜间气泡蓝紫散色更通透。参数与降级不变：--cell-breathe/--cell-drift/--cell-disperse 三组可调，拖拽/展开/收起全停，移动端与 prefers-reduced-motion 自动降级'] },
         { v: 'v104', t: '悬浮球细胞膜呼吸感增强 + 涟漪波纹环（水面涟漪扩散，双层节奏）', pts: ['呼吸感增强：膜呼吸由 scale(1↔1.02) 提升至 scale(1↔1.03)，50% 帧叠加双色光晕脉冲（蓝紫外发光 14px + 白色泛光 24px 同步扩散收缩）——球体涨缩感更明显、更鲜活', '波纹感新增：利用空闲伪元素 #fab:not(.fab-open)::after 增加 52px 细纹涟漪环——从球缘以 cubic-bezier 缓动向外扩散（scale .88→1.55）并渐隐（opacity .55→0），模拟水面涟漪一圈圈荡开；周期 2.6s 与呼吸 2.2s 错相，形成「涨缩呼吸 + 环波扩散」双层节奏，视觉不机械', '适配与降级：涟漪环颜色随材质包（白描边+蓝紫/粉散色，夜间蓝紫），拖拽/展开/收起全停（动画 none+透明度 0），移动端与 prefers-reduced-motion 隐藏/停用——零重排纯合成层动画，不影响地图帧率'] },
+        { v: 'v106', t: '透明度跳变根修 + 玻璃调节美学重调（悬浮球全量接入透明度变量）', pts: ['「点击设置面板按钮时透明度短暂跳变」根因定案：set-blur/set-alpha/set-sat 高级滑杆被双 handler 重复绑定（旧 applyGlass 与 initGlassSystem 的 applyAdv/applySat 双写同一 CSS 变量、clamp 逻辑不同）——一次拖动写两次 --glass-alpha，变量抖动即「不稳定」。v106 移除旧绑定，高级滑杆统一由 applyAdv 单通道驱动，果冻反馈迁移保留，写入值与 applyGlass 同构', '「玻璃透明度调节不够有效」根因二：悬浮球整体硬编码背景（折叠 .58 / hover .66 / 展开 .66）与球体基底 color-mix（42/60/82%）完全不随 --glass-alpha——滑杆对悬浮球无效。v106 全部接入变量：toolbar 背景 .68/.72/.78 系数、球体基底掺入比例 30+24a / 44+32a / 68+26a 随滑杆实时联动', '调节幅度美学拓宽：主滑杆 alpha 锚点 70/85/97 → 50/80/96（低端可调出真通透玻璃）；高级滑杆下限 25 → 0，统一美学地板 0.18（最透仍可辨）、夜间地板 0.55（保文字可读）', 'hover 稳定性：展开态 hover 禁用位移与背景切换（fab-open:hover 背景/transform 均不变）；背景过渡 0.3s → 0.18s 快速到位无拖尾；夜间悬浮球 hover 保持深色玻璃（原全局白色半透明覆盖夜间深底 = 夜间 hover 白底跳变，已修）'] },
         { v: 'v105', t: '按课程笔记第10节验收迭代：卫星影像底图 + 测量单位自动转换', pts: ['底图切换新增第4源「卫星影像」（Esri World_Imagery，免费无Key长期稳定，实测瓦片可用）——底图面板加入口，切换时专题数据自动换算坐标系对齐，与高德矢量/栅格/OSM 共 4 源自由切换', '测量单位自动转换（课程验收任务四）：距离 <1000m 显示 m、≥1000m 自动切 km；面积 <1,000,000 m² 显示 m²、≥ 自动切 km²——全部保留两位小数，替代原来固定「公里/平方公里」3 位小数，小尺度测量读数更直观', '全部测量显示点统一接入：实时距离、双击总距离、完成按钮、面积、测量记录归档（recordsAdd）五处同步，历史记录数值为新格式'] },
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
@@ -1951,9 +1958,10 @@
         var satEl = document.getElementById('set-sat');
         var satVal = document.getElementById('set-sat-val');
         // 预设联动：强度 0% / 50% / 100% 三段锚点 → 轻薄半透 / Apple 中等通透 / 厚重磨砂高反光
-        var P0 = { blur: 6, alpha: 70, sheen: 0.3, shadow: 0.3 };
-        var P50 = { blur: 14, alpha: 85, sheen: 0.9, shadow: 1.0 };
-        var P100 = { blur: 30, alpha: 97, sheen: 1.5, shadow: 1.6 };
+        // v106 美学重调：alpha 锚点由 70/85/97 拓宽为 50/80/96——低端真正可调出「通透玻璃」，高端保留厚实感，视觉差异显著
+        var P0 = { blur: 6, alpha: 50, sheen: 0.3, shadow: 0.3 };
+        var P50 = { blur: 14, alpha: 80, sheen: 0.9, shadow: 1.0 };
+        var P100 = { blur: 30, alpha: 96, sheen: 1.5, shadow: 1.6 };
         function clamp(v, mn, mx) { return Math.max(mn, Math.min(v, mx)); }
         function presetAt(g) {
             var a = g < 50 ? { from: P0, to: P50, t: g / 50 } : { from: P50, to: P100, t: (g - 50) / 50 };
@@ -1968,7 +1976,11 @@
         function glassLabel(g) { return g <= 15 ? '轻薄' : g <= 40 ? '偏透' : g <= 70 ? '中' : g <= 88 ? '偏厚' : '厚重'; }
         function writeVars(v) {
             docEl.style.setProperty('--glass-blur', v.blur + 'px');
-            docEl.style.setProperty('--glass-alpha', (Math.max(v.alpha, v.blur < 6 ? 60 : v.alpha) / 100).toFixed(2)); // 可读性边界保护
+            // v106：alpha 美学地板与夜间可读性地板，与 applyGlass 同构——主滑杆/高级滑杆写入值全程一致，杜绝双写跳变
+            var night = document.body.classList.contains('theme-night');
+            var aFloor = night ? 55 : 18;
+            var aRaw = Math.max(v.alpha, v.blur < 6 ? 60 : v.alpha);
+            docEl.style.setProperty('--glass-alpha', (Math.max(aFloor, aRaw) / 100).toFixed(2));
             docEl.style.setProperty('--glass-sheen', v.sheen.toFixed(2));
             docEl.style.setProperty('--glass-shadow', v.shadow.toFixed(2));
         }
@@ -1993,7 +2005,7 @@
         function applyAdv() {
             var v = {
                 blur: clamp(parseFloat(adv.blur.value), 0, 40),
-                alpha: clamp(parseFloat(adv.alpha.value), 25, 100),
+                alpha: clamp(parseFloat(adv.alpha.value), 0, 100),
                 sheen: +(clamp(parseFloat(adv.sheen.value), 0, 10) / 10).toFixed(2),
                 shadow: +(clamp(parseFloat(adv.shadow.value), 0, 10) / 10).toFixed(2)
             };
@@ -2009,6 +2021,8 @@
             advVal.shadow.textContent = labelOf(parseFloat(adv.shadow.value));
             applySat();
             saveState({ glass: g, blur: v.blur, alpha: v.alpha, sheen: v.sheen, shadow: v.shadow });
+            // v106：果冻反馈随高级滑杆迁移至此（原绑定已移除），桌面端保留、移动端跳过
+            if (!isMobileDevice && typeof jellyPulse === 'function') jellyPulse();
         }
         function applySat() {
             var sat = satEl ? parseFloat(satEl.value) : 150;

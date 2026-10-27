@@ -64,6 +64,8 @@ body.theme-night .panel { background: rgba(19, 26, 48, .66); border-color: #2630
 body.theme-night .panel-title { color: #a5b4fc; border-left-color: #818cf8; }
 body.theme-night .toolbar button { background: rgba(30, 41, 82, .92); color: #dbeafe; }
 body.theme-night .toolbar button:hover { background: rgba(129, 140, 248, .2); color: #e0e7ff; }
+/* v106：夜间悬浮球 hover 保持深色玻璃（原全局 hover 白色半透明覆盖夜间深底 → 夜间 hover 白底跳变） */
+body.theme-night #map .toolbar:hover { background: rgba(19, 26, 48, calc(var(--glass-alpha) * .96)); }
 body.theme-night .toolbar button.active,
 body.theme-night .toolbar .petal-btn.active { background: #6366f1; color: #fff; }
 body.theme-night .zoom-ctrl button { background: rgba(30, 41, 82, .92); color: #a5b4fc; }
@@ -507,7 +509,8 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     width: 56px;
     height: 56px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, .58);
+    /* v106：背景接入 --glass-alpha（原硬编码 .58 不随滑杆——「透明度调节不够有效」根因之一）；默认 alpha .85 → .578 与原观感一致 */
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .68));
     backdrop-filter: blur(18px) saturate(150%);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     box-shadow:
@@ -517,7 +520,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
         0 0 0 .5px rgba(255, 255, 255, .55);
     cursor: pointer;
     transition: width .35s cubic-bezier(.34, 1.56, .64, 1), height .35s cubic-bezier(.34, 1.56, .64, 1),
-        border-radius .35s cubic-bezier(.34, 1.56, .64, 1), background .3s ease, box-shadow .3s ease,
+        border-radius .35s cubic-bezier(.34, 1.56, .64, 1), background .18s ease, box-shadow .18s ease,
         top .38s cubic-bezier(.34, 1.56, .64, 1), left .38s cubic-bezier(.34, 1.56, .64, 1);
     user-select: none;
     -webkit-user-select: none;
@@ -544,7 +547,9 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.6' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
     transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s ease;
 }
-.toolbar:hover { transform: translateY(-4px) scale(1.04); background: rgba(255, 255, 255, .66); }
+/* v106：hover 背景接入 --glass-alpha（原硬编码 .66 与折叠 .58 相差 0.08 → 鼠标进出「透明度跳变」）；展开态 hover 完全稳定（背景/位移均不变，消除点击面板按钮时的跳变感） */
+.toolbar:hover { transform: translateY(-4px) scale(1.04); background: rgba(255, 255, 255, calc(var(--glass-alpha) * .72)); }
+.toolbar.fab-open:hover { transform: none; background: rgba(255, 255, 255, calc(var(--glass-alpha) * .78)); }
 .toolbar:active { transform: scale(.97); transition-duration: .12s; }
 /* 展开：120px 竖列果冻列表 */
 .toolbar.fab-open {
@@ -554,7 +559,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     justify-content: flex-start;
     padding: 8px;
     border-radius: 18px;
-    background: rgba(255, 255, 255, .66);
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
     box-shadow:
         0 16px 40px rgba(15, 23, 42, calc(.2 * var(--glass-shadow))),
         inset 0 1px 0 rgba(255, 255, 255, calc(.85 * var(--glass-sheen))),
@@ -1768,6 +1773,16 @@ body.theme-night .toolbar.fab-open {
     background: rgba(15, 23, 42, .96);
     box-shadow: 0 16px 40px rgba(2, 6, 23, .6), inset 0 1px 0 rgba(148, 163, 212, .3);
 }
+/* v106：夜间展开面板 ID 级深色特化——#fab.fab-open 特异性 (1,1,0) 高于 .toolbar.fab-open (0,2,0)，须用 ID 规则压回深色（原白色半透明覆盖夜间深底 = 夜间展开白底白字；背景接入 --glass-alpha，夜间地板 0.55 保证可读） */
+body.theme-night #fab.fab-open {
+    background: rgba(15, 23, 42, calc(var(--glass-alpha) * 1.05));
+    box-shadow: 0 16px 40px rgba(2, 6, 23, .6), inset 0 1px 0 rgba(148, 163, 212, .3);
+}
+body.theme-night #fab.fab-open #fab-trigger {
+    background: rgba(30, 41, 82, calc(var(--glass-alpha) * .95));
+    color: #a5b4fc;
+    box-shadow: inset 0 1px 0 rgba(148, 163, 212, .3), 0 1px 4px rgba(2, 6, 23, .3);
+}
 body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); color: #dbeafe; box-shadow: 0 3px 10px rgba(2, 6, 23, .4), inset 0 1px 0 rgba(148, 163, 212, .3); }
 #map .legend-panel, #map .settings-panel, #map .measure-result, #map .map-toast {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
@@ -2158,11 +2173,11 @@ body.theme-night .cl-row-points { color: #94a3b8; }
         radial-gradient(circle at 30% 22%, rgba(255, 255, 255, calc(.85 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 13%),
         /* 层4：下缘内反射弧（随 sheen） */
         radial-gradient(120% 65% at 50% 105%, rgba(255, 255, 255, calc(.38 * var(--glass-sheen))) 0%, rgba(255, 255, 255, 0) 48%),
-        /* 层5：材质包同色系半透明玻璃基底（v103 掺 transparent 透出底图 → 折射透光感；亮度随 --glass-alpha） */
+        /* 层5：材质包同色系半透明玻璃基底（v103 掺 transparent 透出底图 → 折射透光感；v106 掺入比例随 --glass-alpha 联动——原硬编码 42/60/82 不随滑杆，是「透明度调节不够有效」根因之二：alpha .85 → 50%/71%/90%，alpha 1 → 54%/76%/94%，alpha 0 → 30%/44%/68% 最透仍可辨） */
         radial-gradient(circle at 50% 50%,
-            color-mix(in srgb, var(--accent) 42%, transparent) 0%,
-            color-mix(in srgb, var(--accent) 60%, transparent) 56%,
-            color-mix(in srgb, var(--accent) 82%, #000000) 100%);
+            color-mix(in srgb, var(--accent) calc(30% + 24% * var(--glass-alpha)), transparent) 0%,
+            color-mix(in srgb, var(--accent) calc(44% + 32% * var(--glass-alpha)), transparent) 56%,
+            color-mix(in srgb, var(--accent) calc(68% + 26% * var(--glass-alpha)), #000000) 100%);
     backdrop-filter: blur(calc(var(--glass-blur) * .18)) saturate(140%);
     -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .18)) saturate(140%);
     box-shadow:
@@ -2205,7 +2220,8 @@ body.theme-night #fab:not(.fab-open) {
     padding: 7px;
     border-radius: 18px;
     cursor: default;
-    background: rgba(255, 255, 255, .6);
+    /* v106：接入 --glass-alpha（原硬编码 .6 不随滑杆且覆盖前面 .toolbar.fab-open 规则——悬浮球展开面板透明度恒 0.6 的根因） */
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
     box-shadow: 0 14px 40px rgba(31, 45, 78, .24);
 }
 #fab.fab-open > button { display: flex; }
@@ -2215,7 +2231,8 @@ body.theme-night #fab:not(.fab-open) {
     width: 100%; height: 34px;
     flex-direction: row; gap: 6px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, .62);
+    /* v106：接入 --glass-alpha（原硬编码 .62——展开态收起按钮白底不随滑杆） */
+    background: rgba(255, 255, 255, calc(var(--glass-alpha) * .74));
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, calc(.8 * var(--glass-sheen))),
         0 1px 4px rgba(31, 45, 78, .08);
