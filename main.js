@@ -70,7 +70,8 @@
     var TILE_CHAIN = [
         { url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', name: '高德·矢量', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
         { url: 'https://wprd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}', name: '高德·栅格', gcj: true, maxZoom: 18, attr: '&copy; <a href="https://www.amap.com/">高德地图</a> &copy; OpenStreetMap &copy; CARTO' },
-        { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
+        { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', name: 'OSM', attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
+        { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', name: '卫星影像', gcj: false, maxZoom: 18, subs: '', attr: '&copy; <a href="https://www.esri.com/en-us/arcgis/products/arcgis-location-services/overview">Esri</a>, Maxar, Earthstar Geographics' }
     ];
     // v100：高德 wprd0{s}+night=1 瓦片参数实测无效（返回仍亮色，PIL 实测 avg-rgb 228,222,209）；免费暗色瓦片源
     // （Carto Dark / Esri Dark Gray / OpenFreeMap）2026 已全部 API key 化或停服；高德暗色样式只能走 JS API 矢量
@@ -611,7 +612,7 @@
                 measure.segs.push(seg); map.addLayer(seg);
                 measure.total += havMeters(measure.pts[n - 2][0], measure.pts[n - 2][1], measure.pts[n - 1][0], measure.pts[n - 1][1]);
             }
-            showMeasure('距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）', false);
+            showMeasure('距离：' + fmtDist(measure.total) + '（双击结束）', false);
         } else {
             if (measure.pts.length >= 2) {
                 if (measure.line) map.removeLayer(measure.line);
@@ -626,15 +627,15 @@
         if (!measure.mode) return;
         e.originalEvent.preventDefault();
         if (measure.mode === 'dist') {
-            showMeasure('总距离：' + (measure.total / 1000).toFixed(3) + ' 公里');
-            if (window._recordsAdd) window._recordsAdd('dist', '总距离', (measure.total / 1000).toFixed(3) + ' 公里', measure.pts.slice());
+            showMeasure('总距离：' + fmtDist(measure.total));
+            if (window._recordsAdd) window._recordsAdd('dist', '总距离', fmtDist(measure.total), measure.pts.slice());
         } else if (measure.pts.length >= 3) {
             if (measure.line) map.removeLayer(measure.line);
             measure.poly = L.polygon(measure.pts, { color: '#059669', weight: 2, fillColor: '#059669', fillOpacity: 0.15 });
             map.addLayer(measure.poly);
             var area = polygonAreaM2(measure.pts);
-            showMeasure('面积：' + (area / 1000000).toFixed(3) + ' 平方公里');
-            if (window._recordsAdd) window._recordsAdd('area', '面积', (area / 1000000).toFixed(3) + ' 平方公里', measure.pts.slice());
+            showMeasure('面积：' + fmtArea(area));
+            if (window._recordsAdd) window._recordsAdd('area', '面积', fmtArea(area), measure.pts.slice());
         }
         measure.mode = null;
         document.getElementById('btn-distance').classList.remove('active');
@@ -650,6 +651,9 @@
         }
         return Math.abs(area * R * R / 2);
     }
+    // v105：测量单位自动转换（课程第10节验收要求）——距离 ≥1000m 切 km、面积 ≥1e6 m² 切 km²，保留两位小数
+    function fmtDist(m) { return m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m.toFixed(2) + ' m'; }
+    function fmtArea(m2) { return m2 >= 1000000 ? (m2 / 1000000).toFixed(2) + ' km²' : m2.toFixed(2) + ' m²'; }
     document.getElementById('btn-distance').addEventListener('click', function () {
         if (measure.mode) { clearMeasure(); return; }
         clearMeasure();
@@ -671,15 +675,15 @@
     var measureDoneBtn = document.getElementById('measure-done');
     if (measureDoneBtn) measureDoneBtn.addEventListener('click', function () {
         if (measure.mode === 'dist') {
-            showMeasure('总距离：' + (measure.total / 1000).toFixed(3) + ' 公里');
-            if (window._recordsAdd) window._recordsAdd('dist', '总距离', (measure.total / 1000).toFixed(3) + ' 公里', measure.pts.slice());
+            showMeasure('总距离：' + fmtDist(measure.total));
+            if (window._recordsAdd) window._recordsAdd('dist', '总距离', fmtDist(measure.total), measure.pts.slice());
         } else if (measure.mode === 'area' && measure.pts.length >= 3) {
             if (measure.line) map.removeLayer(measure.line);
             measure.poly = L.polygon(measure.pts, { color: '#059669', weight: 2, fillColor: '#059669', fillOpacity: 0.15 });
             map.addLayer(measure.poly);
             var area = polygonAreaM2(measure.pts);
-            showMeasure('面积：' + (area / 1000000).toFixed(3) + ' 平方公里');
-            if (window._recordsAdd) window._recordsAdd('area', '面积', (area / 1000000).toFixed(3) + ' 平方公里', measure.pts.slice());
+            showMeasure('面积：' + fmtArea(area));
+            if (window._recordsAdd) window._recordsAdd('area', '面积', fmtArea(area), measure.pts.slice());
         }
         measure.mode = null;
         document.getElementById('btn-distance').classList.remove('active');
@@ -1140,7 +1144,7 @@
                 for (var k = 1; k < measure.pts.length; k++) {
                     measure.total += havMeters(measure.pts[k - 1][0], measure.pts[k - 1][1], measure.pts[k][0], measure.pts[k][1]);
                 }
-                showMeasure(measure.pts.length >= 2 ? '距离：' + (measure.total / 1000).toFixed(3) + ' 公里（双击结束）' : '单击地图添加测量点（双击结束）', false);
+                showMeasure(measure.pts.length >= 2 ? '距离：' + fmtDist(measure.total) + '（双击结束）' : '单击地图添加测量点（双击结束）', false);
             } else {
                 if (measure.line) { map.removeLayer(measure.line); measure.line = null; }
                 if (measure.pts.length >= 2) {
@@ -1721,6 +1725,7 @@
         { v: 'v102', t: '悬浮球「细胞形态+液态折射」动态化：细胞膜呼吸浮动+边缘色散+细胞核布朗漂移+色散光晕', pts: ['三层细胞级液态结构落地：外层细胞膜 = border-radius 低频呼吸浮动（0.45Hz/2.2s 周期，±2px 幅度）+ 多层冷暖半透描边错位色散（棱镜感）；中层细胞质 = 沿用 backdrop 磨砂透光玻璃；内层细胞核 = 珍珠白高光核心（15px，左上聚光渐变）+ 蓝紫/粉双色散光晕 + 12s 缓慢布朗漂移（±5px 安全区，不触碰按钮图标）', '参数可调：--cell-breathe（膜呼吸周期 2.2s）/ --cell-drift（核漂移周期 12s）/ --cell-disperse（色散强度 .5）三组 CSS 变量，色散随玻璃质感滑杆（--glass-sheen/--glass-shadow）联动，夜间蓝紫散色更通透；装饰层由 main.js 注入（.fab-cell-core/.fab-cell-glow，pointer-events:none）', '性能与分级：纯 transform/border-radius/box-shadow/opacity 合成层动画、零重排；拖拽/展开/收起（.fab-dragging/.fab-open/.fab-closing）全停动画仅留基础玻璃；移动端（≤768px）关闭全部连续形变与漂移、隐藏装饰层；prefers-reduced-motion 自动降级——桌面端完整细胞液态效果，移动端零额外开销'] },
         { v: 'v103', t: '悬浮球专项修正：轮廓恒正圆 + 移除中心色块 + 细胞核气泡化 + 基底透光折射', pts: ['收到「都不圆了 / 细胞核没采用原来的 / 没折射透光感 / 去掉中间色块」四项反馈——① 不圆根因：v102 膜呼吸动画改 border-radius 各角非对称值（22/18/24/19），动画中帧视觉变形。v103 废弃角变化，改纯 scale(1↔1.02) 微呼吸 + 边缘色散光晕同步呼吸，几何永远正圆、轮廓不破形', '② 中间色块根因：v90 遗留的「中心白色玻璃环」（#fab:not(.fab-open)::before 15px 白环）与 v102 细胞核叠成两个核——v103 移除该环（display:none），细胞核成为唯一核心；③ 细胞核由实心珍珠白点重做为透明液态折射气泡（聚光高光点+半透渐变+1px 细折射环+底部微内阴影+蓝紫/粉双色散光晕），像液体中悬浮的气泡/晶核', '④ 折射透光：折叠球基底由完全不透明材质包纯色改为 color-mix 掺 transparent 的半透明（透出底图）+ 顶部透光带折射光路层，边缘冷暖双色描边保留；夜间气泡蓝紫散色更通透。参数与降级不变：--cell-breathe/--cell-drift/--cell-disperse 三组可调，拖拽/展开/收起全停，移动端与 prefers-reduced-motion 自动降级'] },
         { v: 'v104', t: '悬浮球细胞膜呼吸感增强 + 涟漪波纹环（水面涟漪扩散，双层节奏）', pts: ['呼吸感增强：膜呼吸由 scale(1↔1.02) 提升至 scale(1↔1.03)，50% 帧叠加双色光晕脉冲（蓝紫外发光 14px + 白色泛光 24px 同步扩散收缩）——球体涨缩感更明显、更鲜活', '波纹感新增：利用空闲伪元素 #fab:not(.fab-open)::after 增加 52px 细纹涟漪环——从球缘以 cubic-bezier 缓动向外扩散（scale .88→1.55）并渐隐（opacity .55→0），模拟水面涟漪一圈圈荡开；周期 2.6s 与呼吸 2.2s 错相，形成「涨缩呼吸 + 环波扩散」双层节奏，视觉不机械', '适配与降级：涟漪环颜色随材质包（白描边+蓝紫/粉散色，夜间蓝紫），拖拽/展开/收起全停（动画 none+透明度 0），移动端与 prefers-reduced-motion 隐藏/停用——零重排纯合成层动画，不影响地图帧率'] },
+        { v: 'v105', t: '按课程笔记第10节验收迭代：卫星影像底图 + 测量单位自动转换', pts: ['底图切换新增第4源「卫星影像」（Esri World_Imagery，免费无Key长期稳定，实测瓦片可用）——底图面板加入口，切换时专题数据自动换算坐标系对齐，与高德矢量/栅格/OSM 共 4 源自由切换', '测量单位自动转换（课程验收任务四）：距离 <1000m 显示 m、≥1000m 自动切 km；面积 <1,000,000 m² 显示 m²、≥ 自动切 km²——全部保留两位小数，替代原来固定「公里/平方公里」3 位小数，小尺度测量读数更直观', '全部测量显示点统一接入：实时距离、双击总距离、完成按钮、面积、测量记录归档（recordsAdd）五处同步，历史记录数值为新格式'] },
     ];
     var clBackdrop = document.getElementById('cl-backdrop');
     var clList = document.getElementById('cl-list');
@@ -2142,7 +2147,15 @@
         var el = e.target && e.target.closest ? e.target.closest(ANIM_SEL) : null;
         if (el) nobf(el);
     }, true);
-})();
+
+    
+    })();
+
+
+
+
+
+
 
 
 
