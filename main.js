@@ -1536,7 +1536,7 @@
     // v113：面板可拖动——Pointer Events + 拖动阈值 + rAF 节流 + transform 加速
     function makeDraggable(panel, storageKey) {
         if (!panel) return;
-        var header = panel.querySelector('h4, .panel-title, .bm-title') || panel;
+        var header = panel.querySelector('h4, .panel-title, .bm-title, .settings-title') || panel;
         var startX, startY, startLeft, startTop, dragging = false, moved = false;
         var rafId = null;
         header.style.cursor = 'move';
