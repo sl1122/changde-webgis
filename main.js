@@ -1539,7 +1539,7 @@
         header.style.cursor = 'move';
 
         header.addEventListener('pointerdown', function (e) {
-            if (e.target.closest('button, input, select, a')) return;
+            if (e.target.closest('button, input, select, a, .settings-close, .panel-close, .bm-close, .close')) return;
             dragging = true;
             moved = false;
             startX = e.clientX; startY = e.clientY;
