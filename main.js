@@ -835,7 +835,11 @@
     if (btnBasemap && basemapPanel) {
         btnBasemap.addEventListener('click', function () {
             basemapPanel.hidden = !basemapPanel.hidden;
-            if (!basemapPanel.hidden) paintBasemapSel();
+            if (!basemapPanel.hidden) {
+                closeOtherGlassPanels('basemap-panel');
+                forceBackdropResample(basemapPanel);
+                paintBasemapSel();
+            }
         });
         document.getElementById('basemap-close').addEventListener('click', function () { basemapPanel.hidden = true; try { hideMeasureCard(); } catch (e) { } });
         basemapPanel.querySelectorAll('.bm-item').forEach(function (it) {
@@ -945,6 +949,10 @@
         });
         btnMark.addEventListener('click', function () {
             markPanel.hidden = !markPanel.hidden;
+            if (!markPanel.hidden) {
+                closeOtherGlassPanels('mark-panel');
+                forceBackdropResample(markPanel);
+            }
             if (markPanel.hidden && markMode) { exitMark(); toast('打点已退出'); }
         });
         document.getElementById('mark-close').addEventListener('click', function () {
@@ -1513,6 +1521,30 @@
     var setBlur = document.getElementById('set-blur');
     var setAlpha = document.getElementById('set-alpha');
     var setSat = document.getElementById('set-sat');
+    // v110：通用玻璃面板工具——backdrop 重采样 + 互斥关闭其他面板
+    function forceBackdropResample(panel) {
+        if (!panel) return;
+        requestAnimationFrame(function () {
+            panel.style.backdropFilter = 'none';
+            void panel.offsetWidth;
+            requestAnimationFrame(function () { panel.style.backdropFilter = ''; });
+        });
+    }
+    function closeOtherGlassPanels(keepId) {
+        ['settings-panel', 'basemap-panel', 'mark-panel'].forEach(function (id) {
+            if (id !== keepId) {
+                var el = document.getElementById(id);
+                if (el && !el.hidden) el.hidden = true;
+            }
+        });
+        // 同时取消对应按钮 active 态
+        [['btn-settings', 'settings-panel'], ['btn-basemap', 'basemap-panel'], ['btn-mark', 'mark-panel']].forEach(function (pair) {
+            if (pair[1] !== keepId) {
+                var b = document.getElementById(pair[0]);
+                if (b) b.classList.remove('active');
+            }
+        });
+    }
     function applyGlass() {
         var blur = setBlur.value, alpha = setAlpha.value, sat = setSat ? setSat.value : 150;
         // 可读性边界保护：低模糊度时自动提升背景不透明度，避免文字无法识别
@@ -1574,14 +1606,8 @@
             settingsPanel.hidden = !settingsPanel.hidden;
             btnSettings.classList.toggle('active', !settingsPanel.hidden);
             if (!settingsPanel.hidden) {
-                // v109-P0-4：强制 backdrop-filter 重新采样——display:none→flex 切换首帧 backdrop 未工作
-                // （透出底图 = 视觉上"先更透后恢复"），双 rAF 强制重采样消除首帧差异
-                requestAnimationFrame(function () {
-                    settingsPanel.style.backdropFilter = 'none';
-                    void settingsPanel.offsetWidth;
-                    requestAnimationFrame(function () { settingsPanel.style.backdropFilter = ''; });
-                });
-                // v109-P0-5：受控 spring 弹出（纯 transform，不碰 background-color）
+                closeOtherGlassPanels('settings-panel');
+                forceBackdropResample(settingsPanel);
                 settingsPanel.classList.remove('pop');
                 void settingsPanel.offsetWidth;
                 settingsPanel.classList.add('pop');

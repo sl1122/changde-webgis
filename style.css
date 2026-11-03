@@ -547,9 +547,9 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.6' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
     transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s ease;
 }
-/* v106：hover 背景接入 --glass-alpha（原硬编码 .66 与折叠 .58 相差 0.08 → 鼠标进出「透明度跳变」）；展开态 hover 完全稳定（背景/位移均不变，消除点击面板按钮时的跳变感） */
-.toolbar:hover { transform: translateY(-4px) scale(1.04); background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .72)); }
-.toolbar.fab-open:hover { transform: none; background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .78)); }
+/* v110：hover/fab-open 不再改 background-color——消除点击 FAB 时底部透明度跳变；只动 transform/shadow */
+.toolbar:hover { transform: translateY(-4px) scale(1.04); }
+.toolbar.fab-open:hover { transform: none; }
 .toolbar:active { transform: scale(.97); transition-duration: .12s; }
 /* 展开：120px 竖列果冻列表 */
 .toolbar.fab-open {
@@ -559,7 +559,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     justify-content: flex-start;
     padding: 8px;
     border-radius: 18px;
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .68));
     box-shadow:
         0 16px 40px rgba(15, 23, 42, calc(.2 * var(--glass-shadow))),
         inset 0 1px 0 rgba(255, 255, 255, calc(.85 * var(--glass-sheen))),
@@ -1784,7 +1784,8 @@ body.theme-night #fab.fab-open #fab-trigger {
     box-shadow: inset 0 1px 0 rgba(148, 163, 212, .3), 0 1px 4px rgba(2, 6, 23, .3);
 }
 body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); color: #dbeafe; box-shadow: 0 3px 10px rgba(2, 6, 23, .4), inset 0 1px 0 rgba(148, 163, 212, .3); }
-#map .legend-panel, #map .settings-panel, #map .measure-result, #map .map-toast {
+#map .legend-panel, #map .settings-panel, #map .measure-result, #map .map-toast,
+#map .basemap-panel, #map .mark-panel {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     box-shadow:
@@ -1796,6 +1797,24 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 #map .legend-panel { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .97)); }
 #map .measure-result { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94)); }
 #map .map-toast { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .95)); }
+/* v110：液态高光层——顶部柔和白光渐变，随 --glass-sheen 强度变化，制造玻璃边缘光感 */
+#map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel, #map .measure-result, #map .map-toast {
+    position: relative;
+    overflow: hidden;
+}
+#map .settings-panel::before, #map .basemap-panel::before, #map .mark-panel::before,
+#map .legend-panel::before, #map .measure-result::before, #map .map-toast::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, calc(.35 * var(--glass-sheen))) 0%,
+        rgba(255, 255, 255, calc(.12 * var(--glass-sheen))) 50%,
+        transparent 100%);
+    pointer-events: none;
+    border-radius: inherit;
+}
 
 /* 图例动态过渡：随图层勾选淡入淡出 */
 .legend-row {
@@ -2034,7 +2053,7 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 
 /* 底图切换面板 */
 .basemap-panel {
-    position: absolute; top: 14px; right: 70px; z-index: 1260;
+    position: absolute; top: 14px; left: 70px; z-index: 1260;
     width: 236px; padding: 13px 15px;
     /* v107 子属性化 */
     background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
@@ -2056,7 +2075,7 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 
 /* 道路打点面板 */
 .mark-panel {
-    position: absolute; top: 14px; right: 70px; z-index: 1265;
+    position: absolute; top: 14px; left: 70px; z-index: 1265;
     width: 292px; padding: 13px 15px;
     /* v107 子属性化 */
     background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
