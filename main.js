@@ -1952,15 +1952,15 @@
         }
         function clampOff(v, max, min) { return Math.max(min, Math.min(v, Math.max(min, max))); }
         ['pointerup', 'pointercancel'].forEach(function (t) { fab.addEventListener(t, endDrag, { passive: true }); });
-        // v111：窗口缩放后 FAB 位置越界自动重定位
-        window.addEventListener('resize', function () {
-            setTimeout(function () {
-                var mr = mapEl.getBoundingClientRect(), r = fab.getBoundingClientRect();
-                if (r.left > mr.right || r.right < mr.left || r.top > mr.bottom || r.bottom < mr.top) {
-                    applyAnchor(loadAnchor());
-                }
-            }, 100);
-        });
+        // v111：resize 后 FAB 被侧边栏遮住时自动移到右边
+        function ensureFabVisible() {
+            var mr = mapEl.getBoundingClientRect(), r = fab.getBoundingClientRect();
+            if (r.left < mr.left + 10 || r.right > mr.right - 10 || r.top < mr.top + 10 || r.bottom > mr.bottom - 10) {
+                applyAnchor({ side: 'right', off: 56 });
+                try { localStorage.setItem('cd_fab_anchor77', JSON.stringify({ side: 'right', off: 56 })); } catch (e) {}
+            }
+        }
+        window.addEventListener('resize', function () { setTimeout(ensureFabVisible, 100); });
         // —— 展开/收起（v81 统一事件委托：折叠态任意点击含触发球即展开；展开态点触发球/空白收缩、点功能按钮执行功能） ——
         fab.addEventListener('click', function (e) {
             if (drag.moved) { drag.moved = false; return; } // 拖拽后的 click 不触发展开
