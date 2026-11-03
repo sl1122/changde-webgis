@@ -1530,42 +1530,65 @@
             requestAnimationFrame(function () { panel.style.backdropFilter = ''; });
         });
     }
-    // v111：面板可拖动——拖标题栏移动位置，位置持久化
+    // v113：面板可拖动——Pointer Events + 拖动阈值 + rAF 节流 + transform 加速
     function makeDraggable(panel, storageKey) {
         if (!panel) return;
         var header = panel.querySelector('h4, .panel-title, .bm-title') || panel;
-        var startX, startY, startLeft, startTop, dragging = false;
+        var startX, startY, startLeft, startTop, dragging = false, moved = false;
+        var rafId = null;
         header.style.cursor = 'move';
-        header.addEventListener('mousedown', function (e) {
+
+        header.addEventListener('pointerdown', function (e) {
             if (e.target.closest('button, input, select, a')) return;
             dragging = true;
+            moved = false;
             startX = e.clientX; startY = e.clientY;
             var r = panel.getBoundingClientRect();
             var mapR = document.getElementById('map').getBoundingClientRect();
             startLeft = r.left - mapR.left;
             startTop = r.top - mapR.top;
+            header.setPointerCapture(e.pointerId);
             e.preventDefault();
         });
-        document.addEventListener('mousemove', function (e) {
+
+        header.addEventListener('pointermove', function (e) {
             if (!dragging) return;
             var dx = e.clientX - startX, dy = e.clientY - startY;
-            var mapR = document.getElementById('map').getBoundingClientRect();
-            var newLeft = Math.max(0, Math.min(mapR.width - panel.offsetWidth, startLeft + dx));
-            var newTop = Math.max(0, Math.min(mapR.height - panel.offsetHeight, startTop + dy));
-            panel.style.left = newLeft + 'px';
-            panel.style.top = newTop + 'px';
-            panel.style.right = 'auto';
+            // 拖动阈值：5px 内不触发
+            if (!moved && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+            moved = true;
+            header.style.cursor = 'grabbing';
+            // rAF 节流
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(function () {
+                var mapR = document.getElementById('map').getBoundingClientRect();
+                var newLeft = Math.max(0, Math.min(mapR.width - panel.offsetWidth, startLeft + dx));
+                var newTop = Math.max(0, Math.min(mapR.height - panel.offsetHeight, startTop + dy));
+                panel.style.transform = 'translate3d(' + newLeft + 'px, ' + newTop + 'px, 0)';
+            });
         });
-        document.addEventListener('mouseup', function () {
-            if (dragging) {
-                dragging = false;
-                try {
-                    localStorage.setItem(storageKey, JSON.stringify({
-                        left: panel.style.left, top: panel.style.top
-                    }));
-                } catch (e) {}
+
+        function endDrag(e) {
+            if (!dragging) return;
+            dragging = false;
+            header.style.cursor = 'move';
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+            if (moved) {
+                // 结束后把 transform 转成 left/top 保存
+                var r = panel.getBoundingClientRect();
+                var mapR = document.getElementById('map').getBoundingClientRect();
+                var left = r.left - mapR.left;
+                var top = r.top - mapR.top;
+                panel.style.transform = '';
+                panel.style.left = left + 'px';
+                panel.style.top = top + 'px';
+                panel.style.right = 'auto';
+                try { localStorage.setItem(storageKey, JSON.stringify({ left: left + 'px', top: top + 'px' })); } catch (e) {}
             }
-        });
+        }
+        header.addEventListener('pointerup', endDrag);
+        header.addEventListener('pointercancel', endDrag);
+
         // 恢复位置——v112：检查是否在可视区域内，越界则不恢复
         try {
             var saved = localStorage.getItem(storageKey);
@@ -1577,7 +1600,6 @@
                     var panelH = panel.offsetHeight || 200;
                     var left = parseInt(pos.left) || 0;
                     var top = parseInt(pos.top) || 0;
-                    // 检查边界：面板必须在地图可视区域内
                     if (left >= 0 && left + panelW <= mapR.width && top >= 0 && top + panelH <= mapR.height) {
                         panel.style.left = pos.left;
                         panel.style.top = pos.top;
