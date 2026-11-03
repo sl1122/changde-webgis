@@ -163,7 +163,8 @@
         gcjMode = !!t.gcj;
         if (wasGcj !== gcjMode) {
             try { refreshAllLayers(); } catch (e) { }
-            if (geoLastBest) renderLoc(L.latLng(geoLastBest.lat, geoLastBest.lng), geoLastBest.acc, geoLastBest.src || '', 'gps', false);
+            if (geoLastBest && typeof geoLastBest.lat === 'number' && typeof geoLastBest.lng === 'number')
+                renderLoc(L.latLng(geoLastBest.lat, geoLastBest.lng), geoLastBest.acc, geoLastBest.src || '', 'gps', false);
             if (typeof pointsLayer !== 'undefined' && pointsLayer &&
                 (pointsLayer.clusters.school || pointsLayer.plains.school)) map.setView(map.getCenter(), map.getZoom());
         }
@@ -1211,6 +1212,8 @@
             .catch(function () { cb(''); });
     }
     function renderLoc(ll, acc, srcText, level, isFresh) {
+        // v113：空值保护——geoLastBest 数据不完整时不渲染
+        if (!ll || typeof ll.lat !== 'number' || typeof ll.lng !== 'number') return;
         // 底图为高德(GCJ-02)时，定位坐标(WGS-84)转换后再显示；逆地理始终用 WGS-84
         var wgsLL = ll;
         if (gcjMode) ll = L.latLng(wgs2gcj([ll.lat, ll.lng]));
