@@ -1799,7 +1799,6 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 #map .map-toast { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .95)); }
 /* v110：液态高光层——顶部柔和白光渐变，随 --glass-sheen 强度变化，制造玻璃边缘光感 */
 #map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel, #map .measure-result, #map .map-toast {
-    position: relative;
     overflow: hidden;
 }
 #map .settings-panel::before, #map .basemap-panel::before, #map .mark-panel::before,
