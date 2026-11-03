@@ -1558,13 +1558,10 @@
             if (!moved && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
             moved = true;
             header.style.cursor = 'grabbing';
-            // rAF 节流
+            // rAF 节流——transform 用偏移量 dx/dy，不是绝对位置
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(function () {
-                var mapR = document.getElementById('map').getBoundingClientRect();
-                var newLeft = Math.max(0, Math.min(mapR.width - panel.offsetWidth, startLeft + dx));
-                var newTop = Math.max(0, Math.min(mapR.height - panel.offsetHeight, startTop + dy));
-                panel.style.transform = 'translate3d(' + newLeft + 'px, ' + newTop + 'px, 0)';
+                panel.style.transform = 'translate3d(' + dx + 'px, ' + dy + 'px, 0)';
             });
         });
 
@@ -1574,16 +1571,16 @@
             header.style.cursor = 'move';
             if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
             if (moved) {
-                // 结束后把 transform 转成 left/top 保存
-                var r = panel.getBoundingClientRect();
+                // 结束后把 transform 偏移转成 left/top 绝对位置
+                var dx = e.clientX - startX, dy = e.clientY - startY;
                 var mapR = document.getElementById('map').getBoundingClientRect();
-                var left = r.left - mapR.left;
-                var top = r.top - mapR.top;
+                var newLeft = Math.max(0, Math.min(mapR.width - panel.offsetWidth, startLeft + dx));
+                var newTop = Math.max(0, Math.min(mapR.height - panel.offsetHeight, startTop + dy));
                 panel.style.transform = '';
-                panel.style.left = left + 'px';
-                panel.style.top = top + 'px';
+                panel.style.left = newLeft + 'px';
+                panel.style.top = newTop + 'px';
                 panel.style.right = 'auto';
-                try { localStorage.setItem(storageKey, JSON.stringify({ left: left + 'px', top: top + 'px' })); } catch (e) {}
+                try { localStorage.setItem(storageKey, JSON.stringify({ left: newLeft + 'px', top: newTop + 'px' })); } catch (e) {}
             }
         }
         header.addEventListener('pointerup', endDrag);
