@@ -1990,6 +1990,8 @@
             }
         }
         window.addEventListener('resize', function () { setTimeout(ensureFabVisible, 100); });
+        // v113：页面加载时也检查 FAB 可见性
+        setTimeout(ensureFabVisible, 500);
         // —— 展开/收起（v81 统一事件委托：折叠态任意点击含触发球即展开；展开态点触发球/空白收缩、点功能按钮执行功能） ——
         fab.addEventListener('click', function (e) {
             if (drag.moved) { drag.moved = false; return; } // 拖拽后的 click 不触发展开
