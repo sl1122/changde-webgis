@@ -1516,7 +1516,7 @@
     function applyGlass() {
         var blur = setBlur.value, alpha = setAlpha.value, sat = setSat ? setSat.value : 150;
         // 可读性边界保护：低模糊度时自动提升背景不透明度，避免文字无法识别
-        if (blur < 6 && alpha < 60) alpha = 60;
+        if (blur < 3 && alpha < 60) alpha = 60;
         // v106 美学地板：alpha 映射下限 0.18（最透仍可辨），夜间提升至 0.55 保文字可读；与 initGlassSystem writeVars 同构，杜绝双写不一致
         var night = document.body.classList.contains('theme-night');
         var aFloor = night ? 55 : 18;
@@ -1574,8 +1574,17 @@
             settingsPanel.hidden = !settingsPanel.hidden;
             btnSettings.classList.toggle('active', !settingsPanel.hidden);
             if (!settingsPanel.hidden) {
-                // v108：移除 jellyPulse 弹跳——scale 弹跳（1→1.03→1）会放大面板、边缘透出更多玻璃区，
-                // 视觉上即「点击卡片时透明度先更透后恢复」；面板改为直接稳定呈现，无形态抖动
+                // v109-P0-4：强制 backdrop-filter 重新采样——display:none→flex 切换首帧 backdrop 未工作
+                // （透出底图 = 视觉上"先更透后恢复"），双 rAF 强制重采样消除首帧差异
+                requestAnimationFrame(function () {
+                    settingsPanel.style.backdropFilter = 'none';
+                    void settingsPanel.offsetWidth;
+                    requestAnimationFrame(function () { settingsPanel.style.backdropFilter = ''; });
+                });
+                // v109-P0-5：受控 spring 弹出（纯 transform，不碰 background-color）
+                settingsPanel.classList.remove('pop');
+                void settingsPanel.offsetWidth;
+                settingsPanel.classList.add('pop');
                 toggleSettingsBackdrop(true);
             } else {
                 toggleSettingsBackdrop(false);
@@ -1967,13 +1976,15 @@
         var satEl = document.getElementById('set-sat');
         var satVal = document.getElementById('set-sat-val');
         // 预设联动：强度 0% / 50% / 100% 三段锚点 → 轻薄半透 / Apple 中等通透 / 厚重磨砂高反光
-        // v106 美学重调：alpha 锚点由 70/85/97 拓宽为 50/80/96——低端真正可调出「通透玻璃」，高端保留厚实感，视觉差异显著
-        var P0 = { blur: 6, alpha: 50, sheen: 0.3, shadow: 0.3 };
-        var P50 = { blur: 14, alpha: 80, sheen: 0.9, shadow: 1.0 };
+        // v109-P0-6：低区间真通透（P0 alpha 50→12），t 改 pow(1.3) 非线性——拖动低段肉眼可见明显变化（参考 iOS Liquid Glass 曲线）
+        var P0 = { blur: 4, alpha: 12, sheen: 0.2, shadow: 0.2 };
+        var P50 = { blur: 12, alpha: 55, sheen: 0.6, shadow: 0.7 };
         var P100 = { blur: 30, alpha: 96, sheen: 1.5, shadow: 1.6 };
         function clamp(v, mn, mx) { return Math.max(mn, Math.min(v, mx)); }
         function presetAt(g) {
             var a = g < 50 ? { from: P0, to: P50, t: g / 50 } : { from: P50, to: P100, t: (g - 50) / 50 };
+            // v109：非线性 t 曲线——低区间更敏感
+            a.t = Math.pow(a.t, 1.3);
             return {
                 blur: Math.round(a.from.blur + (a.to.blur - a.from.blur) * a.t),
                 alpha: Math.round(a.from.alpha + (a.to.alpha - a.from.alpha) * a.t),
@@ -1988,7 +1999,7 @@
             // v106：alpha 美学地板与夜间可读性地板，与 applyGlass 同构——主滑杆/高级滑杆写入值全程一致，杜绝双写跳变
             var night = document.body.classList.contains('theme-night');
             var aFloor = night ? 55 : 18;
-            var aRaw = Math.max(v.alpha, v.blur < 6 ? 60 : v.alpha);
+            var aRaw = Math.max(v.alpha, v.blur < 3 ? 60 : v.alpha);
             docEl.style.setProperty('--glass-alpha', (Math.max(aFloor, aRaw) / 100).toFixed(2));
             docEl.style.setProperty('--glass-sheen', v.sheen.toFixed(2));
             docEl.style.setProperty('--glass-shadow', v.shadow.toFixed(2));
