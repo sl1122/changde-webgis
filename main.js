@@ -1519,10 +1519,12 @@
     var setBlur = document.getElementById('set-blur');
     var setAlpha = document.getElementById('set-alpha');
     var setSat = document.getElementById('set-sat');
-    // v110：通用玻璃面板工具——backdrop 重采样
+    // v112：通用玻璃面板工具——backdrop 重采样（加防抖，连续点击只执行一次）
+    var _resampleTimer = null;
     function forceBackdropResample(panel) {
         if (!panel) return;
-        requestAnimationFrame(function () {
+        if (_resampleTimer) cancelAnimationFrame(_resampleTimer);
+        _resampleTimer = requestAnimationFrame(function () {
             panel.style.backdropFilter = 'none';
             void panel.offsetWidth;
             requestAnimationFrame(function () { panel.style.backdropFilter = ''; });
@@ -1564,15 +1566,23 @@
                 } catch (e) {}
             }
         });
-        // 恢复位置
+        // 恢复位置——v112：检查是否在可视区域内，越界则不恢复
         try {
             var saved = localStorage.getItem(storageKey);
             if (saved) {
                 var pos = JSON.parse(saved);
                 if (pos.left && pos.top) {
-                    panel.style.left = pos.left;
-                    panel.style.top = pos.top;
-                    panel.style.right = 'auto';
+                    var mapR = document.getElementById('map').getBoundingClientRect();
+                    var panelW = panel.offsetWidth || 280;
+                    var panelH = panel.offsetHeight || 200;
+                    var left = parseInt(pos.left) || 0;
+                    var top = parseInt(pos.top) || 0;
+                    // 检查边界：面板必须在地图可视区域内
+                    if (left >= 0 && left + panelW <= mapR.width && top >= 0 && top + panelH <= mapR.height) {
+                        panel.style.left = pos.left;
+                        panel.style.top = pos.top;
+                        panel.style.right = 'auto';
+                    }
                 }
             }
         } catch (e) {}

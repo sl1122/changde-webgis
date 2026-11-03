@@ -1847,7 +1847,7 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transition: visibility 0s linear .35s, opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease, border-color .35s ease;
+    transition: opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease, border-color .35s ease;
     transform-origin: top right;
 }
 /* v111c：HTML hidden 属性会强制 display:none，覆盖 visibility 方案——必须显式覆盖 */
