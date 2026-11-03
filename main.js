@@ -834,24 +834,23 @@
     }
     if (btnBasemap && basemapPanel) {
         btnBasemap.addEventListener('click', function () {
-            basemapPanel.hidden = !basemapPanel.hidden;
-            if (!basemapPanel.hidden) {
-                closeOtherGlassPanels('basemap-panel');
+            basemapPanel.classList.toggle('open');
+            if (basemapPanel.classList.contains('open')) {
                 forceBackdropResample(basemapPanel);
                 paintBasemapSel();
             }
         });
-        document.getElementById('basemap-close').addEventListener('click', function () { basemapPanel.hidden = true; try { hideMeasureCard(); } catch (e) { } });
+        document.getElementById('basemap-close').addEventListener('click', function () { basemapPanel.classList.remove('open'); try { hideMeasureCard(); } catch (e) { } });
         basemapPanel.querySelectorAll('.bm-item').forEach(function (it) {
             it.addEventListener('click', function () {
                 var idx = parseInt(it.getAttribute('data-idx'));
-                if (idx === tileIdx) { basemapPanel.hidden = true; return; }
+                if (idx === tileIdx) { basemapPanel.classList.remove('open'); return; }
                 activateTile(idx, true);
                 basemapLocked = true;
                 paintBasemapSel();
                 try { localStorage.setItem('cd_basemap', idx); } catch (e) { }
                 toast('已切换为「' + TILE_CHAIN[idx].name + '」底图（已锁定，不再自动跳变）');
-                basemapPanel.hidden = true;
+                basemapPanel.classList.remove('open');
             });
         });
         try {
@@ -887,7 +886,7 @@
         document.getElementById('mark-ops').hidden = false;
         document.getElementById('mark-export').value = '';
         document.getElementById('mark-copy').hidden = true;
-        markPanel.hidden = false;
+        markPanel.classList.add('open');
         paintMarkDots();
         document.getElementById('mark-status').textContent =
             '编辑「' + markStreet + '」：拖动节点调整位置、点击可加点、撤销可删点，完成后更新原记录';
@@ -948,15 +947,14 @@
             }
         });
         btnMark.addEventListener('click', function () {
-            markPanel.hidden = !markPanel.hidden;
-            if (!markPanel.hidden) {
-                closeOtherGlassPanels('mark-panel');
+            markPanel.classList.toggle('open');
+            if (markPanel.classList.contains('open')) {
                 forceBackdropResample(markPanel);
             }
-            if (markPanel.hidden && markMode) { exitMark(); toast('打点已退出'); }
+            if (!markPanel.classList.contains('open') && markMode) { exitMark(); toast('打点已退出'); }
         });
         document.getElementById('mark-close').addEventListener('click', function () {
-            markPanel.hidden = true;
+            markPanel.classList.remove('open');
             if (markMode) { exitMark(); toast('打点已退出'); }
         });
         document.getElementById('mark-start').addEventListener('click', function () {
@@ -1521,7 +1519,7 @@
     var setBlur = document.getElementById('set-blur');
     var setAlpha = document.getElementById('set-alpha');
     var setSat = document.getElementById('set-sat');
-    // v110：通用玻璃面板工具——backdrop 重采样 + 互斥关闭其他面板
+    // v110：通用玻璃面板工具——backdrop 重采样
     function forceBackdropResample(panel) {
         if (!panel) return;
         requestAnimationFrame(function () {
@@ -1530,21 +1528,58 @@
             requestAnimationFrame(function () { panel.style.backdropFilter = ''; });
         });
     }
-    function closeOtherGlassPanels(keepId) {
-        ['settings-panel', 'basemap-panel', 'mark-panel'].forEach(function (id) {
-            if (id !== keepId) {
-                var el = document.getElementById(id);
-                if (el && !el.hidden) el.hidden = true;
+    // v111：面板可拖动——拖标题栏移动位置，位置持久化
+    function makeDraggable(panel, storageKey) {
+        if (!panel) return;
+        var header = panel.querySelector('h4, .panel-title, .bm-title') || panel;
+        var startX, startY, startLeft, startTop, dragging = false;
+        header.style.cursor = 'move';
+        header.addEventListener('mousedown', function (e) {
+            if (e.target.closest('button, input, select, a')) return;
+            dragging = true;
+            startX = e.clientX; startY = e.clientY;
+            var r = panel.getBoundingClientRect();
+            var mapR = document.getElementById('map').getBoundingClientRect();
+            startLeft = r.left - mapR.left;
+            startTop = r.top - mapR.top;
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (!dragging) return;
+            var dx = e.clientX - startX, dy = e.clientY - startY;
+            var mapR = document.getElementById('map').getBoundingClientRect();
+            var newLeft = Math.max(0, Math.min(mapR.width - panel.offsetWidth, startLeft + dx));
+            var newTop = Math.max(0, Math.min(mapR.height - panel.offsetHeight, startTop + dy));
+            panel.style.left = newLeft + 'px';
+            panel.style.top = newTop + 'px';
+            panel.style.right = 'auto';
+        });
+        document.addEventListener('mouseup', function () {
+            if (dragging) {
+                dragging = false;
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify({
+                        left: panel.style.left, top: panel.style.top
+                    }));
+                } catch (e) {}
             }
         });
-        // 同时取消对应按钮 active 态
-        [['btn-settings', 'settings-panel'], ['btn-basemap', 'basemap-panel'], ['btn-mark', 'mark-panel']].forEach(function (pair) {
-            if (pair[1] !== keepId) {
-                var b = document.getElementById(pair[0]);
-                if (b) b.classList.remove('active');
+        // 恢复位置
+        try {
+            var saved = localStorage.getItem(storageKey);
+            if (saved) {
+                var pos = JSON.parse(saved);
+                if (pos.left && pos.top) {
+                    panel.style.left = pos.left;
+                    panel.style.top = pos.top;
+                    panel.style.right = 'auto';
+                }
             }
-        });
+        } catch (e) {}
     }
+    makeDraggable(settingsPanel, 'cd_panel_settings');
+    makeDraggable(basemapPanel, 'cd_panel_basemap');
+    makeDraggable(markPanel, 'cd_panel_mark');
     function applyGlass() {
         var blur = setBlur.value, alpha = setAlpha.value, sat = setSat ? setSat.value : 150;
         // 可读性边界保护：低模糊度时自动提升背景不透明度，避免文字无法识别
@@ -1583,7 +1618,7 @@
         settingsBackdrop.classList.toggle('show', show);
     }
     if (settingsBackdrop) settingsBackdrop.addEventListener('click', function () {
-        if (settingsPanel) settingsPanel.hidden = true;
+        if (settingsPanel) settingsPanel.classList.remove('open');
         if (btnSettings) btnSettings.classList.remove('active');
         toggleSettingsBackdrop(false);
     });
@@ -1603,10 +1638,9 @@
     });
     if (btnSettings && settingsPanel) {
         btnSettings.addEventListener('click', function () {
-            settingsPanel.hidden = !settingsPanel.hidden;
-            btnSettings.classList.toggle('active', !settingsPanel.hidden);
-            if (!settingsPanel.hidden) {
-                closeOtherGlassPanels('settings-panel');
+            settingsPanel.classList.toggle('open');
+            btnSettings.classList.toggle('active', settingsPanel.classList.contains('open'));
+            if (settingsPanel.classList.contains('open')) {
                 forceBackdropResample(settingsPanel);
                 settingsPanel.classList.remove('pop');
                 void settingsPanel.offsetWidth;
@@ -1617,7 +1651,7 @@
             }
         });
         document.getElementById('settings-close').addEventListener('click', function () {
-            settingsPanel.hidden = true;
+            settingsPanel.classList.remove('open');
             btnSettings.classList.remove('active');
             toggleSettingsBackdrop(false);
             try { hideMeasureCard(); } catch (e) { }
@@ -1918,6 +1952,15 @@
         }
         function clampOff(v, max, min) { return Math.max(min, Math.min(v, Math.max(min, max))); }
         ['pointerup', 'pointercancel'].forEach(function (t) { fab.addEventListener(t, endDrag, { passive: true }); });
+        // v111：窗口缩放后 FAB 位置越界自动重定位
+        window.addEventListener('resize', function () {
+            setTimeout(function () {
+                var mr = mapEl.getBoundingClientRect(), r = fab.getBoundingClientRect();
+                if (r.left > mr.right || r.right < mr.left || r.top > mr.bottom || r.bottom < mr.top) {
+                    applyAnchor(loadAnchor());
+                }
+            }, 100);
+        });
         // —— 展开/收起（v81 统一事件委托：折叠态任意点击含触发球即展开；展开态点触发球/空白收缩、点功能按钮执行功能） ——
         fab.addEventListener('click', function (e) {
             if (drag.moved) { drag.moved = false; return; } // 拖拽后的 click 不触发展开

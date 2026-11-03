@@ -1843,9 +1843,18 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     padding: 13px 15px;
     font-size: 13px;
     color: var(--text);
-    /* 滑动渐变过渡：调节滑块时玻璃质感平滑渐变，不突变 */
-    transition: backdrop-filter .35s ease, background-color .35s ease, border-color .35s ease;
+    /* v111：visibility+opacity 替代 display:none——backdrop-filter 持续采样，首帧无跳变 */
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: visibility 0s linear .35s, opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease, border-color .35s ease;
     transform-origin: top right;
+}
+.settings-panel.open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0s;
 }
 /* 果冻感：滑块调节时面板弹性回弹 */
 @keyframes jelly-pop {
@@ -2060,7 +2069,13 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
     box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
     font-size: 13px; color: var(--text);
-    transition: backdrop-filter .35s ease, background-color .35s ease;
+    /* v111：visibility+opacity 替代 display:none */
+    visibility: hidden; opacity: 0; pointer-events: none;
+    transition: visibility 0s linear .35s, opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease;
+}
+.basemap-panel.open {
+    visibility: visible; opacity: 1; pointer-events: auto;
+    transition-delay: 0s;
 }
 .bm-item {
     display: flex; align-items: center; gap: 8px;
@@ -2075,14 +2090,20 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 
 /* 道路打点面板 */
 .mark-panel {
-    position: absolute; top: 14px; left: 70px; z-index: 1265;
+    position: absolute; top: 200px; left: 70px; z-index: 1265;
     width: 292px; padding: 13px 15px;
     /* v107 子属性化 */
     background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
     border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
     box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
     font-size: 13px; color: var(--text);
-    transition: backdrop-filter .35s ease, background-color .35s ease;
+    /* v111：visibility+opacity 替代 display:none */
+    visibility: hidden; opacity: 0; pointer-events: none;
+    transition: visibility 0s linear .35s, opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease;
+}
+.mark-panel.open {
+    visibility: visible; opacity: 1; pointer-events: auto;
+    transition-delay: 0s;
 }
 .mark-panel input[type="text"] {
     flex: 1; min-width: 0; padding: 6px 9px;
