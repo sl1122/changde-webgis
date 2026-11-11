@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v115 执行规划书 · 显示系统改造</title>
+<style>
+:root{
+  --bg:#F5F6F8; --card:#FFFFFF; --ink:#0F1319; --ink2:#48505E; --ink3:#7C8595;
+  --line:#E4E7ED; --line2:#EFF1F5;
+  --blue:#0A84FF; --teal:#12A594; --amber:#D97706; --red:#E5484D;
+  --r-s:6px; --r-m:12px; --r-l:20px;
+  --font:-apple-system,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 80px}
+/* ---------- header ---------- */
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.top .ver{font:600 13px/1 var(--mono);letter-spacing:.06em;color:var(--blue)}
+.top .date{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums}
+h1{font-size:34px;line-height:1.22;font-weight:600;letter-spacing:-.02em;margin:26px 0 8px}
+.sub{color:var(--ink2);font-size:15px;max-width:660px}
+.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.chip{font-size:12px;padding:5px 10px;border:1px solid var(--line);border-radius:100px;background:#fff;color:var(--ink2);font-variant-numeric:tabular-nums}
+.chip b{color:var(--ink);font-weight:600}
+/* ---------- hero glass section ---------- */
+.hero{margin-top:34px;background:#fff;border:1px solid var(--line);border-radius:var(--r-l);overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:0}
+.hero-text{padding:30px 30px 34px}
+.hero-text h2{font-size:20px;font-weight:600;letter-spacing:-.01em;margin:0 0 12px}
+.hero-text p{margin:0 0 14px;color:var(--ink2);font-size:14px}
+.legend{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+.lg{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink2)}
+.lg i{width:10px;height:10px;border-radius:3px;flex:none}
+.hero-art{background:linear-gradient(160deg,#EAF1FF 0%,#F0FAF7 52%,#FFF2F4 100%);display:flex;align-items:center;justify-content:center;padding:22px}
+/* ---------- section ---------- */
+section{margin-top:52px}
+.sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.sec-no{font:600 12px/1 var(--mono);color:var(--ink3);letter-spacing:.08em}
+.sec-head h2{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0}
+.sec-note{color:var(--ink3);font-size:13px;margin:0 0 20px}
+/* ---------- table ---------- */
+.tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;font-size:13.5px}
+.tbl th{text-align:left;font-weight:600;font-size:12px;letter-spacing:.04em;color:var(--ink3);padding:12px 14px;background:#FAFBFC;border-bottom:1px solid var(--line)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line2);vertical-align:top;color:var(--ink2)}
+.tbl td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl code{font-family:var(--mono);font-size:12px;background:#F2F4F8;padding:2px 5px;border-radius:4px;color:var(--ink)}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:.02em}
+.tag.bug{background:#FDECEC;color:#B4262B}
+.tag.design{background:#E8F1FF;color:#0B5FCC}
+.tag.fixed{background:#E7F6F3;color:#0B7566}
+/* ---------- cards ---------- */
+.item{background:#fff;border:1px solid var(--line);border-radius:var(--r-m);padding:22px 24px;margin-bottom:14px}
+.item-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.item-head .n{font:600 12px/1 var(--mono);color:#FFF;background:var(--ink);width:22px;height:22px;display:grid;place-items:center;border-radius:5px;flex:none}
+.item-head h3{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+.row{display:grid;grid-template-columns:74px 1fr;gap:12px;padding:9px 0;border-top:1px dashed var(--line2)}
+.row:first-of-type{border-top:none;padding-top:0}
+.row .k{font-size:12px;color:var(--ink3);font-weight:600;letter-spacing:.04em;padding-top:2px}
+.row .v{font-size:13.8px;color:var(--ink2)}
+.row .v strong{color:var(--ink);font-weight:600}
+.param{font-family:var(--mono);font-size:12.5px;background:#F6F7FA;border:1px solid var(--line2);border-radius:6px;padding:10px 12px;margin-top:10px;color:var(--ink);overflow-x:auto;line-height:1.85;white-space:pre}
+/* ---------- two-column pair ---------- */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.oldnew{background:#fff;border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden}
+.oldnew h4{margin:0;padding:11px 16px;font-size:12px;letter-spacing:.05em;font-weight:600;color:var(--ink3);background:#FAFBFC;border-bottom:1px solid var(--line)}
+.oldnew .bd{padding:14px 16px;font-size:13px;color:var(--ink2);font-family:var(--mono);line-height:2;white-space:pre-wrap}
+.oldnew .bd em{font-style:normal;color:var(--red)}
+.oldnew .bd i{font-style:normal;color:var(--teal)}
+/* ---------- shape table ---------- */
+.shapes{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.shape{background:#fff;border:1px solid var(--line);border-radius:var(--r-m);padding:18px 14px;text-align:center}
+.shape svg{display:block;margin:0 auto 12px}
+.shape .nm{font-size:13px;font-weight:600;color:var(--ink)}
+.shape .ds{font-size:11.5px;color:var(--ink3);margin-top:3px;font-family:var(--mono)}
+.shape .hex{font-size:11px;color:var(--ink2);margin-top:6px;font-family:var(--mono)}
+/* ---------- checklist ---------- */
+.chk{background:#fff;border:1px solid var(--line);border-radius:var(--r-m);padding:8px 20px 14px}
+.chk ol{margin:0;padding-left:20px}
+.chk li{padding:9px 0;border-bottom:1px solid var(--line2);font-size:13.6px;color:var(--ink2)}
+.chk li:last-child{border-bottom:none}
+.chk li b{color:var(--ink);font-weight:600}
+/* ---------- questions ---------- */
+.q{background:#fff;border:1px solid var(--line);border-radius:var(--r-m);padding:20px 24px;margin-bottom:12px}
+.q .qt{font-size:14.5px;font-weight:600;margin:0 0 4px}
+.q .qd{font-size:12.8px;color:var(--ink3);margin:0 0 14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#FBFCFD}
+.opt b{display:block;font-size:13px;color:var(--ink);font-weight:600}
+.opt span{font-size:12.2px;color:var(--ink3);line-height:1.5}
+.opt .rec{font-size:10.5px;font-weight:600;color:var(--teal);letter-spacing:.03em}
+/* ---------- footer ---------- */
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media (max-width:760px){
+  .wrap{padding:26px 16px 60px}
+  h1{font-size:25px}
+  .hero-grid{grid-template-columns:1fr}
+  .hero-art{padding:16px;order:-1}
+  .pair,.opts{grid-template-columns:1fr}
+  .shapes{grid-template-columns:1fr 1fr}
+  .row{grid-template-columns:1fr;gap:3px}
+  .row .k{padding-top:0}
+  .tbl{font-size:12.5px}
+  .tbl th,.tbl td{padding:9px 10px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <span class="ver">V115 · PLAN</span>
+    <span class="date">2026-11-11 · 常德公共服务 WebGIS</span>
+  </div>
+
+  <h1>显示系统改造：<br>从「调了参数」到「调出光学」</h1>
+  <p class="sub">六项需求合并成一次结构性重构：玻璃从「白底加模糊」改成有受光面、有折射边、有密度分级的材质体系；地物点从「四色圆点」改成形状即语义的图标语言；全局字体与控件尺寸对齐 iOS 的字阶与 44pt 触控标准。其中「恢复默认」是代码层面的真 bug，不是观感问题。</p>
+
+  <div class="meta">
+    <span class="chip">影响文件 <b>3</b> · main.js / style.css / index.html</span>
+    <span class="chip">真 bug <b>1</b></span>
+    <span class="chip">设计重构 <b>5</b></span>
+    <span class="chip">执行批次 <b>6</b></span>
+    <span class="chip">验收端 <b>1440 / 390 / 夜间</b></span>
+  </div>
+
+  <!-- ===== HERO ===== -->
+  <div class="hero">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <h2>这次改的是玻璃的「光学结构」</h2>
+        <p>现在所有面板共用同一串变量：一层白底、一次模糊、一条顶边白线。调强度只是在加减白底的浓度，所以薄到极处仍是「雾」，厚到极处只是「更白的雾」。</p>
+        <p>v115 把面板拆成四层可独立控制的结构——受光边、镜面扫光、折射暗边、磨砂基体。强度滑杆同时驱动这四层，才谈得上「轻薄半透 → 厚重磨砂」是连续质感，而不是同一个白块换四档浓度。</p>
+        <div class="legend">
+          <div class="lg"><i style="background:#0A84FF"></i>受光边 Rim：左上亮、右下暗，给面板一个明确的光源方向</div>
+          <div class="lg"><i style="background:#12A594"></i>镜面扫光 Specular：22° 斜向高光带，随强度滑杆显现</div>
+          <div class="lg"><i style="background:#E5484D"></i>折射暗边 Refraction：外圈 1px 冷色描边 + 柔投影，让面板浮起来</div>
+          <div class="lg"><i style="background:#C9CED8"></i>磨砂基体 Frost：白底浓度按强度分级，最薄段允许 8%</div>
+        </div>
+      </div>
+      <div class="hero-art">
+        <svg width="330" height="300" viewBox="0 0 330 300" role="img" aria-label="玻璃剖面结构示意图">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FFFFFF" stop-opacity=".92"/>
+              <stop offset=".55" stop-color="#EAF2FF" stop-opacity=".55"/>
+              <stop offset="1" stop-color="#FFFFFF" stop-opacity=".35"/>
+            </linearGradient>
+            <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+              <stop offset=".45" stop-color="#FFFFFF" stop-opacity=".85"/>
+              <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#0A84FF" stop-opacity=".18"/>
+              <stop offset="1" stop-color="#0A84FF" stop-opacity=".04"/>
+            </linearGradient>
+          </defs>
+          <!-- 底图线索（透过玻璃可见的地图线条） -->
+          <g opacity=".55">
+            <rect x="34" y="34" width="262" height="232" rx="16" fill="#fff"/>
+            <path d="M34 96 H296 M34 150 H296 M34 204 H296" stroke="#D9E2F2" stroke-width="2"/>
+            <path d="M96 34 V266 M170 34 V266 M244 34 V266" stroke="#D9E2F2" stroke-width="2"/>
+            <path d="M60 220 C110 170 150 210 200 140 S270 90 292 120" stroke="#B9C9E6" stroke-width="3" fill="none"/>
+          </g>
+          <!-- 玻璃板 -->
+          <rect x="46" y="46" width="238" height="208" rx="18" fill="url(#g1)" stroke="#C9D4E6" stroke-width="1"/>
+          <rect x="46" y="46" width="238" height="208" rx="18" fill="url(#g3)"/>
+          <!-- 受光边：上亮下暗 -->
+          <path d="M64 47 H266" stroke="#FFFFFF" stroke-width="2.4" opacity=".95"/>
+          <path d="M47 64 V236" stroke="#FFFFFF" stroke-width="1.6" opacity=".45"/>
+          <path d="M64 249 H266" stroke="#0B1A33" stroke-width="1.6" opacity=".18"/>
+          <!-- 镜面扫光带 -->
+          <path d="M92 46 L128 46 L74 254 L38 254 Z" fill="url(#g2)" transform="translate(24 0)"/>
+          <!-- 折射暗边 -->
+          <rect x="46" y="46" width="238" height="208" rx="18" fill="none" stroke="#0A84FF" stroke-opacity=".22" stroke-width="1"/>
+          <rect x="40" y="40" width="250" height="220" rx="22" fill="none" stroke="#0F172A" stroke-opacity=".06" stroke-width="1"/>
+          <!-- 标注 -->
+          <g font-family="ui-monospace,Consolas,monospace" font-size="10" fill="#48505E">
+            <line x1="286" y1="62" x2="316" y2="40" stroke="#0A84FF" stroke-width="1"/>
+            <text x="238" y="34" fill="#0A84FF">RIM</text>
+            <line x1="112" y1="176" x2="64" y2="196" stroke="#12A594" stroke-width="1"/>
+            <text x="34" y="212" fill="#12A594">SPECULAR</text>
+            <line x1="292" y1="196" x2="316" y2="216" stroke="#E5484D" stroke-width="1"/>
+            <text x="250" y="234" fill="#E5484D">REFRACTION</text>
+            <text x="70" y="120" fill="#7C8595">FROST 8–96%</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">01</span><h2>现状体检</h2></div>
+    <p class="sec-note">以下每条都对应现有代码里的具体行号，不是估计。这一节决定后面改哪里、不动哪里。</p>
+    <table class="tbl">
+      <tr><th>项目</th><th>现在的实现</th><th>问题定性</th></tr>
+      <tr>
+        <td>玻璃主滑杆</td>
+        <td><code>#set-glass</code> 0–100，三锚点 <code>P0{4,12,.2,.2}</code> / <code>P50{12,55,.6,.7}</code> / <code>P100{30,96,1.5,1.6}</code>，区间曲线 <code>pow(t,1.3)</code>（main.js 2465–2479）</td>
+        <td><span class="tag design">设计</span> 低段既不透也没边光</td>
+      </tr>
+      <tr>
+        <td>白天透明度地板</td>
+        <td><code>aFloor = 18</code>，另有 <code>blur&lt;3 → alpha=60</code> 硬抬（main.js 2486–2488）</td>
+        <td><span class="tag bug">根因</span> 最薄态被强制抬到 18–60% 白</td>
+      </tr>
+      <tr>
+        <td>面板底色</td>
+        <td><code>rgba(255,255,255, calc(var(--glass-alpha)*.98))</code>；卡片 .94–.97（style.css 1719 / 1819–1821）</td>
+        <td><span class="tag design">设计</span> 系数接近 1，等于把 alpha 直接当白底浓度</td>
+      </tr>
+      <tr>
+        <td>边缘高光</td>
+        <td>只有 <code>inset 0 1px 0 rgba(255,255,255,.7*sheen)</code> 与 <code>0 0 0 .5px rgba(255,255,255,.45)</code>（style.css 1730–1734）</td>
+        <td><span class="tag design">设计</span> 单边白线，四角与右下无光，无折射感</td>
+      </tr>
+      <tr>
+        <td>左侧图层管理</td>
+        <td><code>.sidebar</code> 直接读 <code>--glass-alpha / .blur / .sat</code>（style.css 1718–1726）</td>
+        <td><span class="tag design">设计</span> 常驻导航被实验性滑杆牵连</td>
+      </tr>
+      <tr>
+        <td>恢复默认设置</td>
+        <td>只写 <code>setBlur=14 / setAlpha=85 / setSat=150</code> 后调旧 <code>applyGlass()</code>；不改 <code>#set-glass</code>、不重算 sheen/shadow、不写 <code>cd_glass72</code>（main.js 2143–2149）</td>
+        <td><span class="tag bug">真 bug</span> 滑杆不动而质感跳变，刷新后又被旧值覆盖</td>
+      </tr>
+      <tr>
+        <td>地物点</td>
+        <td><code>circleMarker</code> 半径 5、1.5px 同色描边、<code>fillOpacity .85</code>（main.js 373–377）；聚合为纯色圆 <code>.mc-bubble</code>（style.css 1664–1677）</td>
+        <td><span class="tag design">设计</span> 四类只靠色相区分，形状无语义，与玻璃语言脱节</td>
+      </tr>
+      <tr>
+        <td>字体与控件</td>
+        <td>单一字体栈 <code>"Microsoft Yahei","PingFang SC",-apple-system</code>（style.css 103）；字号 11/12/13 混用；圆角散落；部分按钮热区 28–32px</td>
+        <td><span class="tag design">设计</span> 无字阶、无层级、触控低于 44pt</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">02</span><h2>玻璃参数：旧锚点与新锚点</h2></div>
+    <p class="sec-note">左列是现在的三段锚点，右列是 v115 拟采用的值。关键不是把数字调小，而是让「薄」同时意味着「更透 + 更亮的边」，而不是「更白的雾」。</p>
+    <div class="pair">
+      <div class="oldnew">
+        <h4>现在（v114x）</h4>
+        <div class="bd">P0    blur 4   alpha 12  sheen 0.20  shadow 0.20
+P50   blur 12  alpha 55  sheen 0.60  shadow 0.70
+P100  blur 30  alpha 96  sheen 1.50  shadow 1.60
+
+地板  alpha ≥ 18（白天）/ 55（夜间）
+特例  blur &lt; 3 → alpha 抬到 60
+面板系数 · .98 / .97 / .95 / .94</div>
+      </div>
+      <div class="oldnew">
+        <h4>v115 拟采用</h4>
+        <div class="bd">P0    blur 2   alpha 6   sheen 1.15  shadow 0.18
+P50   blur 14  alpha 56  sheen 0.70  shadow 0.75
+P100  blur 32  alpha 94  sheen 1.60  shadow 1.70
+
+地板  alpha ≥ <i>8</i>（白天）/ 55（夜间）
+删除  blur &lt; 3 的 alpha 硬抬
+面板系数 <i>按强度插值</i> .88 → .99</div>
+      </div>
+    </div>
+    <div class="param">新增变量（由 writeVars 一并写入，随主滑杆联动）
+  --glass-dense   0–1   面板底色系数（薄段 .88 / 厚段 .99），替代写死的 .98/.97
+  --glass-edge    0–1   受光边与镜面扫光强度（薄段 0.90 / 厚段 1.0，薄段反而更亮）
+  --sb-alpha      固定  左侧图层管理专用透明度（默认 .52 / 夜间 .86）
+  --sb-blur       固定  左侧图层管理专用模糊（默认 16px）</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">03</span><h2>六项改造</h2></div>
+    <p class="sec-note">每项按「症状 → 根因 → 方案 → 参数 → 验收」写，验收全部是可以用截图或读数判定的，不接受「看着差不多」。</p>
+
+    <div class="item">
+      <div class="item-head"><span class="n">1</span><h3>轻薄端透明感不足</h3><span class="tag design">设计</span></div>
+      <div class="row"><span class="k">症状</span><span class="v">滑杆推到最左（轻薄），面板仍是灰白雾面，看不出底图的道路与地名；用户拿到的观感是「白了但不透」，而不是「薄玻璃」。</span></div>
+      <div class="row"><span class="k">根因</span><span class="v">三处叠加：<strong>①</strong> 白天 <code>alpha</code> 地板 18 把 P0 的 12 抬到 18；<strong>②</strong> <code>blur&lt;3</code> 时直接把 alpha 抬到 60 的死规则；<strong>③</strong> 面板系数 .98 几乎等于「alpha 即白底」，即使 alpha 12% 也叠成近实心。同时 P0 的 <code>sheen</code> 只有 .2，薄段既没厚度也没边光，视觉上就只剩「雾」。</span></div>
+      <div class="row"><span class="k">方案</span><span class="v">P0 重定为 <code>{blur 2, alpha 6, sheen 1.15, shadow .18}</code>；白天地板降到 8，删掉 <code>blur&lt;3 → 60</code> 硬抬；面板底色改用 <code>--glass-dense</code> 插值（薄段 .88）；薄段把 sheen 反向拉高，让"薄"表现为清透 + 明亮边缘。</span></div>
+      <div class="row"><span class="k">验收</span><span class="v">滑杆 0 时，取面板中心 40×40 区域平均亮度与同位置底图亮度差 <strong>≤ 12/255</strong>，且能透过面板辨认出底图的道路走向；滑杆 100 时该差值 <strong>≥ 40</strong>。四档（0 / 30 / 60 / 100）截图亮度单调递增。</span></div>
+    </div>
+
+    <div class="item">
+      <div class="item-head"><span class="n">2</span><h3>「恢复默认设置」滑杆不动、质感却变了</h3><span class="tag bug">真 bug</span></div>
+      <div class="row"><span class="k">症状</span><span class="v">点一下恢复默认，主滑杆还停在原来的位置，面板质感却瞬间变化；再刷新，质感又回不到「默认」，像是重置没生效。</span></div>
+      <div class="row"><span class="k">根因</span><span class="v">重置函数只操作了三条高级滑杆（blur 14 / alpha 85 / sat 150）并调用旧的 <code>applyGlass()</code>，<strong>没有碰主滑杆 <code>#set-glass</code></strong>，<strong>没有重算 sheen / shadow</strong>，<strong>没有写入 <code>cd_glass72</code></strong>。于是 UI 与变量脱钩：滑杆显示旧值、CSS 变量已是新值。刷新时 <code>load()</code> 优先读 <code>cd_glass72</code> 的旧记录，又把变量拉回去——两个症状同一个成因。</span></div>
+      <div class="row"><span class="k">方案</span><span class="v">收敛成单一入口 <code>resetDisplay()</code>：<strong>①</strong> <code>glass = 50</code>；<strong>②</strong> 调 <code>applyMain()</code> 一次写完 4 个变量 + 同步 3 条高级滑杆 + 标签文字；<strong>③</strong> sat 回 150、节律回 5、材质包回桃花、折射回桌面默认；<strong>④</strong> 清 <code>cd_glass72 / cd_glass</code> 后写入默认值；<strong>⑤</strong> 旧 <code>applyGlass()</code> 保留但 reset 不再调用，杜绝双写。</span></div>
+      <div class="row"><span class="k">验收</span><span class="v">先手动做坏状态（glass=3、alpha=30、sheen=9、材质包=夜间），点恢复默认后：主滑杆读数 50、三条高级滑杆回到 P50 对应值、材质包=桃花、饱和度 150、节律适中；<strong>刷新后全部保持</strong>；连续点 3 次无跳变、无一次「滑杆不动」。</span></div>
+    </div>
+
+    <div class="item">
+      <div class="item-head"><span class="n">3</span><h3>边缘透光感</h3><span class="tag design">设计</span></div>
+      <div class="row"><span class="k">症状</span><span class="v">面板是「一块白色矩形加了模糊」，边缘只有顶部一条发白的线，四角、左右、下沿都没有光，缺少玻璃该有的「一圈亮边把光收进来」的感觉。</span></div>
+      <div class="row"><span class="k">根因</span><span class="v">现有边缘只有 <code>inset 0 1px 0</code>（顶边）与 <code>0 0 0 .5px</code>（极淡外描边），没有方向性（光源不分上下）、没有镜面扫光、没有外圈冷色折射边。</span></div>
+      <div class="row"><span class="k">方案</span><span class="v">三层结构，纯 CSS、不新增 DOM：<strong>① 受光边</strong> <code>inset 1px 1px 0 rgba(255,255,255,.85)</code> + <code>inset -1px -1px 0 rgba(255,255,255,.32)</code>（左上亮、右下暗，给出光源方向）；<strong>② 镜面扫光</strong> 伪元素 22° 斜向渐变带（宽 38%、高 130%、<code>mix-blend-mode:screen</code>），强度读 <code>--glass-edge</code>；<strong>③ 折射暗边</strong> 外圈 <code>0 0 0 1px rgba(10,32,64,.10)</code> + <code>0 12px 30px rgba(15,23,42,.10)</code>，让面板离底图有物理距离。所有强度统一由 <code>--glass-edge</code> 控制，薄段给 0.9、厚段给 1.0。</span></div>
+      <div class="row"><span class="k">验收</span><span class="v">1440 截图放大面板左上角：能看到 1px 连续亮边 + 一条斜向光带；右下边缘有轻微压暗；文字区域对比度不下降（抽样正文与背景对比度 ≥ 7:1）。夜间同样结构但边光降为冷白，不出现「白框」。</span></div>
+    </div>
+
+    <div class="item">
+      <div class="item-head"><span class="n">4</span><h3>左侧图层管理：固定恰当质感</h3><span class="tag design">设计</span></div>
+      <div class="row"><span class="k">症状</span><span class="v">左侧图层管理是常驻导航，却和设置面板共用一条实验性滑杆：把玻璃调薄，图层面板跟着变得难读；调厚，又和地图抢注意力。</span></div>
+      <div class="row"><span class="k">根因</span><span class="v"><code>.sidebar</code> 的 <code>background-color / backdrop-filter</code> 直接引用 <code>--glass-alpha</code>、<code>--glass-blur</code>，没有任何独立令牌。</span></div>
+      <div class="row"><span class="k">方案</span><span class="v">给侧栏一套固定令牌：<code>--sb-alpha: .52</code>（夜间 .86）、<code>--sb-blur: 16px</code>、<code>--sb-sheen: .78</code>，<code>.sidebar</code> 与 <code>body.refraction .sidebar::after</code> 只读这套，不再读 <code>--glass-*</code>。设置 / 底图 / 打点 / 图例 / 气泡卡继续跟随滑杆——它们是"实验场"，侧栏是"承重墙"。</span></div>
+      <div class="row"><span class="k">验收</span><span class="v">滑杆从 0 拖到 100，对侧栏区域做前后两张截图的逐像素比较，平均通道差 <strong>≤ 2%</strong>；同一时刻设置面板的亮度差 <strong>≥ 25%</strong>。夜间滑杆全程，侧栏保持深底可读（正文对比度 ≥ 7:1）。</span></div>
+    </div>
+
+    <div class="item">
+      <div class="item-head"><span class="n">5</span><h3>地物点：形状即语义</h3><span class="tag design">设计</span></div>
+      <div class="row"><span class="k">症状</span><span class="v">学校、医院、景点、道路四类点全是同一种圆点，只靠蓝 / 红 / 绿 / 琥珀区分；小半径 + 同色描边让它们在浅色底图上偏弱；聚合气泡是纯色实心圆，和满屏玻璃面板不在同一个材质体系里。</span></div>
+      <div class="row"><span class="k">根因</span><span class="v"><code>LAYER_CONFIG</code> 只有 color/radius，渲染固定为 <code>circleMarker r5 / weight1.5 / fillOpacity .85</code>；聚合走 <code>DivIcon</code> 但样式是纯色圆，没有玻璃层次。</span></div>
+      <div class="row"><span class="k">方案</span><span class="v">改成内联 SVG 图标（形状承担语义、颜色只做辅助），统一"玻璃核"画法：<strong>1.5px 白环 + 同色半透明核 + 左上内高光 + 右下投影</strong>。缩放 ≥ 13 用图标；&lt; 13 或开启聚合时改用玻璃胶囊气泡（白 38% + blur 10 + 数字与类别同色）。单图层 ≤ 600 个用 DivIcon，超过自动回落 CircleMarker，避免手机端掉帧。</span></div>
+      <div class="row"><span class="k">验收</span><span class="v">1440 与 390 截图，在 100% 缩放下 3 秒内能靠<strong>形状</strong>分辨四类（而不是靠颜色）；聚合气泡与侧栏同族玻璃感；切换材质包时点位高光跟着变、但色相语义不变；夜间点位轮廓清晰、不糊在地图里。</span></div>
+    </div>
+
+    <div class="item">
+      <div class="item-head"><span class="n">6</span><h3>全局字体与显示：对齐 iOS</h3><span class="tag design">设计</span></div>
+      <div class="row"><span class="k">症状</span><span class="v">字号 11/12/13 混着用，标题和正文靠字重区分，信息层级靠感觉；圆角大小不统一；部分图标按钮热区 28–32px，手机端不好点。</span></div>
+      <div class="row"><span class="k">根因</span><span class="v">没有 token 体系：字体栈一处定义，但字号、行高、字重、圆角、间距全部散落在各组件规则里，改一处不影响全局。</span></div>
+      <div class="row"><span class="k">方案</span><span class="v">引入 iOS 型 token：字体栈前置 <code>-apple-system / "SF Pro Text" / "PingFang SC"</code>；字阶 Display 28·Title1 22·Title2 17·Body 15·Subhead 13·Footnote 12·Caption 11，行高按 iOS 比例 1.2–1.4；字重只用 400/500/600（禁 700+）；圆角阶梯 6/10/14/20/28；间距回到 8pt 网格；触控统一补到 44×44（小图标扩热区、不改视觉尺寸）；文字三档语义色 label / secondaryLabel / tertiaryLabel。动效统一 iOS 弹簧曲线 <code>cubic-bezier(.32,.72,0,1)</code>。</span></div>
+      <div class="row"><span class="k">验收</span><span class="v">抽查 6 处：面板标题 22/28、正文 15/21、辅助 12/17、按钮 13/500、圆角落在阶梯值、图标按钮热区 ≥ 44。手机端逐项点击可命中；文字不溢出、不截断；与 v114x 对比无一处「字号突然变大变小」。</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">04</span><h2>地物点形状规范</h2></div>
+    <p class="sec-note">形状承担语义，颜色只做辅助——这样色弱用户、夜间低对比、以及材质包换色时都不会丢失识别。四类图标共用同一套"玻璃核"画法：1.5px 白环 + 同色半透明核 + 左上内高光 + 右下压暗。</p>
+    <div class="shapes">
+      <div class="shape">
+        <svg width="56" height="56" viewBox="0 0 56 56" aria-label="学校图标">
+          <rect x="16" y="14" width="24" height="24" rx="6" fill="#2F6BFF" fill-opacity=".92"/>
+          <rect x="16" y="14" width="24" height="24" rx="6" fill="none" stroke="#fff" stroke-width="1.5" stroke-opacity=".9"/>
+          <path d="M21 22h14M21 27h14M21 32h9" stroke="#fff" stroke-width="1.4" stroke-opacity=".85"/>
+          <rect x="17" y="15" width="22" height="9" rx="5" fill="#fff" fill-opacity=".22"/>
+        </svg>
+        <div class="nm">学校</div><div class="ds">圆角方 + 书页</div><div class="hex">#2F6BFF / 夜 #7FA6FF</div>
+      </div>
+      <div class="shape">
+        <svg width="56" height="56" viewBox="0 0 56 56" aria-label="医院图标">
+          <rect x="16" y="14" width="24" height="24" rx="6" fill="#E5484D" fill-opacity=".92"/>
+          <rect x="16" y="14" width="24" height="24" rx="6" fill="none" stroke="#fff" stroke-width="1.5" stroke-opacity=".9"/>
+          <path d="M28 20v12M22 26h12" stroke="#fff" stroke-width="2.2"/>
+          <rect x="17" y="15" width="22" height="9" rx="5" fill="#fff" fill-opacity=".22"/>
+        </svg>
+        <div class="nm">医院</div><div class="ds">圆角方 + 十字</div><div class="hex">#E5484D / 夜 #FF8A8F</div>
+      </div>
+      <div class="shape">
+        <svg width="56" height="56" viewBox="0 0 56 56" aria-label="景点图标">
+          <g fill="#12A594" fill-opacity=".92">
+            <ellipse cx="28" cy="20" rx="6.2" ry="7.4"/>
+            <ellipse cx="28" cy="36" rx="6.2" ry="7.4"/>
+            <ellipse cx="20" cy="28" rx="7.4" ry="6.2"/>
+            <ellipse cx="36" cy="28" rx="7.4" ry="6.2"/>
+          </g>
+          <circle cx="28" cy="28" r="4.2" fill="#0F3D3A" fill-opacity=".35"/>
+          <circle cx="28" cy="28" r="11.6" fill="none" stroke="#fff" stroke-width="1.5" stroke-opacity=".9"/>
+          <ellipse cx="25" cy="19" rx="3" ry="2.2" fill="#fff" fill-opacity=".30"/>
+        </svg>
+        <div class="nm">景点</div><div class="ds">四瓣花（随包瓣形）</div><div class="hex">#12A594 / 夜 #59D6C8</div>
+      </div>
+      <div class="shape">
+        <svg width="56" height="56" viewBox="0 0 56 56" aria-label="道路图标">
+          <path d="M14 42 C22 30 30 30 42 16" stroke="#fff" stroke-width="6.5" stroke-opacity=".55" fill="none" stroke-linecap="round"/>
+          <path d="M14 42 C22 30 30 30 42 16" stroke="#D97706" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M14 41 C22 29 30 29 42 15" stroke="#fff" stroke-width="1.1" stroke-opacity=".55" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="nm">道路</div><div class="ds">双层线（白描边 + 主线）</div><div class="hex">#D97706 / 夜 #F5B14C</div>
+      </div>
+    </div>
+    <div class="param">渲染分级（避免手机端掉帧）
+  zoom ≥ 13 且该图层点数 ≤ 600   →  L.divIcon 内联 SVG（14×14 视口，aliased:false）
+  zoom &lt; 13 或开启聚合            →  .mc-bubble 玻璃胶囊（白 38% + blur 10 + 数字同色）
+  单图层点数 &gt; 600                →  回落 L.circleMarker（r 5.5，白环 1.5px，同色核）
+夜间：图标外加 1px 深色描边，核色提亮 12%，高光降低到 .18 防止「亮点糊成一片」</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">05</span><h2>iOS 型设计令牌</h2></div>
+    <p class="sec-note">只搬结构，不搬字形。Windows 上没有 SF Pro，字体栈会回退到苹方 / 微软雅黑 UI——字阶、行高、字重、圆角、间距、触控尺寸这些"比例关系"才是 iOS 观感的来源。</p>
+    <table class="tbl">
+      <tr><th>层级</th><th>字号 / 行高</th><th>字重</th><th>用在哪</th></tr>
+      <tr><td>Display</td><td>28 / 34</td><td>600</td><td>页面主标题、更新日志大标题</td></tr>
+      <tr><td>Title 1</td><td>22 / 28</td><td>600</td><td>面板标题（设置 / 图层管理 / 自建要素）</td></tr>
+      <tr><td>Title 2</td><td>17 / 22</td><td>600</td><td>卡片标题、POI 详情卡名称</td></tr>
+      <tr><td>Body</td><td>15 / 21</td><td>400</td><td>正文、说明段落、弹窗内容</td></tr>
+      <tr><td>Subhead</td><td>13 / 19</td><td>500</td><td>按钮文字、列表项名称、标签</td></tr>
+      <tr><td>Footnote</td><td>12 / 17</td><td>400</td><td>辅助说明、滑杆数值、字段标签</td></tr>
+      <tr><td>Caption</td><td>11 / 15</td><td>400</td><td>脚注、计数徽标、占位提示（letter-spacing .2px）</td></tr>
+    </table>
+    <div class="param">圆角阶梯   6 / 10 / 14 / 20 / 28      小控件 6 · 输入框 10 · 卡片 14 · 面板 20 · 弹层 28
+间距网格   4 / 8 / 12 / 16 / 24 / 32（8pt 基底）
+字重白名单 400 / 500 / 600（移除全部 700+，避免「粗体糊成一团」）
+文字语义色 label #0F1319 · secondaryLabel #48505E · tertiaryLabel #8E8E93
+            夜间 #F5F8FF / #C9D5F5 / #93A2C4
+语义强调色 blue #0A84FF · red #FF453A · green #30D158 · orange #FF9F0A
+动效曲线   cubic-bezier(.32, .72, 0, 1)   时长 .28–.42s   尊重 prefers-reduced-motion
+触控下限   44 × 44（图标视觉可保持 20–28px，热区靠 padding 补足）</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">06</span><h2>验收清单</h2></div>
+    <p class="sec-note">每一项都要有可回看的产物（截图或读数），不接受口头「好了」。</p>
+    <div class="chk">
+      <ol>
+        <li><b>玻璃四档</b>：1440 桌面滑杆 0 / 30 / 60 / 100 各一张，面板中心亮度与底图亮度差按 §3-1 阈值判定单调递增。</li>
+        <li><b>手机端同档</b>：390 宽滑杆 0 / 100 两张，面板不遮挡标题栏、不压左侧栏、不溢出屏幕。</li>
+        <li><b>恢复默认</b>：先做坏状态再重置，主滑杆 / 三条高级滑杆 / 材质包 / 饱和度 / 节律全部归位；刷新后一致；连点三次无跳变。</li>
+        <li><b>侧栏固定</b>：滑杆 0→100 前后截图逐像素比较，侧栏平均通道差 ≤ 2%。</li>
+        <li><b>边缘透光</b>：面板左上角放大图能看到亮边 + 斜向光带；正文对比度 ≥ 7:1。</li>
+        <li><b>地物点</b>：四类靠形状可辨；聚合气泡玻璃化；切换材质包与夜间各一张。</li>
+        <li><b>字体与触控</b>：抽查 6 处字阶；图标按钮热区 ≥ 44；无文字截断与溢出。</li>
+        <li><b>回归</b>：自建要素点/线/面绘制、编辑权限开关（整体 / 点 / 线 / 面）、GeoJSON 导入导出往返、删整类图层、列表三按钮图标——五项全部复测通过，不得因视觉改造回归。</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">07</span><h2>执行批次与风险</h2></div>
+    <p class="sec-note">每批独立可回滚，批内改完立刻双端截图，不攒到最后一起验。</p>
+    <table class="tbl">
+      <tr><th>批次</th><th>范围</th><th>动到的文件</th><th>批末验收</th></tr>
+      <tr><td>B1</td><td>玻璃锚点重定 + alpha 地板 + 密度系数 + 恢复默认收敛</td><td>main.js</td><td>清单 1 / 3</td></tr>
+      <tr><td>B2</td><td>四层边缘结构（Rim / Specular / Refraction / Frost）</td><td>style.css</td><td>清单 5</td></tr>
+      <tr><td>B3</td><td>侧栏固定令牌，断开 <code>--glass-*</code> 依赖</td><td>style.css</td><td>清单 4</td></tr>
+      <tr><td>B4</td><td>地物点 SVG 图标 + 玻璃胶囊聚合 + 分级回落</td><td>main.js / style.css</td><td>清单 6</td></tr>
+      <tr><td>B5</td><td>字体 / 字阶 / 圆角 / 间距 / 触控令牌全站替换</td><td>style.css（少量 main.js 内联）</td><td>清单 7</td></tr>
+      <tr><td>B6</td><td>版本号 <code>?v=114x</code> → <code>?v=115</code>、五项回归复测、推 GitHub</td><td>index.html</td><td>清单 2 / 8</td></tr>
+    </table>
+    <div class="param">红线（本版一律不动）
+  localStorage 键：cd_user_roads / cd_records_v1 / cd_theme / cd_glass / cd_glass72
+                  cd_adv_open / cd_fab_anchor77 / cd_basemap / cd_refract / cd_custom_features / cd_edit_geom
+  数据模型：{id, geometry, properties{name,kind,remark}, crs, ts}，坐标 GCJ-02，Polygon 三层闭合
+  交互逻辑：编辑权限状态机、GeoJSON 导入导出、删整类委托、模式互斥 APP_MODE
+
+风险与对策
+  改字体字阶可能挤爆窄面板 → 先改 1440，再用 390 复检每块面板的换行与省略
+  SVG 图标点位增多可能掉帧   → 先按 ≤600 阈值上线，手机端看 FPS 再决定是否全量回落
+  边缘伪元素可能与折射滤镜打架 → 扫光层放在最上层、pointer-events:none，折射只作用内层
+  用户已有自定义位置与设置     → 不改任何持久化键名与结构，仅在写默认值时清旧键</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">08</span><h2>需要你拍板的四件事</h2></div>
+    <p class="sec-note">这四个取值直接决定观感差异，我不替你定。回一句「A 选 2、B 选 1……」就行。</p>
+
+    <div class="q">
+      <p class="qt">A · 玻璃强度默认值定在哪一档？</p>
+      <p class="qd">影响「恢复默认」之后的初始观感，也影响首次打开页面的第一印象。</p>
+      <div class="opts">
+        <div class="opt"><b>1 · 50% 中等通透</b><span>与现有文案「默认中等通透」一致，面板清晰、底图若隐若现。<span class="rec">推荐</span></span></div>
+        <div class="opt"><b>2 · 35% 偏透</b><span>更接近 iOS 26 Liquid Glass 的观感，地图存在感更强，文字对比度略降。</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <p class="qt">B · 左侧图层管理固定成多"实"？</p>
+      <p class="qd">它是常驻导航，太透会和地图抢，太实会像一块白板。</p>
+      <div class="opts">
+        <div class="opt"><b>1 · 半透玻璃 52%</b><span>能透出一点底图，仍有玻璃感；夜间 86% 近实底保可读。<span class="rec">推荐</span></span></div>
+        <div class="opt"><b>2 · 近实底 78%</b><span>几乎不透明，最稳最清晰，但会削弱整站的玻璃语言。</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <p class="qt">C · 地物点用哪种方案？</p>
+      <p class="qd">这是本轮视觉改动最大的一块，也是回归风险最高的一块。</p>
+      <div class="opts">
+        <div class="opt"><b>1 · 形状语义化（学校方块 / 医院十字 / 景点花瓣 / 道路线）</b><span>识别最快、最像成品；改动大，需要按 §4 的分级回落控性能。<span class="rec">推荐</span></span></div>
+        <div class="opt"><b>2 · 统一圆形，只重做玻璃质感与配色</b><span>改动小、风险低，但四类仍主要靠颜色区分。</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <p class="qt">D · 字体要不要引入自托管近似字体？</p>
+      <p class="qd">Windows 上没有 SF Pro，纯系统栈会落到微软雅黑 UI。</p>
+      <div class="opts">
+        <div class="opt"><b>1 · 纯系统字体栈</b><span>零依赖、离线可用、加载最快；字形与 iOS 有差异，但比例与字重一致。<span class="rec">推荐</span></span></div>
+        <div class="opt"><b>2 · 自托管 Inter（约 40KB，两个 woff2）</b><span>更接近 SF Pro 的骨架，代价是首屏多一次字体加载与一个缓存键。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>v115 执行规划书 · 常德市城市公共服务 WebGIS · 佘磊 202412040132</span>
+    <span>依据：main.js 2143–2149 / 2443–2584、style.css 1718–1734 / 1819–1821，以及本轮显示设置实测截图</span>
+  </footer>
+
+</div>
+</body>
+</html>
