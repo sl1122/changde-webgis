@@ -118,12 +118,32 @@ body.theme-night .iw-card .iw-label { color: #94a3b8; }
     font-display: swap;
     src: url('fonts/inter-latin-600-normal.woff2') format('woff2');
 }
+/* v115b：中文才是主角。Inter 只覆盖拉丁字母，中文必须走自带字形，否则「换了字体」在满屏中文上完全看不出。
+   自托管 Noto Sans SC（简体常用字子集，400/600），字形比微软雅黑更方正、笔画更细，观感贴近苹方。 */
+@font-face {
+    font-family: 'Noto Sans SC';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('fonts/noto-sans-sc-chinese-simplified-400-normal.woff2') format('woff2');
+    unicode-range: U+3000-303F, U+4E00-9FFF, U+FF00-FFEF;
+}
+@font-face {
+    font-family: 'Noto Sans SC';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('fonts/noto-sans-sc-chinese-simplified-600-normal.woff2') format('woff2');
+    unicode-range: U+3000-303F, U+4E00-9FFF, U+FF00-FFEF;
+}
 html, body { height: 100%; }
 body {
-    font-family: "Inter", -apple-system, "SF Pro Text", "PingFang SC", "Microsoft Yahei", "Segoe UI", sans-serif;
+    font-family: "Inter", "Noto Sans SC", -apple-system, "SF Pro Text", "PingFang SC", "Microsoft Yahei", "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    letter-spacing: .012em;
+    font-feature-settings: "tnum" 1, "cv05" 1;
     background: var(--bg);
     color: var(--text);
     overflow: hidden;
@@ -274,8 +294,9 @@ html, body, button, a, input, select, label {
     box-shadow: 0 2px 8px rgba(142, 42, 82, .05), inset 0 1px 0 rgba(255, 255, 255, .6);
 }
 .panel-title {
-    font-size: 13px;
+    font-size: 14.5px;
     font-weight: 600;
+    letter-spacing: .2px;
     color: var(--plum);
     margin-bottom: 10px;
     padding-left: 8px;
@@ -507,9 +528,10 @@ body.theme-night .panel-close, body.theme-night .measure-close {
 
 /* 数据说明 */
 .note {
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--text-2);
     line-height: 1.7;
+    letter-spacing: .01em;
     margin-bottom: 6px;
 }
 
@@ -1935,7 +1957,7 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 .settings-panel.pop { animation: spring-pop .4s cubic-bezier(.34, 1.4, .64, 1); }
 .settings-title {
     display: flex; align-items: center; justify-content: space-between;
-    font-weight: 600; font-size: 14px; color: var(--accent, var(--plum));
+    font-weight: 600; font-size: 15px; color: var(--accent, var(--plum));
     padding-bottom: 9px; margin-bottom: 9px;
     border-bottom: 1px solid #f0dce4;
 }
