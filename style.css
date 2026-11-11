@@ -17,11 +17,16 @@
     --radius: 12px;
     --shadow: 0 4px 16px rgba(15, 23, 42, .08);
     /* 玻璃质感（设置面板可调，localStorage 持久化；在原配色基础上叠加：半透明+高光+内边框） */
-    --glass-blur: 14px;
-    --glass-alpha: .85;
+    --glass-blur: 8px;
+    --glass-alpha: .35;
     --glass-sat: 1.5;
-    --glass-shadow: 1;       /* glassliquid 阴影柔和度 0-1 */
-    --glass-sheen: .9;       /* glassliquid 边框高光强度 0-1 */
+    --glass-shadow: .42;       /* glassliquid 阴影柔和度 0-1 */
+    --glass-sheen: .93;        /* glassliquid 边框高光强度 0-1 */
+    --glass-edge: .94;         /* v115 边缘透光强度：薄段 .90 → 厚段 1.00 */
+    /* v115 侧栏固定令牌：左侧图层管理是常驻导航（承重墙），不跟随玻璃滑杆漂移 */
+    --sb-alpha: .26;
+    --sb-blur: 9px;
+    --sb-sheen: .78;
     /* v102 悬浮球「细胞形态 + 液态折射」动态参数（仅作用于折叠态悬浮球本体，桌面端生效） */
     --cell-breathe: 2.2s;    /* 细胞膜呼吸周期（≈0.45Hz 低频起伏） */
     --cell-drift: 12s;       /* 细胞核漂移周期（缓慢布朗运动） */
@@ -57,7 +62,7 @@ body.theme-night #map .settings-panel,
 body.theme-night #map .basemap-panel,
 body.theme-night #map .mark-panel,
 body.theme-night #map .legend-panel,
-body.theme-night .sidebar { background: rgba(19, 26, 48, calc(var(--glass-alpha) * .9)); color: var(--text); }
+body.theme-night .sidebar { background: rgba(19, 26, 48, .86); color: var(--text); }
 body.theme-night .settings-panel .settings-title { border-bottom-color: #26304d; }
 /* 夜间模式：修复功能栏文字看不清（按钮白底浅字→深底浅字，输入框/面板同步深色） */
 body.theme-night .panel { background: rgba(19, 26, 48, .66); border-color: #26304d; }
@@ -98,9 +103,27 @@ body.theme-night .iw-card .iw-label { color: #94a3b8; }
 .petal { transition: background .7s ease, border-radius .7s ease, box-shadow .7s ease; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* v115：自托管 Inter（只取拉丁子集，中文仍回落系统字体）——骨架更接近 SF Pro */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('fonts/inter-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('fonts/inter-latin-600-normal.woff2') format('woff2');
+}
 html, body { height: 100%; }
 body {
-    font-family: "Microsoft Yahei", "PingFang SC", -apple-system, sans-serif;
+    font-family: "Inter", -apple-system, "SF Pro Text", "PingFang SC", "Microsoft Yahei", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     background: var(--bg);
     color: var(--text);
     overflow: hidden;
@@ -243,15 +266,16 @@ html, body, button, a, input, select, label {
     transition: width .35s cubic-bezier(.4, 0, .2, 1), min-width .35s cubic-bezier(.4, 0, .2, 1), padding .35s cubic-bezier(.4, 0, .2, 1), opacity .22s ease;
 }
 .panel {
-    background: rgba(255, 255, 255, .55);
-    border: 1px solid rgba(240, 220, 228, .8);
+    /* v115：卡片不再用 55% 白把侧栏「垫实」，改为 32% 薄片——与侧栏 30% 底叠加后约 52%，地图透得出来 */
+    background: rgba(255, 255, 255, .32);
+    border: 1px solid rgba(255, 255, 255, .55);
     border-radius: var(--radius);
     padding: 12px;
     box-shadow: 0 2px 8px rgba(142, 42, 82, .05), inset 0 1px 0 rgba(255, 255, 255, .6);
 }
 .panel-title {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--plum);
     margin-bottom: 10px;
     padding-left: 8px;
@@ -365,7 +389,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     content: '✓';
     color: #fff;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
 }
 .layer-name { flex: 1; }
@@ -1052,7 +1076,7 @@ body.theme-night .measure-result {
 }
 .legend-title {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--plum);
     margin-bottom: 8px;
     padding-left: 8px;
@@ -1103,7 +1127,7 @@ body.theme-night .measure-result {
     background: var(--blue);
     color: #fff;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1123,7 +1147,7 @@ body.theme-night .measure-result {
 }
 .iw-card .iw-title {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     color: #1e293b;
     margin-bottom: 8px;
     padding-bottom: 6px;
@@ -1591,7 +1615,7 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
 .leaflet-popup-content { margin: 10px 12px; line-height: 1.5; }
 .pw-box { font-size: 13px; color: var(--text); min-width: 180px; }
 .pw-t {
-    font-weight: 700; font-size: 14px; color: var(--plum);
+    font-weight: 600; font-size: 14px; color: var(--plum);
     padding: 2px 0 7px 9px; margin-bottom: 6px;
     border-left: 3px solid var(--rose); line-height: 1.4;
 }
@@ -1618,7 +1642,7 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
 
 /* 我的道路点库（打点管理） */
 .mark-sec { margin-top: 10px; border-top: 1px solid #f0dce4; padding-top: 9px; }
-.mark-sec-title { font-weight: 700; font-size: 13px; color: var(--plum); margin-bottom: 4px; }
+.mark-sec-title { font-weight: 600; font-size: 13px; color: var(--plum); margin-bottom: 4px; }
 .mark-sec-note { font-size: 11px; color: var(--text-2); line-height: 1.5; margin-bottom: 7px; }
 .mark-list { max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
 .mark-item {
@@ -1661,20 +1685,26 @@ body.theme-night .cf-layer-item .cf-layer-del { color: rgba(255, 255, 255, .55);
 
 /* 聚合气泡：图层分类色（蓝/红/绿，与图例一致），小尺寸半透明减少遮挡；颜色走 CSS 变量，随材质包/夜间联动 */
 .mc-wrap { background: transparent; border: none; }
+/* v115 玻璃胶囊：白环 + 同色核 + 顶部内高光 + 底部压暗，与点位 SVG 同一套光学语言 */
 .mc-bubble {
     border-radius: 50%;
     color: #fff;
-    font-weight: 700;
+    font-weight: 600;
     text-align: center;
-    border: 2px solid rgba(255, 255, 255, .9);
+    border: 1.8px solid rgba(255, 255, 255, .92);
+    background-image: linear-gradient(160deg,
+        rgba(255, 255, 255, .34) 0%,
+        rgba(255, 255, 255, .06) 46%,
+        rgba(0, 0, 0, .08) 100%);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .45),
-        0 3px 10px rgba(15, 23, 42, .28);
+        inset 0 1px 0 rgba(255, 255, 255, .55),
+        inset 0 -3px 7px rgba(0, 0, 0, .10),
+        0 3px 12px rgba(15, 23, 42, .30);
     transition: background-color .5s ease;
 }
-.mc-bubble.mc-school { background: var(--school); }
-.mc-bubble.mc-hospital { background: var(--hospital); }
-.mc-bubble.mc-scenic { background: var(--scenic); }
+.mc-bubble.mc-school { background-color: var(--school); }
+.mc-bubble.mc-hospital { background-color: var(--hospital); }
+.mc-bubble.mc-scenic { background-color: var(--scenic); }
 /* POI 圆点图标：颜色走 CSS 变量，随材质包/夜间联动 */
 .poi-icon.poi-school { background: var(--school); }
 .poi-icon.poi-hospital { background: var(--hospital); }
@@ -1714,23 +1744,27 @@ body.theme-night .cf-layer-item .cf-layer-del { color: rgba(255, 255, 255, .55);
     outline: 2px solid var(--rose); outline-offset: 1px;
 }
 
-/* 侧边栏 / 悬浮控件玻璃化（Apple Liquid Glass 风格，可调）；v107 背景子属性化（规避简写+过渡冻结） */
+/* 侧边栏 / 悬浮控件玻璃化（Apple Liquid Glass 风格，可调）；v107 背景子属性化（规避简写+过渡冻结）
+   v115：左侧图层管理改为「固定令牌」——它是常驻导航（承重墙），不跟随玻璃滑杆漂移 */
 .sidebar {
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .98));
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    background-color: rgba(255, 255, 255, var(--sb-alpha));
+    backdrop-filter: blur(var(--sb-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--sb-blur)) saturate(var(--glass-sat));
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .75),
-        inset -1px 0 0 rgba(255, 255, 255, .45),
+        inset 0 1px 0 rgba(255, 255, 255, calc(.82 * var(--sb-sheen))),
+        inset 1px 0 0 rgba(255, 255, 255, calc(.5 * var(--sb-sheen))),
+        inset -1px -1px 0 rgba(10, 32, 64, .08),
+        0 0 0 .5px rgba(10, 32, 64, .08),
         2px 0 18px rgba(124, 36, 80, .10);
 }
 /* ===== 全 UI 液态玻璃统一层（参考 glasskit：磨砂基底 + 顶部内高光 + 细描边 + 柔和外阴影，参数全由全局变量管控） ===== */
 #map .panel, #map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel,
 #map .measure-result, #map .map-toast, .scale, .cl-card, .toolbar button::before {
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, calc(.7 * var(--glass-sheen))),
-        0 4px 24px rgba(15, 23, 42, calc(.12 * var(--glass-shadow))),
-        0 0 0 .5px rgba(255, 255, 255, .45);
+        inset 1px 1px 0 rgba(255, 255, 255, calc(.80 * var(--glass-sheen) * var(--glass-edge))),
+        inset -1px -1px 0 rgba(10, 32, 64, calc(.12 * var(--glass-shadow))),
+        0 0 0 .5px rgba(10, 32, 64, calc(.10 * var(--glass-edge))),
+        0 6px 28px rgba(15, 23, 42, calc(.14 * var(--glass-shadow)));
 }
 .set-note { font-size: 11px; color: var(--text-2); line-height: 1.5; margin-top: 4px; padding-left: 2px; }
 /* 高级设置折叠区：默认收起（max-height 0），展开时平滑淡入 + 高度过渡 */
@@ -1810,16 +1844,18 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 #map .basemap-panel, #map .mark-panel {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    /* v115 四层边缘：受光边（左上）→ 背光边（右下）→ 外圈冷折射暗边 → 柔投影 */
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .8),
-        inset 0 0 0 .5px rgba(255, 255, 255, .6),
-        0 10px 32px rgba(15, 23, 42, .16);
+        inset 1px 1px 0 rgba(255, 255, 255, calc(.80 * var(--glass-sheen) * var(--glass-edge))),
+        inset -1px -1px 0 rgba(10, 32, 64, calc(.12 * var(--glass-shadow))),
+        0 0 0 .5px rgba(10, 32, 64, calc(.10 * var(--glass-edge))),
+        0 6px 28px rgba(15, 23, 42, calc(.14 * var(--glass-shadow)));
     transition: backdrop-filter .35s ease, background-color .35s ease;
 }
 #map .legend-panel { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .97)); }
 #map .measure-result { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94)); }
 #map .map-toast { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .95)); }
-/* v110：液态高光层——顶部柔和白光渐变，随 --glass-sheen 强度变化，制造玻璃边缘光感 */
+/* v115：面板裁边（扫光带落在面板内） + 镜面扫光——22° 斜向亮带，强度随 --glass-sheen / --glass-edge 联动 */
 #map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel, #map .measure-result, #map .map-toast {
     overflow: hidden;
 }
@@ -1827,12 +1863,15 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 #map .legend-panel::before, #map .measure-result::before, #map .map-toast::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 50%;
-    background: linear-gradient(180deg,
-        rgba(255, 255, 255, calc(.35 * var(--glass-sheen))) 0%,
-        rgba(255, 255, 255, calc(.12 * var(--glass-sheen))) 50%,
-        transparent 100%);
+    top: -25%;
+    left: -12%;
+    right: -12%;
+    height: 150%;
+    background: linear-gradient(158deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, calc(.05 * var(--glass-sheen) * var(--glass-edge))) 34%,
+        rgba(255, 255, 255, calc(.14 * var(--glass-sheen) * var(--glass-edge))) 47%,
+        rgba(255, 255, 255, 0) 63%);
     pointer-events: none;
     border-radius: inherit;
 }
@@ -1896,7 +1935,7 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 .settings-panel.pop { animation: spring-pop .4s cubic-bezier(.34, 1.4, .64, 1); }
 .settings-title {
     display: flex; align-items: center; justify-content: space-between;
-    font-weight: 700; font-size: 14px; color: var(--accent, var(--plum));
+    font-weight: 600; font-size: 14px; color: var(--accent, var(--plum));
     padding-bottom: 9px; margin-bottom: 9px;
     border-bottom: 1px solid #f0dce4;
 }
@@ -2004,7 +2043,7 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     background: var(--header-grad);
     color: #fff;
 }
-.cl-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; letter-spacing: .5px; }
+.cl-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; letter-spacing: .5px; }
 .cl-logo { color: var(--logo-color, #fff); }
 .cl-close {
     width: 30px; height: 30px;
@@ -2036,14 +2075,14 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     flex-shrink: 0;
     min-width: 46px;
     text-align: center;
-    font-size: 11px; font-weight: 800;
+    font-size: 11px; font-weight: 600;
     padding: 4px 6px; border-radius: 999px;
     background: var(--accent, var(--plum));
     color: #fff;
     box-shadow: 0 2px 8px rgba(142, 42, 82, .22);
 }
 .cl-body { flex: 1; min-width: 0; }
-.cl-row-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.cl-row-title { font-size: 13px; font-weight: 600; color: var(--text); }
 .cl-row-points { font-size: 12px; color: var(--text-2); line-height: 1.65; margin-top: 2px; }
 .cl-foot {
     padding: 9px 18px;
@@ -2168,23 +2207,25 @@ body.theme-night #map .mark-panel .mark-tools .mark-btn.danger { color: #ff9c9c 
 .mark-dot {
     width: 20px; height: 20px; border-radius: 50%;
     background: linear-gradient(135deg, #2563eb, #60a5fa);
-    color: #fff; font-size: 10px; font-weight: 700;
+    color: #fff; font-size: 10px; font-weight: 600;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 0 0 2px rgba(255,255,255,.95), 0 2px 6px rgba(15,23,42,.35);
 }
 
-/* 点位图标重构：类别彩色圆底 + 白色符号 */
-.poi-icon-wrap { background: transparent; border: none; }
-.poi-icon {
-    width: 18px; height: 18px; border-radius: 50%;
+/* v115 点位图标：形状语义化（方块书页 / 方块十字 / 四瓣花），SVG 内白环 + 同色核 */
+.poi-node-wrap { background: transparent; border: none; }
+.poi-node {
+    width: 20px; height: 20px;
     display: flex; align-items: center; justify-content: center;
-    color: #fff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, .92), 0 1px 5px rgba(15, 23, 42, .3);
     cursor: pointer;
-    transition: transform .12s ease;
+    filter: drop-shadow(0 1px 2.5px rgba(15, 23, 42, .32));
+    transition: transform .18s cubic-bezier(.32, .72, 0, 1), filter .18s ease;
 }
-.poi-icon:hover { transform: scale(1.22); }
-.poi-icon svg { width: 10px; height: 10px; display: block; }
+.poi-node:hover { transform: scale(1.16); filter: drop-shadow(0 2px 6px rgba(15, 23, 42, .38)); }
+.poi-node svg { display: block; }
+/* 夜间：外圈加深色描边保证与暗底分离，核色由 material 主题变量替换 */
+body.theme-night .poi-node { filter: drop-shadow(0 0 1px rgba(4, 8, 20, .95)) drop-shadow(0 2px 5px rgba(0, 0, 0, .55)); }
+body.theme-night .poi-node svg g[stroke="#fff"] { stroke: rgba(233, 238, 255, .92); }
 
 /* 点位名称悬停提示（玻璃质感小气泡） */
 .poi-tip {
@@ -2368,7 +2409,7 @@ body.theme-night #fab:not(.fab-open) {
 .rp-head {
     display: flex; justify-content: space-between; align-items: center;
     gap: 8px; margin-bottom: 9px;
-    font-size: 13px; font-weight: 700; color: var(--text);
+    font-size: 13px; font-weight: 600; color: var(--text);
 }
 .rp-actions { display: flex; gap: 5px; align-items: center; }
 .rp-actions button, .rp-close {
@@ -2416,7 +2457,7 @@ body.theme-night #fab:not(.fab-open) {
     flex-shrink: 0; width: 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    font-size: 11px; font-weight: 700; color: #fff;
+    font-size: 11px; font-weight: 600; color: #fff;
 }
 .rp-type.dist { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 .rp-type.area { background: linear-gradient(135deg, #10b981, #059669); }
@@ -2842,7 +2883,7 @@ body.theme-night .leaflet-tooltip-right::before { border-right-color: rgba(15, 2
     padding: 2px 8px; color: #3b2b33;
 }
 .cf-tag::before { display: none; }
-.cf-tip-name { font-size: 11.5px; font-weight: 700; }
+.cf-tip-name { font-size: 11.5px; font-weight: 600; }
 .cf-tip-meta { font-size: 10px; color: #8a7a83; margin-left: 4px; }
 
 /* 顶点手柄：白芯粉边小圆点，44pt 触控热区由 20px 视觉 + padding 提供 */
@@ -2856,7 +2897,7 @@ body.theme-night .leaflet-tooltip-right::before { border-right-color: rgba(15, 2
 
 /* 图层清单动态分组：与基础四行同排布，仅加一条虚线分隔 */
 .cf-layer-box { margin-top: 8px; border-top: 1px dashed #f0dce4; padding-top: 7px; }
-.cf-layer-head { font-size: 11px; font-weight: 700; color: var(--text-2); letter-spacing: .4px; margin: 0 0 4px 2px; }
+.cf-layer-head { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: .4px; margin: 0 0 4px 2px; }
 .cf-layer-item .dot { box-shadow: 0 0 0 2px rgba(255, 255, 255, .9); }
 
 /* 夜间：仅补子元素配色，面板底色继续由 body.theme-night #map .mark-panel 统一控制 */
@@ -2929,7 +2970,17 @@ body.theme-night #map .cf-card { background: rgba(28, 30, 40, .93); }
    修法：不再依赖伪元素尺寸，直接对瓦片层做颜色矩阵滤镜（GPU 合成，纯视觉、不改任何元素结构），
    !important 覆盖此前 body.theme-night .leaflet-tile-pane{filter:none} 的写法。 */
 body.theme-night .leaflet-tile-pane {
-    filter: brightness(.46) saturate(.55) contrast(1.12) !important;
+    filter: none !important;
+}
+/* v115 夜间暗化根修（三）：tile-pane、map-pane、tile-container 实测全为 0×0，filter 与伪元素都落在 0 面积上。
+   改在瓦片 img 上做两次衰减：①亮度/饱和滤镜 ②半透明 + 容器深底混色（processor 不支持滤镜时也能暗）。 */
+body.theme-night .leaflet-container {
+    background: #0c1124 !important;
+}
+body.theme-night .leaflet-tile {
+    filter: brightness(.72) saturate(.70) contrast(1.06);
+    /* Leaflet 用内联 style.opacity 做淡入（实测会停在 0.47x），这里 !important 压住内联，保证夜间亮度稳定 */
+    opacity: .58 !important;
 }
 /* 白天材质包的淡色叠加同样受 0×0 影响，这里不再依赖伪元素，改用极轻的滤镜避免“材质包只换 UI 不换地图” */
 body.refraction:not(.theme-night) .leaflet-tile-pane {

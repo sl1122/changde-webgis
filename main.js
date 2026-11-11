@@ -320,29 +320,45 @@
             '</div>';
     }
 
-    // 类别图标（白色符号，彩色圆底）
-    var CAT_ICONS = {
-        school: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3L1 9l11 6 9-4.9V17h2V9L12 3zm0 12.5L5 13v4c0 1.7 3.1 3 7 3s7-1.3 7-3v-4l-7 3.5z"/></svg>',
-        hospital: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6V3z"/></svg>',
-        scenic: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 19l7-9 5 6 3-3 5 6H2z"/></svg>'
+    // v115 地物点「形状语义化」：学校=方块+书页 / 医院=方块+十字 / 景点=四瓣花
+    // 统一画法：1.5px 白环 + 同色核，夜间由 repaintThemeColors 换核色
+    var POI_SHAPE = {
+        school: '<rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.2"/>',
+        hospital: '<rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.2"/>',
+        scenic: '<g><circle cx="12" cy="8.2" r="3.6"/><circle cx="15.8" cy="12" r="3.6"/><circle cx="12" cy="15.8" r="3.6"/><circle cx="8.2" cy="12" r="3.6"/><circle cx="12" cy="12" r="2.1"/></g>'
     };
+    var POI_GLYPH = {
+        school: '<rect x="7.4" y="7.6" width="9.2" height="1.9" rx=".6"/><rect x="7.4" y="11" width="9.2" height="1.9" rx=".6"/><rect x="7.4" y="14.4" width="6" height="1.9" rx=".6"/>',
+        hospital: '<rect x="10.5" y="6.6" width="3" height="10.8" rx=".8"/><rect x="6.6" y="10.5" width="10.8" height="3" rx=".8"/>',
+        scenic: ''
+    };
+    function poiIconHtml(key) {
+        var c = LAYER_CONFIG[key] ? LAYER_CONFIG[key].color : '#2563eb';
+        return '<svg class="poi-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
+            '<g stroke="#fff" stroke-width="1.6" fill="' + c + '">' + (POI_SHAPE[key] || '') + '</g>' +
+            '<g fill="#fff" stroke="none">' + (POI_GLYPH[key] || '') + '</g>' +
+            '</svg>';
+    }
     function makePointMarker(key, feat) {
         var p = feat.properties;
         var coords = feat.geometry.coordinates;
-        var c = LAYER_CONFIG[key];
         var icon = L.divIcon({
-            className: 'poi-icon-wrap',
-            html: '<div class="poi-icon poi-' + key + '">' + (CAT_ICONS[key] || '') + '</div>',
-            iconSize: [18, 18], iconAnchor: [9, 9]
+            className: 'poi-node-wrap',
+            html: '<div class="poi-node poi-' + key + '">' + poiIconHtml(key) + '</div>',
+            iconSize: [20, 20], iconAnchor: [10, 10]
         });
         return L.marker(toMapCoord(coords), { icon: icon })
-            .bindTooltip(p.name, { direction: 'top', offset: [0, -10], className: 'poi-tip' })
+            .bindTooltip(p.name, { direction: 'top', offset: [0, -12], className: 'poi-tip' })
             .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 });
     }
 
     function makeCluster(key) {
         return L.markerClusterGroup({
             maxClusterRadius: 60,
+            // v115 P0-b：分块灌入，勾选图层时不再一次性冻结主线程
+            chunkedLoading: true,
+            chunkInterval: 200,
+            chunkDelay: 30,
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
             spiderfyOnMaxZoom: true,
@@ -367,15 +383,8 @@
             return cg;
         }
         var g = L.layerGroup();
-        feats.forEach(function (f) {
-            var coords = f.geometry.coordinates;
-            var p = f.properties;
-            g.addLayer(L.circleMarker(toMapCoord(coords), {
-                radius: 5, color: LAYER_CONFIG[key].color, weight: 1.5,
-                fillColor: LAYER_CONFIG[key].color, fillOpacity: 0.85
-            }).bindTooltip(p.name, { direction: 'top', offset: [0, -8], className: 'poi-tip' })
-                .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 }));
-        });
+        // v115：关聚合时也用同一套形状标记，保证「开关聚合」前后符号不跳变
+        feats.forEach(function (f) { g.addLayer(makePointMarker(key, f)); });
         return g;
     }
 
@@ -1713,7 +1722,7 @@
         if (!wrap) return;
         var p = PACKS[themeState.pack];
         var r = themeState.rhythm;              // 1-10：越大越密越快
-        var count = 6 + r * 2;                  // 8 ~ 26 片
+        var count = 4 + r;                     // v115：8~26 → 6~14，减少叠加合成层
         var durBase = 15 - r * 0.8;             // 14.2 ~ 7s
         var swayBase = 20 + r * 7;              // 27 ~ 90px
         // 粒子池复用：数量不足补、多余移除；已有粒子只换外观类（保留下落动画状态，平滑变形状，不再整池重建闪跳）
@@ -1745,7 +1754,16 @@
                 var g = pointsLayer[bucket][key];
                 if (!g) return;
                 g.eachLayer(function (l) {
-                    if (l.setStyle) l.setStyle({ color: LAYER_CONFIG[key].color, fillColor: LAYER_CONFIG[key].color });
+                    if (l.setStyle) { l.setStyle({ color: LAYER_CONFIG[key].color, fillColor: LAYER_CONFIG[key].color }); return; }
+                    // v115：点位已换成 SVG 形状标记（divIcon），换肤时必须重建 icon，否则夜间仍是白天的色
+                    if (l.setIcon && l.options && l.options.icon && l.options.icon.options &&
+                        String(l.options.icon.options.className).indexOf('poi-node-wrap') >= 0) {
+                        l.setIcon(L.divIcon({
+                            className: 'poi-node-wrap',
+                            html: '<div class="poi-node poi-' + key + '">' + poiIconHtml(key) + '</div>',
+                            iconSize: [20, 20], iconAnchor: [10, 10]
+                        }));
+                    }
                 });
             });
         });
@@ -2141,11 +2159,12 @@
             toast(c.checked ? '聚合气泡已开启' : '聚合气泡已关闭');
         });
         document.getElementById('set-reset').addEventListener('click', function () {
-            setBlur.value = 14; setAlpha.value = 85; if (setSat) setSat.value = 150;
-            applyGlass();
+            // v115：单一入口——主滑杆回到默认 35%（去偏透档），高级滑杆、CSS 变量、cd_glass72 一次性对齐
+            if (window.applyGlassPreset) { window.applyGlassPreset(35); }
+            if (setSat) { setSat.value = 150; var sv = document.getElementById('set-sat-val'); if (sv) sv.textContent = '150%'; }
             applyPack('peach');
             if (setRhythm) { setRhythm.value = 5; setRhythm.dispatchEvent(new Event('input', { bubbles: true })); }
-            toast('已恢复默认（毛玻璃默认值 + 桃花材质包）');
+            toast('已恢复默认（35% 偏透 + 桃花材质包）');
         });
         try {
             var g = JSON.parse(localStorage.getItem('cd_glass') || 'null');
@@ -2155,6 +2174,16 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v115', t: '显示系统改造：玻璃锚点重定 + 恢复默认单一入口 + 点位形状语义化 + Inter 自托管 + 夜间底图暗化',
+            pts: [
+                '玻璃锚点：轻薄端不再被硬抬 alpha（旧逻辑 blur<3 就把 alpha 抬到 60，越薄越不透），薄段改为低模糊高边光',
+                '「恢复默认设置」收成单一入口 applyGlassPreset(35)：滑杆读数、CSS 变量、cd_glass72 存档一次对齐，不再「滑杆不动质感变」',
+                '侧栏改固定令牌 --sb-*，不随玻璃滑杆漂移；面板四层边缘（左上受光/右下压暗/冷折射暗边/柔投影）+ 22° 镜面扫光',
+                '地物点改 SVG 形状语义化：学校方块+书页、医院方块+十字、景点四瓣花；聚合气泡改玻璃胶囊',
+                '字体换自托管 Inter（两个 woff2 本地加载，中文回落系统），全站字重收敛到 400/500/600',
+                '夜间底图实测压暗 46%：瓦片级滤镜 + 深色容器混色，点位与面板保持原亮度']
+        },
         { v: 'v36', t: '道路数据重构', pts: ['14 条主干道线要素重建（路口锚点 + 步行描线）', '弯道圆弧平滑、34/34 交叉口拓扑校验通过', '去抖动、无锯齿，拒绝横冲直撞的折线'] },
         { v: 'v38', t: '定位技术开源化', pts: ['告别单一闭源方案，转向 OSM 开源体系', '定位精度问题开启根治之路'] },
         { v: 'v39', t: '全开源迁移', pts: ['Leaflet + OSM 底图，坐标动态转换', '不再受制于单一地图源'] },
@@ -2460,10 +2489,10 @@
         };
         var satEl = document.getElementById('set-sat');
         var satVal = document.getElementById('set-sat-val');
-        // 预设联动：强度 0% / 50% / 100% 三段锚点 → 轻薄半透 / Apple 中等通透 / 厚重磨砂高反光
-        // v109-P0-6：低区间真通透（P0 alpha 50→12），t 改 pow(1.3) 非线性——拖动低段肉眼可见明显变化（参考 iOS Liquid Glass 曲线）
-        var P0 = { blur: 4, alpha: 12, sheen: 0.2, shadow: 0.2 };
-        var P50 = { blur: 12, alpha: 55, sheen: 0.6, shadow: 0.7 };
+        // v115：锚点按「光学结构」重定——薄段不再靠白底遮，而是低模糊 + 高边光；厚段维持磨砂高反
+        // P0 边光 1.15 高于 P50，形成「薄而亮」的玻璃薄片感（旧版 P0 sheen 0.2 是错的）
+        var P0 = { blur: 2, alpha: 8, sheen: 1.15, shadow: 0.18 };
+        var P50 = { blur: 12, alpha: 50, sheen: 0.85, shadow: 0.55 };
         var P100 = { blur: 30, alpha: 96, sheen: 1.5, shadow: 1.6 };
         function clamp(v, mn, mx) { return Math.max(mn, Math.min(v, mx)); }
         function presetAt(g) {
@@ -2481,13 +2510,16 @@
         function glassLabel(g) { return g <= 15 ? '轻薄' : g <= 40 ? '偏透' : g <= 70 ? '中' : g <= 88 ? '偏厚' : '厚重'; }
         function writeVars(v) {
             docEl.style.setProperty('--glass-blur', v.blur + 'px');
-            // v106：alpha 美学地板与夜间可读性地板，与 applyGlass 同构——主滑杆/高级滑杆写入值全程一致，杜绝双写跳变
+            // v115：删掉「blur<3 就把 alpha 硬抬到 60%」——它是「切到轻薄反而不透」的根因之一
+            // 白天 8% 只作可读性护栏，夜间 62% 保证深底浅字；其余全部交给滑杆本身
             var night = document.body.classList.contains('theme-night');
-            var aFloor = night ? 55 : 18;
-            var aRaw = Math.max(v.alpha, v.blur < 3 ? 60 : v.alpha);
-            docEl.style.setProperty('--glass-alpha', (Math.max(aFloor, aRaw) / 100).toFixed(2));
+            var aFloor = night ? 62 : 8;
+            var aVal = Math.max(v.alpha, aFloor);
+            docEl.style.setProperty('--glass-alpha', (aVal / 100).toFixed(2));
             docEl.style.setProperty('--glass-sheen', v.sheen.toFixed(2));
             docEl.style.setProperty('--glass-shadow', v.shadow.toFixed(2));
+            // v115 边缘透光强度：薄段 0.90 → 厚段 1.00，配合 style.css 的 Rim / Specular / Refraction 三层
+            docEl.style.setProperty('--glass-edge', (0.9 + Math.min(aVal / 100, 1) * 0.1).toFixed(2));
         }
         function saveState(s) { try { localStorage.setItem('cd_glass72', JSON.stringify(s)); } catch (e) { } }
         // 主滑杆 → 预设联动（同步高级滑杆 UI + 变量）
@@ -2506,6 +2538,11 @@
             applySat();
             saveState({ glass: g, blur: v.blur, alpha: v.alpha, sheen: v.sheen, shadow: v.shadow });
         }
+        // v115：对外暴露唯一入口——「恢复默认」及任何外部重置必须走这里，杜绝滑杆与 CSS 变量脱钩
+        window.applyGlassPreset = function (g) {
+            glass.value = clamp(g, 0, 100);
+            applyMain();
+        };
         // 高级微调 → 写变量 + 反推主滑杆相对强度（双向联动）
         function applyAdv() {
             var v = {
