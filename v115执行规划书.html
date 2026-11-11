@@ -46,6 +46,7 @@ section{margin-top:52px}
 .tbl th{text-align:left;font-weight:600;font-size:12px;letter-spacing:.04em;color:var(--ink3);padding:12px 14px;background:#FAFBFC;border-bottom:1px solid var(--line)}
 .tbl td{padding:12px 14px;border-bottom:1px solid var(--line2);vertical-align:top;color:var(--ink2)}
 .tbl td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+.tbl th:first-child{white-space:nowrap}
 .tbl tr:last-child td{border-bottom:none}
 .tbl code{font-family:var(--mono);font-size:12px;background:#F2F4F8;padding:2px 5px;border-radius:4px;color:var(--ink)}
 .tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:.02em}
@@ -91,7 +92,7 @@ section{margin-top:52px}
 .opt{border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#FBFCFD}
 .opt b{display:block;font-size:13px;color:var(--ink);font-weight:600}
 .opt span{font-size:12.2px;color:var(--ink3);line-height:1.5}
-.opt .rec{font-size:10.5px;font-weight:600;color:var(--teal);letter-spacing:.03em}
+.opt .rec{font-size:10.5px;font-weight:600;color:var(--teal);letter-spacing:.03em;white-space:nowrap}
 /* ---------- footer ---------- */
 footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (max-width:760px){
@@ -103,8 +104,10 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);font-si
   .shapes{grid-template-columns:1fr 1fr}
   .row{grid-template-columns:1fr;gap:3px}
   .row .k{padding-top:0}
-  .tbl{font-size:12.5px}
-  .tbl th,.tbl td{padding:9px 10px}
+  .tbl{font-size:12px}
+  .tbl th,.tbl td{padding:9px 8px}
+  .tbl th:first-child,.tbl td:first-child{width:auto;white-space:nowrap;padding-right:6px}
+  .param{white-space:pre-wrap;word-break:break-word;font-size:11.5px;line-height:1.7;padding:9px 10px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -118,13 +121,14 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);font-si
   </div>
 
   <h1>显示系统改造：<br>从「调了参数」到「调出光学」</h1>
-  <p class="sub">六项需求合并成一次结构性重构：玻璃从「白底加模糊」改成有受光面、有折射边、有密度分级的材质体系；地物点从「四色圆点」改成形状即语义的图标语言；全局字体与控件尺寸对齐 iOS 的字阶与 44pt 触控标准。其中「恢复默认」是代码层面的真 bug，不是观感问题。</p>
+  <p class="sub">六项视觉改造合并成一次结构性重构：玻璃从「白底加模糊」改成有受光面、有折射边、有密度分级的材质体系；地物点从「四色圆点」改成形状即语义的图标语言；全局字体与控件尺寸对齐 iOS 的字阶与 44pt 触控标准。再单独用一节处理全局流畅性——现状是 558 个点位走 SVG、47 处 backdrop-filter、两处 SVG 位移滤镜同时参与合成，"越做越好看、越拖越卡"是必须先拆掉的隐患。其中「恢复默认」是代码层面的真 bug，不是观感问题。</p>
 
   <div class="meta">
     <span class="chip">影响文件 <b>3</b> · main.js / style.css / index.html</span>
     <span class="chip">真 bug <b>1</b></span>
-    <span class="chip">设计重构 <b>5</b></span>
-    <span class="chip">执行批次 <b>6</b></span>
+    <span class="chip">视觉改造 <b>6</b></span>
+    <span class="chip">性能专项 <b>1</b></span>
+    <span class="chip">执行批次 <b>7</b></span>
     <span class="chip">验收端 <b>1440 / 390 / 夜间</b></span>
   </div>
 
@@ -415,21 +419,81 @@ P100  blur 32  alpha 94  sheen 1.60  shadow 1.70
         <li><b>地物点</b>：四类靠形状可辨；聚合气泡玻璃化；切换材质包与夜间各一张。</li>
         <li><b>字体与触控</b>：抽查 6 处字阶；图标按钮热区 ≥ 44；无文字截断与溢出。</li>
         <li><b>回归</b>：自建要素点/线/面绘制、编辑权限开关（整体 / 点 / 线 / 面）、GeoJSON 导入导出往返、删整类图层、列表三按钮图标——五项全部复测通过，不得因视觉改造回归。</li>
+        <li><b>性能基线（B0 存证）</b>：改代码前先量一次，落成一张表：首屏 DOMContentLoaded、558 点灌入耗时、拖动 2 s 平均 FPS（1440 / 390）、30 次缩放后 JSHeapUsedSize。没有这张表，后面的"变快了"无法证明。</li>
+        <li><b>流畅度（B6 复测）</b>：同一台机器、同一网络、同一组操作重跑，逐项对照 §7 指标——1440 平均 FPS ≥ 50、390 ≥ 40，灌入 ≤ 350 ms，换肤 P95 ≤ 32 ms，内存增长 ≤ 15%，静置 CPU ≤ 3%；并确认 <code>preferCanvas</code> 后点击、悬停、气泡、编辑手柄全部照常可用。</li>
       </ol>
     </div>
   </section>
 
   <section>
-    <div class="sec-head"><span class="sec-no">07</span><h2>执行批次与风险</h2></div>
+    <div class="sec-head"><span class="sec-no">07</span><h2>全局流畅性：先拆合成层，再谈视觉</h2></div>
+    <p class="sec-note">视觉改造会把玻璃做得更"厚"——更多高光、更多模糊、更多边光。这些恰好都是最贵的合成操作。如果不先把性能地板抬起来，v115 上线后就是"截图很好看、手指一拖就卡"。这一节独立于视觉方案，可单独执行、单独回滚。</p>
+
+    <div class="param">现状画像（实测代码，不是估算）
+  数据     4 个 geojson 共 235 KB；点 558 个（学校 229 / 医院 204 / 景点 125）+ 道路 15 条
+  渲染栈   Leaflet SVG 渲染（未开 preferCanvas），markerCluster maxClusterRadius 60 / 18 级拆散
+  样式栈   47 处 backdrop-filter · 4 处 SVG url() 滤镜 · 22 个 animation · 68 条 transition
+           11 处 drop-shadow · 6 处 will-change
+  结论     瓶颈不在数据量（235 KB 很小），而在"每次重绘要处理多少 SVG 节点"与"同屏叠了几层模糊"</div>
+
+    <table class="tbl">
+      <tr><th>级别</th><th>瓶颈</th><th>证据</th><th>用户感受</th></tr>
+      <tr><td>P0</td><td>① 558 个点位全走 SVG</td><td>未设 <code>preferCanvas</code>（main.js 59–66），每个点是一条 SVG path（373）</td><td>拖动 / 缩放时整屏 path 重绘，手机明显掉帧</td></tr>
+      <tr><td>P0</td><td>② 聚合一次性灌入</td><td>markerCluster 未开 <code>chunkedLoading</code>（345–349）</td><td>勾选图层瞬间卡 300–600ms，像"点了没反应"</td></tr>
+      <tr><td>P0</td><td>③ 同屏多层 backdrop-filter</td><td>47 条规则；侧栏 + 设置 + 打点 + 图例同时可见时叠 3–4 层</td><td>滚动列表、拖面板时整屏掉帧</td></tr>
+      <tr><td>P1</td><td>④ 两处 SVG 位移滤镜常驻</td><td><code>body.refraction</code> 对 <code>.sidebar</code> 与 <code>.settings-inner</code> 各挂一次 feTurbulence + feDisplacementMap（style.css 1761–1781）</td><td>桌面端鼠标移动都可能有微顿；低端机发热</td></tr>
+      <tr><td>P1</td><td>⑤ 全屏粒子层</td><td><code>#petal-wrap</code> 固定全屏 z-index 1000，8–26 个粒子各带 inset 阴影 + <code>will-change:transform</code>（main.js 1712 / style.css）</td><td>常驻合成层，低端机耗电、发热</td></tr>
+      <tr><td>P1</td><td>⑥ 三个 zoomend 各跑一遍</td><td>3 个独立 handler 各写一次 DOM（labels-13 / labels-14 / 其它）</td><td>缩放松手瞬间三次样式重算</td></tr>
+      <tr><td>P2</td><td>⑦ 换材质包全量重绘</td><td><code>repaintThemeColors()</code> 遍历 558 个点逐个 <code>setStyle</code>（1738–1758）</td><td>点材质包按钮卡一帧</td></tr>
+    </table>
+
+    <p class="sec-note">方案按"改一行能换来多少帧"排序。P0 三项都不改变任何观感，属于纯结构优化，可以先做、也必须先做。</p>
+
+    <table class="tbl">
+      <tr><th>级别</th><th>做法</th><th>具体改法</th><th>预期</th></tr>
+      <tr><td>P0-a</td><td>点位改 Canvas 渲染</td><td><code>L.map('map', { preferCanvas: true, ... })</code>；<code>circleMarker</code> 不变，Leaflet 自动落到 canvas 层</td><td>558 条 SVG path → 1 个 canvas，拖动重绘成本降一个数量级；popup / tooltip / 点击命中不变</td></tr>
+      <tr><td>P0-b</td><td>聚合分块灌入</td><td><code>chunkedLoading: true, chunkInterval: 200, chunkDelay: 30</code>；<code>maxClusterRadius</code> 60 → 72</td><td>勾选图层不再一次性冻结主线程，UI 保持可点；同屏聚合块变少</td></tr>
+      <tr><td>P0-c</td><td>同屏模糊层限额</td><td>任何一个面板 <code>open</code> 时，对其余已开面板的 <code>backdrop-filter</code> 置 <code>none</code>，关掉再恢复；把现有「动画期间清 backdropFilter」收拢成一个 <code>enforceGlassBudget()</code></td><td>同屏模糊层从 3–4 降到 ≤ 2，滚动与拖面板明显顺</td></tr>
+      <tr><td>P1-a</td><td>折射按设备能力降级</td><td><code>navigator.hardwareConcurrency ≤ 4</code> 或 <code>deviceMemory ≤ 4</code> → 强制关折射、blur 钳到 8；手机默认关闭（现状已如此，保留）</td><td>低端机不发热；桌面高配照常开，观感不牺牲</td></tr>
+      <tr><td>P1-b</td><td>粒子层收敛</td><td>粒子上限 26 → 14；<code>#petal-wrap</code> 加 <code>contain: layout paint style</code>；关闭时 <code>removeChild</code> 而非 <code>display:none</code></td><td>少一个常驻全屏合成层，关掉后彻底释放</td></tr>
+      <tr><td>P1-c</td><td>合并缩放回调</td><td>三个 <code>zoomend</code> 收成一个 <code>syncZoomState()</code>，内部一次读写</td><td>缩放松手少两次全量样式重算</td></tr>
+      <tr><td>P2-a</td><td>换肤批量提交</td><td>材质包切换只打 dirty 标记，下一帧统一 <code>setStyle</code>；canvas 层直接 <code>redraw()</code> 一次</td><td>换肤从"卡一帧"变成"不掉帧"</td></tr>
+      <tr><td>P2-b</td><td>数据合并（可选）</td><td>4 个 geojson 合成 1 个 <code>poi-all.geojson</code>（约 235 KB），少 3 次 RTT</td><td>冷启动少 3 个请求；但数据层级是仓库约定，只在批次里标注，不擅自改</td></tr>
+    </table>
+
+    <div class="param">指标（验收看数，不看感觉）
+  首屏      冷缓存 DOMContentLoaded ≤ 1.2s，首帧可交互 ≤ 1.8s（本地 8000 端口）
+  拖动      连续拖动 2 s，平均 FPS：1440 ≥ 50，390 ≥ 40
+  缩放      单次 zoom 期间帧间隔 P95 ≤ 24ms
+  灌入      勾选三层（558 点）到计数刷新 ≤ 350ms
+  换肤      点材质包到颜色落定，P95 ≤ 32ms
+  内存      连续缩放 30 次，JSHeapUsedSize 增长 ≤ 15%
+  静置      挂机 5 分钟，CPU 占用 ≤ 3%
+
+采样（可复现，直接粘控制台）
+  FPS  let t0=performance.now(),last=t0,gaps=[];(function loop(){requestAnimationFrame(function(t){gaps.push(t-last);last=t;if(t-t0&gt;=2000){const a=gaps.slice(1).sort((x,y)=>x-y);console.log('avgFPS',(1000/(a.reduce((s,v)=>s+v,0)/a.length)).toFixed(1),'p95',a[Math.floor(a.length*0.95)].toFixed(1));}else loop();});})();
+  内存 CDP 开 Performance.enable，读 Performance.getMetrics 的 JSHeapUsedSize / TaskDuration
+  低端 DevTools → Performance → CPU 降速 4x，重跑上面两条
+
+用户可感知的开关（写进设置面板高级区）
+  新增「性能模式（低功耗）」toggle，持久化键 cd_perf_lite（新键，不碰旧键）
+  开启后：关折射、blur 钳到 8、粒子 ≤ 6、去掉面板 drop-shadow
+  与玻璃滑杆互不干扰——滑杆仍调 alpha，只是 blur 上限被钳住</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">08</span><h2>执行批次与风险</h2></div>
     <p class="sec-note">每批独立可回滚，批内改完立刻双端截图，不攒到最后一起验。</p>
     <table class="tbl">
       <tr><th>批次</th><th>范围</th><th>动到的文件</th><th>批末验收</th></tr>
+      <tr><td>B0</td><td>性能基线：改代码前先量一次（FPS / 灌入耗时 / 内存），作为后面所有对比的零点</td><td>不改文件，只跑采样脚本</td><td>清单 9</td></tr>
       <tr><td>B1</td><td>玻璃锚点重定 + alpha 地板 + 密度系数 + 恢复默认收敛</td><td>main.js</td><td>清单 1 / 3</td></tr>
       <tr><td>B2</td><td>四层边缘结构（Rim / Specular / Refraction / Frost）</td><td>style.css</td><td>清单 5</td></tr>
       <tr><td>B3</td><td>侧栏固定令牌，断开 <code>--glass-*</code> 依赖</td><td>style.css</td><td>清单 4</td></tr>
       <tr><td>B4</td><td>地物点 SVG 图标 + 玻璃胶囊聚合 + 分级回落</td><td>main.js / style.css</td><td>清单 6</td></tr>
       <tr><td>B5</td><td>字体 / 字阶 / 圆角 / 间距 / 触控令牌全站替换</td><td>style.css（少量 main.js 内联）</td><td>清单 7</td></tr>
-      <tr><td>B6</td><td>版本号 <code>?v=114x</code> → <code>?v=115</code>、五项回归复测、推 GitHub</td><td>index.html</td><td>清单 2 / 8</td></tr>
+      <tr><td>B6</td><td>性能专项：Canvas 渲染 + 聚合分块 + 玻璃层限额 + 粒子收敛 + 合并 zoomend + 性能模式开关</td><td>main.js / style.css</td><td>清单 10</td></tr>
+      <tr><td>B7</td><td>版本号 <code>?v=114x</code> → <code>?v=115</code>、回归复测、推 GitHub</td><td>index.html</td><td>清单 2 / 8 / 9</td></tr>
     </table>
     <div class="param">红线（本版一律不动）
   localStorage 键：cd_user_roads / cd_records_v1 / cd_theme / cd_glass / cd_glass72
@@ -445,8 +509,8 @@ P100  blur 32  alpha 94  sheen 1.60  shadow 1.70
   </section>
 
   <section>
-    <div class="sec-head"><span class="sec-no">08</span><h2>需要你拍板的四件事</h2></div>
-    <p class="sec-note">这四个取值直接决定观感差异，我不替你定。回一句「A 选 2、B 选 1……」就行。</p>
+    <div class="sec-head"><span class="sec-no">09</span><h2>需要你拍板的五件事</h2></div>
+    <p class="sec-note">这五个取值直接决定观感差异与性能地板，我不替你定。回一句「A 选 2、B 选 1……」就行。</p>
 
     <div class="q">
       <p class="qt">A · 玻璃强度默认值定在哪一档？</p>
@@ -483,11 +547,20 @@ P100  blur 32  alpha 94  sheen 1.60  shadow 1.70
         <div class="opt"><b>2 · 自托管 Inter（约 40KB，两个 woff2）</b><span>更接近 SF Pro 的骨架，代价是首屏多一次字体加载与一个缓存键。</span></div>
       </div>
     </div>
+    <div class="q">
+      <p class="qt">E · 「性能模式」默认怎么定？</p>
+      <p class="qd">§7 新增的低功耗开关。定得太保守等于没做，定得太激进会削掉你想要的观感。</p>
+      <div class="opts">
+        <div class="opt"><b>1 · 默认关，只按设备能力自动降级</b><span>高配桌面全开（折射 + 全模糊 + 粒子）；CPU ≤ 4 核或内存 ≤ 4GB 时自动降。用户想省电再手动开。<span class="rec">推荐</span></span></div>
+        <div class="opt"><b>2 · 手机默认开，桌面默认关</b><span>手机端直接关折射、blur 钳到 8、粒子减半；桌面全观感。</span></div>
+        <div class="opt"><b>3 · 全局默认开</b><span>最省电最流畅，但玻璃的"厚"会明显打折，与本次改造目标相冲。</span></div>
+      </div>
+    </div>
   </section>
 
   <footer>
     <span>v115 执行规划书 · 常德市城市公共服务 WebGIS · 佘磊 202412040132</span>
-    <span>依据：main.js 2143–2149 / 2443–2584、style.css 1718–1734 / 1819–1821，以及本轮显示设置实测截图</span>
+    <span>依据：main.js 59–66 / 345–349 / 1712 / 1738–1758 / 2143–2149 / 2443–2584、style.css 1718–1734 / 1761–1781 / 1819–1821，以及本轮显示设置实测截图</span>
   </footer>
 
 </div>
