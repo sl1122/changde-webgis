@@ -1628,12 +1628,34 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
 }
 .mark-item .mi-name { flex: 1; min-width: 0; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mark-item .mi-meta { font-size: 10.5px; color: var(--text-2); white-space: nowrap; }
+.mark-item .mi-badge { flex: 0 0 auto; padding: 1px 5px; border-radius: 6px; text-align: center; }
+/* 名称优先：几何类型说明「点 · 1点」搬到 badge/名字的 title，列表内不再单列（两端一致，避免名称被挤断） */
+.mark-item .mi-meta { display: none; }
 .mark-item .mi-ops { display: flex; gap: 4px; }
 .mark-item .mi-btn {
     border: none; border-radius: 6px; padding: 3px 7px; font-size: 11px; cursor: pointer;
     background: #fff; color: var(--plum); transition: background .15s ease;
 }
 .mark-item .mi-btn:hover { background: var(--plum); color: #fff; }
+/* v114 P2-4：图标按钮——文字没了，靠 title 悬浮提示补回语义 */
+.mark-item .mi-btn.ico { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.mark-item .mi-btn.ico svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 640px) {
+    .mark-item .mi-btn.ico { width: 32px; height: 32px; }
+    .mark-item .mi-btn.ico svg { width: 17px; height: 17px; }
+    /* 图标占位后行宽不够，手机端让「点·N点」退场：类型与点数在详情卡里仍完整显示，换回名称可读 */
+    .mark-item .mi-meta { display: none; }
+}
+.mark-item .mi-btn.ico[data-act="del"]:hover { background: #dc2626; }
+/* v114 P2-1：分类行右侧 × 删整组 */
+.cf-layer-item .cf-layer-del {
+    flex: 0 0 auto; margin-left: 2px; width: 20px; height: 20px; padding: 0;
+    border: none; border-radius: 5px; background: transparent; cursor: pointer;
+    color: var(--text-2); font-size: 14px; line-height: 18px;
+    transition: color .15s ease, background .15s ease;
+}
+.cf-layer-item .cf-layer-del:hover { color: #dc2626; background: rgba(220, 38, 38, .1); }
+body.theme-night .cf-layer-item .cf-layer-del { color: rgba(255, 255, 255, .55); }
 .mark-empty { font-size: 11.5px; color: var(--text-2); padding: 8px 4px; }
 .mark-btn.danger { background: linear-gradient(135deg, #dc2626, #f87171); }
 
@@ -2123,6 +2145,13 @@ body.theme-night .cl-row-points { color: #94a3b8; }
 .mark-btn:active { transform: scale(.96); }
 .mark-btn.small { width: auto; padding: 6px 14px; font-size: 12px; margin-top: 0; }
 .mark-ops { display: flex; gap: 8px; margin-top: 8px; }
+/* v114m：导出 / 导入 / 清空是数据管理工具，挪到点库标题下常驻可见，不再被长列表挤到滚动底部 */
+.mark-tools { flex-wrap: nowrap; margin-top: 0; margin-bottom: 8px; }
+.mark-tools .mark-btn.small { flex: 1 1 0; padding: 6px 4px; min-width: 0; white-space: nowrap; }
+.mark-panel .mark-tools .mark-btn.danger { background: rgba(255, 255, 255, .75); color: #c02626; border: 1px solid rgba(220, 38, 38, .32); }
+.mark-panel .mark-tools .mark-btn.danger:hover { background: #fff4f4; }
+/* 夜间：mark-panel 内按钮被 2689 的 !important 统一成深底白字，这里用更高特异性只给「清空」换警示色 */
+body.theme-night #map .mark-panel .mark-tools .mark-btn.danger { color: #ff9c9c !important; border-color: rgba(255, 140, 140, .35) !important; }
 .mark-status {
     margin-top: 8px; font-size: 11.5px; color: var(--text-2); line-height: 1.5;
     padding: 8px 10px; background: var(--rose-soft); border-radius: 9px;
@@ -2764,3 +2793,252 @@ body.theme-night .leaflet-tooltip-right::before { border-right-color: rgba(15, 2
     pointer-events: none;
     transition: background .5s ease;
 }
+
+/* ================= v114：自建要素（点 / 线 / 面）专用样式 =================
+   与既有玻璃面板同源：全部挂 .mark-panel 玻璃壳，只做位置与子元素补充，
+   不新增材质变量、不改夜间 --map-tint、不动原有打点面板布局 */
+.cf-seg { display: flex; gap: 6px; margin: 2px 0 9px; }
+.cf-seg button {
+    flex: 1; min-height: 34px; padding: 6px 0;
+    border: 1px solid rgba(224, 90, 138, .35); border-radius: 9px;
+    background: rgba(255, 255, 255, .72); color: var(--plum);
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: background .18s ease, color .18s ease, transform .15s ease, box-shadow .18s ease;
+}
+.cf-seg button.on {
+    background: linear-gradient(135deg, var(--accent-dark, #c14f7c), var(--accent, #e05a8a));
+    color: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(224, 90, 138, .3);
+}
+.cf-seg button:active { transform: scale(.96); }
+
+/* 详情卡：右下侧悬浮，避开左侧打点面板与顶部标题栏 */
+.cf-card {
+    top: auto; left: auto; right: 18px; bottom: 96px;
+    width: 300px; max-height: calc(100vh - 220px); overflow-y: auto;
+    z-index: 1266;
+}
+.cf-badge { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); margin: 2px 0 8px; }
+.cf-badge-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
+.cf-remark {
+    width: 100%; height: 56px; margin-top: 7px; box-sizing: border-box;
+    border: 1px solid #e3cdd8; border-radius: 9px; padding: 7px 9px;
+    font-size: 12px; font-family: inherit; line-height: 1.5;
+    background: rgba(255, 255, 255, .85); color: var(--text); resize: none; outline: none;
+}
+.cf-remark:focus { border-color: var(--rose); }
+.cf-btns { display: flex; gap: 8px; margin-top: 8px; }
+.cf-btns .mark-btn.small { flex: 1; margin-top: 0; }
+.mark-btn.ghost {
+    background: rgba(255, 255, 255, .75); color: var(--plum);
+    border: 1px solid rgba(224, 90, 138, .35);
+}
+.mark-btn.ghost:hover { background: #fff; }
+.mark-btn.danger.small { background: linear-gradient(135deg, #dc2626, #f87171); color: #fff; border: none; }
+
+/* 地图标签：与道路标签一致的胶囊形，但按要素类型着色描边 */
+.cf-tag {
+    background: rgba(255, 255, 255, .93); border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 8px; box-shadow: 0 3px 10px rgba(15, 23, 42, .2);
+    padding: 2px 8px; color: #3b2b33;
+}
+.cf-tag::before { display: none; }
+.cf-tip-name { font-size: 11.5px; font-weight: 700; }
+.cf-tip-meta { font-size: 10px; color: #8a7a83; margin-left: 4px; }
+
+/* 顶点手柄：白芯粉边小圆点，44pt 触控热区由 20px 视觉 + padding 提供 */
+.cf-handle-icon { background: transparent; border: none; }
+.cf-handle {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: linear-gradient(135deg, #fff, #f7e7ee);
+    border: 2px solid var(--accent, #e05a8a);
+    box-shadow: 0 1px 5px rgba(15, 23, 42, .38);
+}
+
+/* 图层清单动态分组：与基础四行同排布，仅加一条虚线分隔 */
+.cf-layer-box { margin-top: 8px; border-top: 1px dashed #f0dce4; padding-top: 7px; }
+.cf-layer-head { font-size: 11px; font-weight: 700; color: var(--text-2); letter-spacing: .4px; margin: 0 0 4px 2px; }
+.cf-layer-item .dot { box-shadow: 0 0 0 2px rgba(255, 255, 255, .9); }
+
+/* 夜间：仅补子元素配色，面板底色继续由 body.theme-night #map .mark-panel 统一控制 */
+body.theme-night .cf-seg button { background: rgba(58, 44, 52, .7); color: #f2dfe7; border-color: rgba(255, 255, 255, .18); }
+body.theme-night .cf-remark { background: rgba(40, 30, 36, .85); color: #f4e8ee; border-color: rgba(255, 255, 255, .18); }
+body.theme-night .cf-tag { background: rgba(32, 24, 29, .92); color: #f4e8ee; border-color: rgba(255, 255, 255, .16); }
+body.theme-night .cf-tip-meta { color: #b9a3ae; }
+body.theme-night .cf-layer-head { color: #c9b3be; }
+body.theme-night .cf-layer-box { border-top-color: rgba(165, 180, 252, .28); }
+body.theme-night .mark-btn.ghost { background: rgba(58, 44, 52, .7); color: #f2dfe7; border-color: rgba(255, 255, 255, .18); }
+
+/* 移动端：详情卡改为底部整宽，避开安全区与工具栏 */
+@media (max-width: 768px) {
+    .cf-card {
+        top: auto; left: 10px; right: 10px; bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+        width: auto; max-height: 56vh;
+    }
+    .cf-seg button { min-height: 40px; }
+    .cf-btns .mark-btn.small { min-height: 40px; }
+}
+/* v114 修正：自建要素面板内容变长（三档绘制 + 业务类型 + 备注 + 列表），
+   在 900 / 768 高屏幕上会顶出视口，改为限高内部滚动，保证「完成」和列表可触达 */
+.mark-panel { max-height: calc(100dvh - 236px); overflow-y: auto; overscroll-behavior: contain; }
+@media (max-width: 768px) {
+    .mark-panel { max-height: calc(100dvh - 300px); }
+}
+/* v114 修正 R1：`#map .mark-panel{overflow:hidden}` 特异度(0,1,1)高于 `.mark-panel`，
+   导致 v114 追加的限高/滚动规则全部失效（面板内容被裁、详情卡也继承成不可滚动）。
+   这里用同特异度的 #map 前缀 + 文件末尾位置把它压回来。 */
+#map .mark-panel {
+    max-height: calc(100dvh - 236px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+#map .cf-card {
+    max-height: calc(100dvh - 208px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+@media (max-width: 768px) {
+    #map .mark-panel { max-height: calc(100dvh - 300px); }
+    #map .cf-card {
+        top: auto; left: 10px; right: 10px;
+        bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+        width: auto; max-height: 52dvh;
+    }
+}
+/* v114 修正 R2：详情卡与左栏「自建要素」面板在 768~1024 的中窄窗口里会横向叠压，
+   把卡片切成底部整宽（≤1024），并把「开卡自动收面板」的判断也放到 1024。 */
+@media (max-width: 1024px) {
+    #map .cf-card {
+        top: auto; left: 10px; right: 10px;
+        bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+        width: auto; max-height: 52dvh;
+    }
+}
+/* v114 修正 R3：详情卡是正文可读区，玻璃太透会在复杂底图上糊字。
+   给它一层高一点的底色（夜间单独一套），同时把底部弹层高度放宽到 58dvh 让提示行完整露出。 */
+#map .cf-card { background: rgba(255, 255, 255, .93); }
+body.theme-night #map .cf-card { background: rgba(28, 30, 40, .93); }
+@media (max-width: 1024px) {
+    #map .cf-card { max-height: 58dvh; }
+}
+/* ================= v114i 夜间瓦片暗化根修 =================
+   现象：夜间只有面板变深，地图瓦片仍亮。
+   根因（实测）：.leaflet-tile-pane 及其父 .leaflet-map-pane 都是 0×0 的绝对定位盒，
+   ::after 的 top/left/right/bottom:0 与 inset:0 都解析成 0×0，伪元素实际尺寸 getComputedStyle 读出 0px×0px，
+   遮罩等于没画（--map-tint 变量本身正常）。
+   修法：不再依赖伪元素尺寸，直接对瓦片层做颜色矩阵滤镜（GPU 合成，纯视觉、不改任何元素结构），
+   !important 覆盖此前 body.theme-night .leaflet-tile-pane{filter:none} 的写法。 */
+body.theme-night .leaflet-tile-pane {
+    filter: brightness(.46) saturate(.55) contrast(1.12) !important;
+}
+/* 白天材质包的淡色叠加同样受 0×0 影响，这里不再依赖伪元素，改用极轻的滤镜避免“材质包只换 UI 不换地图” */
+body.refraction:not(.theme-night) .leaflet-tile-pane {
+    filter: saturate(1.05) brightness(.99);
+}
+
+/* ================= v114w P2 挑战 2：编辑权限行（整体 + 点/线/面） =================
+   只锁几何操作，属性编辑不受影响；关闭时列表与卡片上的改形状 / 移动 / 删除一起置灰。
+   夜间配色要压过前面「panel button 统一深底」规则，故带 #map 与 !important。 */
+.cf-editmod {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 5px 6px;
+    border-radius: 9px;
+    background: rgba(241, 245, 249, .72);
+    border: 1px solid rgba(15, 23, 42, .09);
+    flex-wrap: nowrap;
+}
+.cf-seg-cap {
+    margin: 12px 0 5px;
+    font-size: 11px;
+    letter-spacing: .4px;
+    color: rgba(15, 23, 42, .55);
+}
+.cf-em-label {
+    flex: 0 0 auto;
+    font-size: 11px;
+    letter-spacing: .4px;
+    color: rgba(15, 23, 42, .55);
+}
+.cf-em-chip {
+    flex: 0 0 auto;
+    height: 26px;
+    padding: 0 9px;
+    border-radius: 8px;
+    border: 1px solid rgba(15, 23, 42, .16);
+    background: rgba(255, 255, 255, .55);
+    color: #334155;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .18s, color .18s, border-color .18s, opacity .18s;
+}
+.cf-em-chip.on {
+    background: rgba(99, 102, 241, .16);
+    border-color: rgba(99, 102, 241, .42);
+    color: #4338ca;
+    font-weight: 600;
+}
+.cf-em-chip:hover { background: rgba(255, 255, 255, .82); }
+.cf-em-chip.on:hover { background: rgba(99, 102, 241, .24); }
+.cf-em-chip.is-locked { opacity: .42; cursor: not-allowed; }
+.cf-em-chip.is-locked:hover { background: rgba(255, 255, 255, .55); }
+
+/* 列表行：被锁定时的改 / 删图标 */
+.mark-item .mi-btn.ico.is-off {
+    opacity: .32;
+    cursor: not-allowed;
+    filter: grayscale(.55);
+}
+.mark-item .mi-btn.ico.is-off:hover { background: transparent; color: inherit; }
+
+/* 详情卡：三个几何操作改成方形图标按钮（保存属性保留文字） */
+.cf-card .cf-ico {
+    width: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.cf-card .cf-ico svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.cf-card .cf-ico.is-off { opacity: .4; cursor: not-allowed; }
+.cf-card .cf-ico.is-off:hover { background: transparent; }
+.cf-editmod-note {
+    font-size: 10.5px;
+    color: rgba(15, 23, 42, .45);
+    margin: 2px 0 4px;
+}
+
+@media (max-width: 640px) {
+    .cf-em-chip { height: 28px; padding: 0 10px; font-size: 11.5px; }
+    .cf-card .cf-ico { width: 48px; height: 34px; }
+}
+
+body.theme-night .cf-editmod {
+    background: rgba(24, 34, 66, .9);
+    border-color: rgba(148, 163, 184, .26);
+}
+body.theme-night .cf-seg-cap { color: rgba(203, 213, 225, .72); }
+body.theme-night .cf-em-label { color: rgba(203, 213, 225, .72); }
+body.theme-night .cf-editmod-note { color: rgba(148, 163, 184, .72); }
+body.theme-night #map #mark-panel #mark-sec .cf-editmod .cf-em-chip {
+    background: rgba(30, 41, 82, .96) !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+body.theme-night #map #mark-panel #mark-sec .cf-editmod .cf-em-chip.on {
+    background: rgba(99, 102, 241, .38) !important;
+    color: #e6e9ff !important;
+    border-color: rgba(129, 140, 248, .62) !important;
+}
+body.theme-night #map #mark-panel #mark-sec .cf-editmod .cf-em-chip.is-locked { opacity: .38; }

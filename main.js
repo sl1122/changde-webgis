@@ -247,6 +247,52 @@
         try { localStorage.setItem('cd_user_roads', JSON.stringify(userRoads)); } catch (e) { }
     }
     loadUserRoads();
+
+    // ---------------- v114：自建要素统一数据模型（点 / 线 / 面） ----------------
+    // 存储结构：[{id, geometry:{type,coordinates}, properties:{name,kind,remark}, crs, ts}]
+    // 坐标约定与既有图层一致：存 [lng,lat]（底图坐标系），显示统一走 toMapCoord()
+    var CF_KEY = 'cd_custom_features';
+    var customFeatures = [];
+    var CF_KINDS = ['设施点', '公交站', '公园', '自定区域', '道路'];
+    var CF_KIND_COLORS = { '设施点': '#2563eb', '公交站': '#0d9488', '公园': '#16a34a', '自定区域': '#a855f7', '道路': '#6d28d9' };
+    function cfColor(kind) { return CF_KIND_COLORS[kind] || '#6d28d9'; }
+    function cfCoordList(f) {
+        if (!f || !f.geometry) return [];
+        var g = f.geometry;
+        if (g.type === 'Point') return [g.coordinates];
+        if (g.type === 'LineString') return g.coordinates || [];
+        if (g.type === 'Polygon') return (g.coordinates && g.coordinates[0]) || [];
+        return [];
+    }
+    function cfById(id) {
+        for (var i = 0; i < customFeatures.length; i++) if (String(customFeatures[i].id) === String(id)) return customFeatures[i];
+        return null;
+    }
+    function saveCustom() {
+        try { localStorage.setItem(CF_KEY, JSON.stringify(customFeatures)); } catch (e) { }
+    }
+    function loadCustom() {
+        var raw = null;
+        try { raw = localStorage.getItem(CF_KEY); } catch (e) { }
+        if (raw === null) {
+            // 首次运行 v114：把旧 cd_user_roads 一次性迁入，旧键保留只读，不删用户数据
+            customFeatures = (userRoads || []).map(function (r, i) {
+                return {
+                    id: 'cf' + (r.id || (Date.now() + i)),
+                    geometry: { type: 'LineString', coordinates: (r.coordinates || []).slice() },
+                    properties: { name: (r.street || r.name || ('道路' + (i + 1))), kind: '道路', remark: '' },
+                    crs: r.crs || 'WGS-84', ts: r.ts || Date.now(), legacy: 'cd_user_roads'
+                };
+            }).filter(function (f) { return f.geometry.coordinates.length >= 2; });
+            saveCustom();
+        } else {
+            try { customFeatures = JSON.parse(raw); } catch (e) { customFeatures = []; }
+        }
+        if (!Array.isArray(customFeatures)) customFeatures = [];
+        customFeatures = customFeatures.filter(function (f) { return f && f.geometry && f.properties; });
+    }
+    loadCustom();
+
     function userRoadPopupHtml(r) {
         var n = (r.coordinates || []).length;
         var dt = r.ts ? new Date(r.ts).toLocaleString() : '';
@@ -337,7 +383,7 @@
         var g = L.layerGroup();
         // 同名替代：用户打点道路（如"武陵大道"）优先于内置同名线
         var userNames = {};
-        userRoads.forEach(function (r) { userNames[r.street || r.name] = true; });
+        customFeatures.forEach(function (f) { if (f.geometry.type === 'LineString') userNames[f.properties.name] = true; });
         layerState.road.data.forEach(function (f) {
             if (userNames[f.properties.name]) return;
             var coords = f.geometry.coordinates.map(function (c) { return toMapCoord(c); });
@@ -364,26 +410,7 @@
                 g.addLayer(tag);
             }
         });
-        // 用户打点道路（紫色虚线，实时入库后立即参与显示）
-        userRoads.forEach(function (r) {
-            var coords = (r.coordinates || []).map(function (c) { return toMapCoord(c); });
-            if (coords.length < 2) return;
-            g.addLayer(L.polyline(coords, {
-                color: '#ffffff', weight: 7, opacity: 0.35,
-                lineJoin: 'round', lineCap: 'round'
-            }));
-            var line = L.polyline(coords, {
-                color: '#6d28d9', weight: 4, opacity: 0.95, dashArray: '9 6',
-                lineJoin: 'round', lineCap: 'round'
-            }).bindPopup(userRoadPopupHtml(r), { autoPan: true, maxWidth: 300 });
-            line.on('mouseover', function () { line.setStyle({ weight: 6.5, opacity: 1 }); });
-            line.on('mouseout', function () { line.setStyle({ weight: 4, opacity: 0.95, dashArray: '9 6' }); });
-            g.addLayer(line);
-            var mid = coords[Math.floor(coords.length / 2)];
-            g.addLayer(L.tooltip({
-                permanent: true, direction: 'center', className: 'road-tag user-road-tag', opacity: 1
-            }).setContent('我的·' + (r.street || r.name)).setLatLng(mid));
-        });
+        // v114：用户自建要素不再挂在内置道路图层上，改由 customLayer 统一渲染（点/线/面）
         updateRoadLabelZoom();
         return g;
     }
@@ -439,9 +466,9 @@
                 var any = f.geometry.coordinates.some(function (c) { return b.contains(toMapCoord(c)); });
                 if (any) n++;
             });
-            // 用户打点道路计入视野计数
-            n += userRoads.filter(function (r) {
-                return (r.coordinates || []).some(function (c) { return b.contains(toMapCoord(c)); });
+            // v114：自建要素中的「线」计入道路视野计数
+            n += customFeatures.filter(function (f) {
+                return f.geometry.type === 'LineString' && cfCoordList(f).some(function (c) { return b.contains(toMapCoord(c)); });
             }).length;
             return n;
         }
@@ -504,6 +531,14 @@
                 searchIdx.push({ key: k, name: f.properties.name || '', feat: f });
             });
         });
+        // v114：自建要素一并进索引，删除后重建索引即不再出现（杜绝"删了还能搜到"）
+        customFeatures.forEach(function (f) {
+            searchIdx.push({ key: 'custom', name: f.properties.name || '', cf: f, kind: f.properties.kind });
+        });
+    }
+    function refreshSearch() {
+        buildSearchIndex();
+        if ((searchInput.value || '').trim()) runSearch();
     }
     var searchResultEl = document.getElementById('search-result');
     var searchInput = document.getElementById('search-input');
@@ -512,7 +547,10 @@
         var q = (searchInput.value || '').trim();
         var type = searchType.value;
         var hits = searchIdx.filter(function (it) {
-            if (type && it.key !== type) return false;
+            if (type) {
+                if (it.key === 'custom') { if (it.kind !== type) return false; }
+                else if (it.key !== type) return false;
+            }
             return it.name.toLowerCase().indexOf(q.toLowerCase()) >= 0;
         }).slice(0, 30);
         if (!q) { searchResultEl.innerHTML = ''; searchResultEl.hidden = true; return; }
@@ -522,13 +560,22 @@
             return;
         }
         searchResultEl.innerHTML = hits.map(function (it, i) {
-            return '<div class="sr-item" data-i="' + i + '"><span class="sr-name">' + esc(it.name) + '</span><span class="sr-type" style="color:' + LAYER_CONFIG[it.key].color + '">' + LAYER_CONFIG[it.key].name + '</span></div>';
+            var conf = it.key === 'custom'
+                ? { color: cfColor(it.kind), name: '我的' + it.kind }
+                : LAYER_CONFIG[it.key];
+            return '<div class="sr-item" data-i="' + i + '"><span class="sr-name">' + esc(it.name) + '</span><span class="sr-type" style="color:' + conf.color + '">' + conf.name + '</span></div>';
         }).join('');
         searchResultEl.hidden = false;
         Array.prototype.forEach.call(searchResultEl.querySelectorAll('.sr-item'), function (el) {
             el.addEventListener('click', function () {
                 var it = hits[+el.getAttribute('data-i')];
                 if (!it) return;
+                if (it.key === 'custom') {
+                    showCfKind(it.kind, true);
+                    selectCf(it.cf.id, true);
+                    closeDrawer();
+                    return;
+                }
                 if (!layerState[it.key].visible) {
                     document.getElementById('chk-' + it.key).checked = true;
                     layerState[it.key].visible = true;
@@ -656,7 +703,8 @@
     function fmtDist(m) { return m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m.toFixed(2) + ' m'; }
     function fmtArea(m2) { return m2 >= 1000000 ? (m2 / 1000000).toFixed(2) + ' km²' : m2.toFixed(2) + ' m²'; }
     document.getElementById('btn-distance').addEventListener('click', function () {
-        if (measure.mode) { clearMeasure(); return; }
+        if (measure.mode) { clearMeasure(); APP_MODE = (cfSelId != null ? 'select' : 'idle'); return; }
+        setAppMode('measure');
         clearMeasure();
         measure.mode = 'dist';
         this.classList.add('active');
@@ -664,14 +712,18 @@
         showMeasure('单击地图添加测量点，双击结束并显示总距离', false);
     });
     document.getElementById('btn-area').addEventListener('click', function () {
-        if (measure.mode) { clearMeasure(); return; }
+        if (measure.mode) { clearMeasure(); APP_MODE = (cfSelId != null ? 'select' : 'idle'); return; }
+        setAppMode('measure');
         clearMeasure();
         measure.mode = 'area';
         this.classList.add('active');
         // v76：激活测量工具即显示测量卡片（操作提示），默认不显示；清除/退出自动隐藏
         showMeasure('单击地图添加顶点，双击闭合计算面积', false);
     });
-    document.getElementById('btn-clear').addEventListener('click', clearMeasure);
+    document.getElementById('btn-clear').addEventListener('click', function () {
+        clearMeasure();
+        APP_MODE = (cfSelId != null ? 'select' : 'idle');
+    });
     // 「完成测量」按钮（手机端无法双击结束，必须有明确结束入口）
     var measureDoneBtn = document.getElementById('measure-done');
     if (measureDoneBtn) measureDoneBtn.addEventListener('click', function () {
@@ -865,8 +917,165 @@
 
     // ---------------- 8.6 道路打点工具 ----------------
     var markMode = false, markStreet = '', markPts = [], markLayer = null, markLine = null, markEditingId = null;
+    var markDrawType = 'LineString', markKind = '道路';
     var btnMark = document.getElementById('btn-mark');
     var markPanel = document.getElementById('mark-panel');
+
+    // v114：把「道路打点」面板升级为「自建要素」面板（点 / 线 / 面 + 业务类型 + 备注）
+    (function injectDrawUI() {
+        if (!markPanel || document.getElementById('mark-seg')) return;
+        var title = markPanel.querySelector('.settings-title');
+        if (title) title.innerHTML = '自建要素<span class="settings-close" id="mark-close" title="关闭">×</span>';
+        var seg = document.createElement('div');
+        seg.className = 'cf-seg';
+        seg.id = 'mark-seg';
+        seg.innerHTML = '<button type="button" data-t="Point">点</button><button type="button" data-t="LineString" class="on">线</button><button type="button" data-t="Polygon">面</button>';
+        var firstRow = markPanel.querySelector('.set-row');
+        // v114w：给「点/线/面」加标题，避免和列表上方的「编辑权限」三个同名 chip 混成一团
+        var segCap = document.createElement('div');
+        segCap.className = 'cf-seg-cap';
+        segCap.textContent = '绘制类型';
+        if (firstRow) {
+            markPanel.insertBefore(segCap, firstRow);
+            markPanel.insertBefore(seg, firstRow);
+        } else {
+            markPanel.appendChild(segCap);
+            markPanel.appendChild(seg);
+        }
+        var kindRow = document.createElement('div');
+        kindRow.className = 'set-row';
+        kindRow.innerHTML = '<span class="set-name" style="width:60px">业务类型</span><select id="mark-kind">' +
+            CF_KINDS.map(function (k) { return '<option value="' + k + '">' + k + '</option>'; }).join('') + '</select>';
+        var startBtn = document.getElementById('mark-start');
+        if (startBtn) markPanel.insertBefore(kindRow, startBtn); else markPanel.appendChild(kindRow);
+        var remark = document.createElement('textarea');
+        remark.id = 'mark-remark';
+        remark.className = 'mark-export';
+        remark.style.height = '54px';
+        remark.placeholder = '备注（选填，如：临时站点 / 边界待核）';
+        var status = document.getElementById('mark-status');
+        if (status) markPanel.insertBefore(remark, status); else markPanel.appendChild(remark);
+        var secTitle = markPanel.querySelector('.mark-sec-title');
+        if (secTitle) secTitle.innerHTML = '我的自建要素（<span id="mark-sec-n">0</span>）';
+        var secNote = markPanel.querySelector('.mark-sec-note');
+        if (secNote) secNote.textContent = '点 / 线 / 面统一入库；点击地图上的要素可选中，再进行改形状、整体移动或删除';
+        seg.addEventListener('click', function (e) {
+            var b = e.target && e.target.closest ? e.target.closest('button[data-t]') : null;
+            if (!b) return;
+            markDrawType = b.getAttribute('data-t');
+            Array.prototype.forEach.call(seg.querySelectorAll('button'), function (x) { x.classList.toggle('on', x === b); });
+            markPts = [];
+            if (markMode) paintMarkDots();
+            updateMarkHint();
+        });
+        var kindSel = document.getElementById('mark-kind');
+        if (kindSel) {
+            kindSel.value = markKind;
+            kindSel.addEventListener('change', function () { markKind = kindSel.value; if (markMode) paintMarkDots(); });
+        }
+        updateMarkHint();
+    })();
+
+    // ---------------- 8.6.1 编辑权限（v114 P2 挑战 2）----------------
+    // 只锁几何操作（改形状 / 整体移动 / 删除）；属性仍可改，避免「关掉编辑＝连备注都存不了」。
+    // 总开关「整体」+ 点 / 线 / 面 三档独立开关，状态存 cd_edit_geom（不改动既有红线键）。
+    var EDIT_MOD = { all: true, Point: true, LineString: true, Polygon: true };
+    var EDIT_MOD_KEY = 'cd_edit_geom';
+    (function loadEditMod() {
+        try {
+            var s = JSON.parse(localStorage.getItem(EDIT_MOD_KEY) || 'null');
+            if (s && typeof s === 'object') {
+                ['all', 'Point', 'LineString', 'Polygon'].forEach(function (k) {
+                    if (typeof s[k] === 'boolean') EDIT_MOD[k] = s[k];
+                });
+            }
+        } catch (e) { }
+    })();
+    function saveEditMod() {
+        try { localStorage.setItem(EDIT_MOD_KEY, JSON.stringify(EDIT_MOD)); } catch (e) { }
+    }
+    function editAllowed(t) {
+        var ty = (t && t.geometry) ? t.geometry.type : t;
+        return !!EDIT_MOD.all && !!EDIT_MOD[ty];
+    }
+    function editOffTip(ty) {
+        if (!EDIT_MOD.all) return '（编辑已整体关闭，在「编辑权限」里打开）';
+        return '（' + (ty === 'Point' ? '点' : ty === 'LineString' ? '线' : '面') + '要素编辑已关闭，在「编辑权限」里打开）';
+    }
+    window.__editAllowed = editAllowed;
+    window.__editOffTip = editOffTip;
+    window.__applyEditMod = applyEditMod;
+    window.__syncCardEditBtns = syncCardEditBtns;
+    (function injectEditModUI() {
+        var sec = document.getElementById('mark-sec');
+        if (!sec || document.getElementById('cf-editmod')) return;
+        var box = document.createElement('div');
+        box.className = 'cf-editmod';
+        box.id = 'cf-editmod';
+        box.innerHTML =
+            '<span class="cf-em-label">编辑权限</span>' +
+            '<button type="button" class="cf-em-chip" id="cf-em-all" title="总开关：关闭后只能查看与改属性，改形状 / 整体移动 / 删除全部上锁">整体</button>' +
+            '<button type="button" class="cf-em-chip" data-t="Point" title="是否允许编辑「点」要素">点</button>' +
+            '<button type="button" class="cf-em-chip" data-t="LineString" title="是否允许编辑「线」要素">线</button>' +
+            '<button type="button" class="cf-em-chip" data-t="Polygon" title="是否允许编辑「面」要素">面</button>';
+        sec.appendChild(box);
+        box.addEventListener('click', function (e) {
+            var b = e.target && e.target.closest ? e.target.closest('button') : null;
+            if (!b || b.disabled) return;
+            if (b.id === 'cf-em-all') {
+                EDIT_MOD.all = !EDIT_MOD.all;
+                toast(EDIT_MOD.all ? '编辑已开启：可改形状 / 整体移动 / 删除' : '编辑已关闭：几何操作全部上锁，仍可查看与改属性');
+            } else {
+                var t = b.getAttribute('data-t');
+                EDIT_MOD[t] = !EDIT_MOD[t];
+                toast((EDIT_MOD[t] ? '已开放编辑：' : '已锁定编辑：') + (t === 'Point' ? '点' : t === 'LineString' ? '线' : '面') + '要素');
+            }
+            saveEditMod();
+            applyEditMod();
+        });
+        applyEditMod();
+    })();
+    function applyEditMod() {
+        var box = document.getElementById('cf-editmod');
+        if (box) {
+            var allBtn = document.getElementById('cf-em-all');
+            if (allBtn) allBtn.classList.toggle('on', !!EDIT_MOD.all);
+            Array.prototype.forEach.call(box.querySelectorAll('.cf-em-chip[data-t]'), function (b) {
+                var t = b.getAttribute('data-t');
+                b.classList.toggle('on', !!EDIT_MOD[t] && !!EDIT_MOD.all);
+                b.classList.toggle('is-locked', !EDIT_MOD.all);
+                b.disabled = !EDIT_MOD.all;
+            });
+        }
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        if (cfSelId !== null) {
+            var f = cfById(cfSelId);
+            var card = document.getElementById('cf-card');
+            if (f && card && card.classList.contains('open')) syncCardEditBtns(f);
+        }
+    }
+    function syncCardEditBtns(f) {
+        var ok = editAllowed(f);
+        ['cf-shape', 'cf-move', 'cf-del'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (!b) return;
+            b.disabled = !ok;
+            b.classList.toggle('is-off', !ok);
+            var base = id === 'cf-shape' ? '改形状（拖顶点改轮廓）' : id === 'cf-move' ? '整体移动（拖动整个要素）' : '删除该要素';
+            b.title = ok ? base : base + editOffTip(f.geometry.type);
+        });
+    }
+
+    function updateMarkHint() {
+        var st = document.getElementById('mark-status');
+        var ph = document.getElementById('mark-name');
+        if (ph) ph.placeholder = markDrawType === 'Point' ? '如：柳叶湖公交站' : markDrawType === 'LineString' ? '如：武陵大道' : '如：滨湖公园';
+        if (!st || markMode) return;
+        var label = markDrawType === 'Point' ? '单击地图放置一个点，再点「完成」入库'
+            : markDrawType === 'LineString' ? '沿线连续单击添加节点（≥2 点可完成）'
+                : '沿边界连续单击添加顶点（≥3 点自动闭合成面）';
+        st.textContent = '选类型 → 输入名称 → 点「开始打点」→ ' + label;
+    }
     function exitMark() {
         markMode = false;
         markEditingId = null;
@@ -876,22 +1085,31 @@
         markPts = [];
     }
     // 载入已有道路为可编辑草稿（节点可拖动，完成后更新原记录）
-    function loadUserRoadForEdit(r) {
+    function loadUserRoadForEdit(f) {
+        if (!f) return;
+        if (!editAllowed(f)) { toast('编辑已锁定：' + editOffTip(f.geometry.type).replace(/[（）]/g, ''), true); return; }
         if (measure.mode) clearMeasure();
-        markEditingId = r.id;
-        markStreet = r.street || r.name;
-        markPts = (r.coordinates || []).map(function (c) { return [c[1], c[0]]; });
+        clearCfSel();
+        markEditingId = f.id;
+        markDrawType = f.geometry.type;
+        markStreet = f.properties.name || '';
+        markKind = f.properties.kind || '道路';
+        markPts = cfCoordList(f).map(function (c) { return [c[1], c[0]]; });
         markMode = true;
         btnMark.classList.add('active');
+        var seg = document.getElementById('mark-seg');
+        if (seg) Array.prototype.forEach.call(seg.querySelectorAll('button'), function (x) { x.classList.toggle('on', x.getAttribute('data-t') === markDrawType); });
+        var kindSel = document.getElementById('mark-kind');
+        if (kindSel) kindSel.value = markKind;
+        var remarkEl = document.getElementById('mark-remark');
+        if (remarkEl) remarkEl.value = f.properties.remark || '';
         document.getElementById('mark-name').value = markStreet;
         document.getElementById('mark-ops').hidden = false;
         document.getElementById('mark-export').value = '';
         document.getElementById('mark-copy').hidden = true;
         markPanel.classList.add('open');
         paintMarkDots();
-        document.getElementById('mark-status').textContent =
-            '编辑「' + markStreet + '」：拖动节点调整位置、点击可加点、撤销可删点，完成后更新原记录';
-        toast('已载入「' + markStreet + '」进入编辑模式：拖动节点微调');
+        toast('已载入「' + markStreet + '」进入编辑模式：拖动节点微调，完成后点「完成」保存');
     }
     function paintMarkDots() {
         if (markLayer) map.removeLayer(markLayer);
@@ -914,18 +1132,26 @@
             markLayer.addLayer(m);
         });
         if (markPts.length >= 2) {
-            markLine = L.polyline(markPts, { color: '#2563eb', weight: 3, opacity: .85, dashArray: '2 8' });
+            if (markDrawType === 'Polygon') {
+                markLine = L.polygon(markPts, { color: cfColor(markKind), weight: 2.5, opacity: .9, fillColor: cfColor(markKind), fillOpacity: .18, dashArray: '3 7' });
+            } else {
+                markLine = L.polyline(markPts, { color: cfColor(markKind), weight: 3, opacity: .85, dashArray: '2 8' });
+            }
             map.addLayer(markLine);
         }
         map.addLayer(markLayer);
+        var needPts = markDrawType === 'Point' ? 1 : markDrawType === 'LineString' ? 2 : 3;
         document.getElementById('mark-status').textContent =
-            '「' + markStreet + '」已打 ' + markPts.length + ' 个点' +
-            (markPts.length >= 2 ? '，继续沿线点击加点（节点可拖动调整）' : '，继续沿道路点击添加节点');
+            '「' + (markStreet || '未命名') + '」已打 ' + markPts.length + ' 个' + (markDrawType === 'LineString' ? '节点' : '点') +
+            (markPts.length >= needPts
+                ? '，可以点「完成」入库'
+                : '，还需 ' + (needPts - markPts.length) + ' 个' + (markDrawType === 'Polygon' ? '顶点（≥3 自动闭合成面）' : '节点'));
     }
     map.on('click', function (e) {
         if (uiHit(e)) return; // v75：卡片/面板内点击不触发打点
         if (!markMode) return;
-        markPts.push([e.latlng.lat, e.latlng.lng]);
+        if (markDrawType === 'Point') markPts = [[e.latlng.lat, e.latlng.lng]];
+        else markPts.push([e.latlng.lat, e.latlng.lng]);
         paintMarkDots();
     });
     if (btnMark && markPanel) {
@@ -950,25 +1176,32 @@
         btnMark.addEventListener('click', function () {
             markPanel.classList.toggle('open');
             if (markPanel.classList.contains('open')) {
+                setAppMode('mark');   // v114 P1-I：开自建要素面板即退出测量 / 结束编辑 / 清选中，避免卡片互相叠压
                 forceBackdropResample(markPanel);
+            } else {
+                if (markMode) { exitMark(); toast('打点已退出'); }
+                APP_MODE = (cfSelId != null ? 'select' : 'idle');
             }
-            if (!markPanel.classList.contains('open') && markMode) { exitMark(); toast('打点已退出'); }
         });
         document.getElementById('mark-close').addEventListener('click', function () {
             markPanel.classList.remove('open');
             if (markMode) { exitMark(); toast('打点已退出'); }
+            APP_MODE = (cfSelId != null ? 'select' : 'idle');
         });
         document.getElementById('mark-start').addEventListener('click', function () {
             var name = (document.getElementById('mark-name').value || '').trim();
-            if (!name) { toast('请先输入街道名称', true); return; }
-            if (measure.mode) clearMeasure();
+            if (!name) { toast('请先输入要素名称', true); return; }
+            setAppMode('mark');
             markStreet = name; markPts = []; markMode = true; markEditingId = null;
+            var kindSel = document.getElementById('mark-kind');
+            if (kindSel) markKind = kindSel.value;
             btnMark.classList.add('active');
             document.getElementById('mark-ops').hidden = false;
             document.getElementById('mark-export').value = '';
             document.getElementById('mark-copy').hidden = true;
             paintMarkDots();
-            toast('开始为「' + name + '」打点：单击地图沿线添加节点');
+            var what = markDrawType === 'Point' ? '设施点' : markDrawType === 'LineString' ? '线要素' : '面要素';
+            toast('开始绘制「' + name + '」（' + what + '）：' + (markDrawType === 'Point' ? '单击地图放置' : '单击地图连续加点'));
         });
         document.getElementById('mark-undo').addEventListener('click', function () {
             if (markMode && markPts.length) { markPts.pop(); paintMarkDots(); toast('已撤销一个节点'); }
@@ -982,48 +1215,65 @@
                 btnMark.classList.remove('active');
                 document.getElementById('mark-ops').hidden = true;
             }
-            toast('已清空当前打点节点（已入库的 ' + userRoads.length + ' 条标注道路仍保留，删除请用「清空全部」）');
+            toast('已清空当前绘制草稿（已入库的 ' + customFeatures.length + ' 个自建要素仍保留，删除请选中要素或点「清空全部」）');
         });
         document.getElementById('mark-done').addEventListener('click', function () {
             if (!markMode) return;
-            if (markPts.length < 2) { toast('至少需要 2 个点才能构成道路线', true); return; }
-            var coords = markPts.map(function (p) {
+            var name = (markStreet || '').trim();
+            if (!name) { toast('请先输入要素名称', true); return; }
+            var needPts = markDrawType === 'Point' ? 1 : markDrawType === 'LineString' ? 2 : 3;
+            if (markPts.length < needPts) {
+                toast(markDrawType === 'Point' ? '请先在地图上点一个位置' : markDrawType === 'LineString' ? '线至少要 2 个节点' : '面至少要 3 个顶点', true);
+                return;
+            }
+            var ring = markPts.map(function (p) {
                 return [Math.round(p[1] * 1e6) / 1e6, Math.round(p[0] * 1e6) / 1e6];
             });
-            var rec = {
-                id: markEditingId || Date.now(),
-                street: markStreet,
+            if (markDrawType === 'Polygon') {
+                if (ring.length === 3 || ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]) {
+                    ring.push([ring[0][0], ring[0][1]]);
+                }
+            }
+            var geom = markDrawType === 'Point'
+                ? { type: 'Point', coordinates: ring[0] }
+                : markDrawType === 'LineString'
+                    ? { type: 'LineString', coordinates: ring }
+                    : { type: 'Polygon', coordinates: [ring] };
+            var kindSel = document.getElementById('mark-kind');
+            var kindVal = (kindSel && kindSel.value) || markKind;
+            var remarkVal = ((document.getElementById('mark-remark') || {}).value || '').trim();
+            var isEdit = !!markEditingId;
+            var feat = {
+                id: isEdit ? markEditingId : ('cf' + Date.now()),
+                geometry: geom,
+                properties: { name: name, kind: kindVal, remark: remarkVal },
                 crs: gcjMode ? 'GCJ-02' : 'WGS-84',
                 basemap: TILE_CHAIN[tileIdx].name,
-                ts: Date.now(),
-                coordinates: coords
+                ts: Date.now()
             };
-            var isEdit = !!markEditingId;
             markEditingId = null;
-            if (isEdit) {
-                var idx = -1;
-                for (var k = 0; k < userRoads.length; k++) { if (userRoads[k].id === rec.id) { idx = k; break; } }
-                if (idx >= 0) userRoads[idx] = rec; else { isEdit = false; userRoads.push(rec); }
-            } else {
-                userRoads.push(rec);
-            }
-            saveUserRoads();
+            var idx = -1;
+            for (var k = 0; k < customFeatures.length; k++) { if (String(customFeatures[k].id) === String(feat.id)) { idx = k; break; } }
+            if (isEdit && idx >= 0) customFeatures[idx] = feat; else customFeatures.push(feat);
+            saveCustom();
             markMode = false;
             btnMark.classList.remove('active');
-            // 完成入库后自动清理草稿显示：序号点 + 蓝色预览线一并移除，只保留入库的紫色虚线
             if (markLayer) { map.removeLayer(markLayer); markLayer = null; }
             if (markLine) { map.removeLayer(markLine); markLine = null; }
             markPts = [];
             document.getElementById('mark-ops').hidden = true;
-            if (layerState.road.visible) refreshLayer('road');
-            updateCounts();
+            renderCustom();
+            syncCfCats();
             renderMarkList();
-            var txt = JSON.stringify(rec, null, 2);
+            refreshSearch();
+            updateCounts();
+            var txt = JSON.stringify(feat, null, 2);
             document.getElementById('mark-export').value = txt;
             document.getElementById('mark-copy').hidden = false;
+            var geoLabel = markDrawType === 'Point' ? '点' : markDrawType === 'LineString' ? '线' : '面';
             document.getElementById('mark-status').textContent =
-                (isEdit ? '已更新「' : '「') + markStreet + (isEdit ? '」标注道路（' : '」已存入我的道路点库（共 ') + userRoads.length + ' 条），紫色虚线已显示在地图上；序号点已自动清除，可复制 JSON 或继续打点';
-            toast((isEdit ? '已更新「' : '已存入「') + markStreet + '」，将自动合入网站正式数据');
+                (isEdit ? '已更新「' : '已入库「') + name + '」（' + kindVal + ' · ' + geoLabel + '），当前共 ' + customFeatures.length + ' 个自建要素；刷新页面仍会保留';
+            toast((isEdit ? '已更新「' : '已存入「') + name + '」，已同步到图层 / 搜索 / 图例');
         });
         document.getElementById('mark-copy').addEventListener('click', function () {
             var v = document.getElementById('mark-export').value;
@@ -1056,76 +1306,208 @@
             return mergedNames;
         }
         function renderMarkList() {
+            window.__renderMarkList = renderMarkList;  // v114：暴露给外层的删除 / 拖拽落库 / 属性保存后刷新列表
             var sec = document.getElementById('mark-sec');
             var list = document.getElementById('mark-list');
             if (!sec || !list) return;
-            document.getElementById('mark-sec-n').textContent = userRoads.length;
+            var nEl = document.getElementById('mark-sec-n');
+            if (nEl) nEl.textContent = customFeatures.length;
             list.innerHTML = '';
-            if (!userRoads.length) {
-                list.innerHTML = '<div class="mark-empty">暂无标注道路：输入名称 → 开始打点 → 完成即自动入库</div>';
+            if (!customFeatures.length) {
+                list.innerHTML = '<div class="mark-empty">暂无自建要素：选点 / 线 / 面 → 输入名称 → 开始绘制 → 完成即入库</div>';
                 return;
             }
-            userRoads.forEach(function (r, i) {
+            customFeatures.forEach(function (f) {
                 var row = document.createElement('div');
                 row.className = 'mark-item';
-                var isMerged = mergedNames && mergedNames.indexOf(r.street || r.name) >= 0;
+                var geo = f.geometry.type === 'Point' ? '点' : f.geometry.type === 'LineString' ? '线' : '面';
+                var pts = cfCoordList(f).length;
+                // v114 P2-2：编辑权限关闭时，改 / 删两个入口置灰禁用（定位不受影响）
+                var okE = window.__editAllowed ? window.__editAllowed(f) : true;
+                var offCls = okE ? '' : ' is-off';
+                var disAttr = okE ? '' : ' disabled';
+                var offTip = okE ? '' : (window.__editOffTip ? window.__editOffTip(f.geometry.type) : '（编辑已关闭）');
                 row.innerHTML =
-                    '<span class="mi-name">我的·' + esc(r.street || r.name) + '</span>' +
-                    (isMerged ? '<span class="mi-badge">已合入</span>' : '<span class="mi-badge wait">待合入</span>') +
-                    '<span class="mi-meta">' + (r.coordinates || []).length + '点·' + esc(r.crs || '') + '</span>' +
+                    '<span class="mi-name">' + esc(f.properties.name) + '</span>' +
+                    '<span class="mi-badge" style="background:' + cfColor(f.properties.kind) + '">' + esc(f.properties.kind) + '</span>' +
+                    '<span class="mi-meta">' + geo + '·' + pts + '点</span>' +
                     '<span class="mi-ops">' +
-                    '<button data-act="edit" class="mi-btn" title="编辑这条道路（载入草稿，节点可拖动）">改</button>' +
-                    '<button data-act="del" class="mi-btn" title="删除这条标注道路">删</button>' +
-                    '<button data-act="exp" class="mi-btn" title="导出这条道路 JSON">导出</button>' +
+                    // v114 P2-4：文字按钮换图标 + 悬浮提示（title 兼作读屏标签），行宽够放三个
+                    '<button data-act="zoom" class="mi-btn ico" title="定位到该要素" aria-label="定位"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg></button>' +
+                    '<button data-act="edit" class="mi-btn ico' + offCls + '"' + disAttr + ' title="编辑形状（拖顶点改轮廓）' + offTip + '" aria-label="编辑形状"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5l-4-4L4 16v4z"/><path d="M14.5 5.5l4 4"/></svg></button>' +
+                    '<button data-act="del" class="mi-btn ico' + offCls + '"' + disAttr + ' title="删除该要素' + offTip + '" aria-label="删除"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9.5 7V4.5h5V7M7.5 7l1 12.5h7l1-12.5"/></svg></button>' +
                     '</span>';
+                row.querySelector('[data-act=zoom]').addEventListener('click', function () {
+                    var c = cfCoordList(f);
+                    if (!c.length) return;
+                    var pts = c.map(function (p) { return toMapCoord(p); });
+                    if (pts.length === 1) map.setView(pts[0], Math.max(map.getZoom(), 16));
+                    else map.fitBounds(L.latLngBounds(pts).pad(0.2));
+                    selectCf(f.id);
+                });
                 row.querySelector('[data-act=edit]').addEventListener('click', function () {
-                    loadUserRoadForEdit(userRoads[i]);
+                    loadUserRoadForEdit(f);
                 });
                 row.querySelector('[data-act=del]').addEventListener('click', function () {
-                    userRoads.splice(i, 1);
-                    saveUserRoads();
-                    if (layerState.road.visible) refreshLayer('road');
-                    updateCounts();
-                    renderMarkList();
-                    toast('已删除「' + (r.street || r.name) + '」标注道路');
-                });
-                row.querySelector('[data-act=exp]').addEventListener('click', function () {
-                    document.getElementById('mark-export').value = JSON.stringify(r, null, 2);
-                    document.getElementById('mark-copy').hidden = false;
-                    toast('「' + (r.street || r.name) + '」JSON 已生成，可复制');
+                    deleteCf(f.id);   // 确认框只在 deleteCf 内弹一次，避免双击确认
                 });
                 list.appendChild(row);
             });
         }
-        document.getElementById('mark-export-all').addEventListener('click', function () {
-            if (!userRoads.length) { toast('暂无标注道路可导出', true); return; }
-            var payload = {
+        // ---- v114 P1-H：自建要素 GeoJSON 导出 / 导入（按 id 去重合并）----
+        // 坐标口径如实标注：本项目存的是底图坐标系（GCJ-02），不是 WGS-84；
+        // 导出文件不谎报坐标系，需要 WGS-84 时先做偏移纠偏，避免在 QGIS 里错位上百米。
+        function cfGeoJSON() {
+            var isGcj = (typeof gcjMode === 'undefined') ? true : !!gcjMode;
+            return {
+                type: 'FeatureCollection',
+                name: 'changde_custom_features',
+                crs_note: '坐标为 ' + (isGcj ? 'GCJ-02（高德/腾讯系，非 WGS-84）' : 'WGS-84') + '；如需 WGS-84 请先做 GCJ-02→WGS-84 偏移纠偏',
                 generated: new Date().toISOString(),
-                crs_note: '高德底图下为GCJ-02（与 road.geojson 一致）；导出后可直接合并入库',
-                roads: userRoads
+                features: customFeatures.map(function (f) {
+                    return {
+                        type: 'Feature',
+                        id: f.id,
+                        geometry: f.geometry,
+                        properties: { name: f.properties.name, kind: f.properties.kind, remark: f.properties.remark || '', crs: f.crs || (isGcj ? 'GCJ-02' : 'WGS-84'), ts: f.ts || 0 }
+                    };
+                })
             };
-            var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        }
+        // 规范化坐标：容错「面少一层外环」「环首尾没闭合」「点写成嵌套数组」这三种真实坏数据
+        function normPt(p) {
+            if (!p) return null;
+            var x = null, y = null;
+            if (typeof p[0] === 'number' && typeof p[1] === 'number') { x = p[0]; y = p[1]; }
+            else if (p[0] && typeof p[0][0] === 'number') { x = p[0][0]; y = p[0][1]; }
+            if (x === null || y === null || !isFinite(x) || !isFinite(y)) return null;
+            if (Math.abs(y) > 90 || Math.abs(x) > 180) return null;   // [lng,lat] 顺序，纬度不可能超过 90
+            return [x, y];
+        }
+        function normRing(arr) {
+            if (!Array.isArray(arr)) return null;
+            var ring = [];
+            for (var i = 0; i < arr.length; i++) {
+                var q = normPt(arr[i]);
+                if (!q) return null;
+                ring.push(q);
+            }
+            if (ring.length < 3) return null;
+            var a = ring[0], b = ring[ring.length - 1];
+            if (a[0] !== b[0] || a[1] !== b[1]) ring.push([a[0], a[1]]);   // 首尾不闭合就补上
+            return ring;
+        }
+        function normCfGeom(type, c) {
+            if (!c) return null;
+            if (type === 'Point') return normPt(c);
+            if (type === 'LineString') {
+                if (!Array.isArray(c) || c.length < 2) return null;
+                var line = [];
+                for (var i = 0; i < c.length; i++) {
+                    var q = normPt(c[i]);
+                    if (!q) return null;
+                    line.push(q);
+                }
+                return line;
+            }
+            if (type === 'Polygon') {
+                // 两层（[[lng,lat],…]）是漏了外环那一层——正是让整个面不渲染的经典坏数据，这里自动补一层
+                if (Array.isArray(c) && c.length && typeof c[0][0] === 'number') {
+                    var r0 = normRing(c);
+                    return r0 ? [r0] : null;
+                }
+                var rings = [];
+                for (var k = 0; k < c.length; k++) {
+                    var r = normRing(c[k]);
+                    if (!r) return null;
+                    rings.push(r);
+                }
+                return rings.length ? rings : null;
+            }
+            return null;
+        }
+        function importCfText(text) {
+            var data;
+            try { data = JSON.parse(text); } catch (e) { toast('导入失败：不是合法 JSON', true); return; }
+            var arr = [];
+            if (data && data.type === 'FeatureCollection' && Array.isArray(data.features)) arr = data.features;
+            else if (data && data.type === 'Feature') arr = [data];
+            else if (Array.isArray(data)) arr = data;
+            if (!arr.length) { toast('文件里没有可导入的要素', true); return; }
+            var added = 0, dup = 0, bad = 0;
+            arr.forEach(function (ft) {
+                try {
+                    var g = ft && ft.geometry;
+                    if (!g || !g.coordinates) { bad++; return; }
+                    var type = g.type;
+                    if (type !== 'Point' && type !== 'LineString' && type !== 'Polygon') { bad++; return; }
+                    var coords = normCfGeom(type, g.coordinates);
+                    if (!coords) { bad++; return; }
+                    var p = ft.properties || {};
+                    var id = String(ft.id || p.id || ('cfimp' + Date.now() + '_' + added));
+                    if (cfById(id)) { dup++; return; }               // 按 id 去重：同一个要素重复导入不会翻倍
+                    var kind = (CF_KINDS.indexOf(p.kind) >= 0) ? p.kind : '设施点';
+                    customFeatures.push({
+                        id: id,
+                        geometry: { type: type, coordinates: coords },
+                        properties: {
+                            name: String(p.name || p.NAME || ('导入要素 ' + (added + 1))).slice(0, 40),
+                            kind: kind,
+                            remark: String(p.remark || p.note || '').slice(0, 120)
+                        },
+                        crs: p.crs || 'GCJ-02',
+                        ts: Date.now() + added
+                    });
+                    added++;
+                } catch (eOne) { bad++; }
+            });
+            saveCustom(); renderCustom(); syncCfCats(); updateCounts(); renderMarkList(); refreshSearch();
+            var msg = '导入 ' + added + ' 个自建要素';
+            if (dup) msg += '，跳过 ' + dup + ' 个（id 重复）';
+            if (bad) msg += '，跳过 ' + bad + ' 个（结构不合法）';
+            toast(msg, !added);
+        }
+        window.__cfExport = cfGeoJSON;                 // 验收探针：直接拿到当前导出结构
+        window.__cfImport = importCfText;              // 验收探针：直接喂文本走导入
+        document.getElementById('mark-export-all').addEventListener('click', function () {
+            if (!customFeatures.length) { toast('暂无自建要素可导出', true); return; }
+            var blob = new Blob([JSON.stringify(cfGeoJSON(), null, 2)], { type: 'application/json' });
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = '我的道路点库.json';
+            a.download = '我的自建要素.geojson';
             document.body.appendChild(a);
             a.click();
             a.remove();
             setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
-            toast('已下载「我的道路点库.json」（' + userRoads.length + ' 条），发送给开发者即可合入数据');
+            toast('已下载「我的自建要素.geojson」（' + customFeatures.length + ' 个），可直接在 QGIS / GeoJSON.io 打开');
         });
+        var cfImportBtn = document.getElementById('mark-import-all');
+        var cfFileInput = document.getElementById('mark-file');
+        if (cfImportBtn && cfFileInput) {
+            cfImportBtn.addEventListener('click', function () { cfFileInput.click(); });
+            cfFileInput.addEventListener('change', function () {
+                var file = cfFileInput.files && cfFileInput.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function () { importCfText(String(reader.result || '')); };
+                reader.readAsText(file, 'utf-8');
+                cfFileInput.value = '';
+            });
+        }
         document.getElementById('mark-clear-all').addEventListener('click', function () {
-            if (!userRoads.length) return;
-            if (!window.confirm('确定清空全部 ' + userRoads.length + ' 条标注道路？此操作不可恢复')) return;
-            userRoads = [];
-            saveUserRoads();
-            if (layerState.road.visible) refreshLayer('road');
+            if (!customFeatures.length) return;
+            if (!window.confirm('确定清空全部 ' + customFeatures.length + ' 个自建要素？此操作不可恢复')) return;
+            customFeatures = [];
+            saveCustom();
+            clearCfSel();
+            renderCustom();
+            syncCfCats();
             updateCounts();
             renderMarkList();
-            toast('已清空全部标注道路');
+            refreshSearch();
+            toast('已清空全部自建要素');
         });
         renderMarkList();
-        ensureMergedNames();
     }
 
     // ---------------- 8.7 Ctrl+Z 全局撤销 ----------------
@@ -1185,8 +1567,8 @@
                 }
             });
         });
-        userRoads.forEach(function (r) {
-            (r.coordinates || []).forEach(function (c) { bounds.extend(toMapCoord(c)); any = true; });
+        customFeatures.forEach(function (f) {
+            cfCoordList(f).forEach(function (c) { bounds.extend(toMapCoord(c)); any = true; });
         });
         if (any) map.fitBounds(bounds, { padding: [70, 70, 40, 70], maxZoom: 14 });
     }
@@ -2247,6 +2629,589 @@
         if (fab) fab.addEventListener('dblclick', function (e) { e.stopPropagation(); }, false);
     })();
 
+
+    // ---------------- 13.10 v114：自建要素渲染 / 选中 / 改形状 / 整体移动 / 删除 ----------------
+    var customLayer = L.layerGroup().addTo(map);
+    var cfSelId = null;
+    var cfKindOn = {};
+    var cfEditing = null;
+    // v114：要素自身被点中的时间戳。Leaflet 会先派发图层 click、再派发地图 click，
+    // 用这个时间差区分「点中要素」与「点空白」，否则详情卡刚打开就被空白点击逻辑关掉
+    var cfHitTs = 0;
+
+    function round6(v) { return Math.round(v * 1e6) / 1e6; }
+    function cfLatLngs(f) { return cfCoordList(f).map(function (c) { return L.latLng(c[1], c[0]); }); }
+    // 屏幕经纬度 → 入库坐标（与既有 geojson 一致：统一存 GCJ-02 底图坐标）
+    function fromMapLatLng(ll) {
+        var c = gcjMode ? [ll.lat, ll.lng] : wgs2gcj([ll.lat, ll.lng]);
+        return [round6(c[1]), round6(c[0])];
+    }
+    function writeGeomFromLatLngs(f, lls) {
+        var cs = lls.map(fromMapLatLng);
+        if (f.geometry.type === 'Point') { f.geometry.coordinates = cs[0]; return; }
+        if (f.geometry.type === 'LineString') { f.geometry.coordinates = cs; return; }
+        var ring = cs.slice();
+        if (ring.length >= 3 && (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])) {
+            ring.push([ring[0][0], ring[0][1]]);
+        }
+        f.geometry.coordinates = [ring];
+    }
+    function cfGeoLabel(t) { return t === 'Point' ? '点' : t === 'LineString' ? '线' : '面'; }
+
+    function cfStyle(f, sel) {
+        var col = cfColor(f.properties.kind);
+        if (f.geometry.type === 'Point') {
+            return { radius: sel ? 10 : 7.5, color: '#ffffff', weight: sel ? 3.5 : 2.5, fillColor: col, fillOpacity: 1 };
+        }
+        if (f.geometry.type === 'LineString') {
+            return { color: col, weight: sel ? 6.5 : 4, opacity: .95, lineJoin: 'round', lineCap: 'round' };
+        }
+        return { color: col, weight: sel ? 3.5 : 2.5, fillColor: col, fillOpacity: sel ? .3 : .16, dashArray: '5 6' };
+    }
+
+    function renderCustom() {
+        // v114l：permanent tooltip 的 DOM 不会随 clearLayers 一起消失——每次重绘（选中/取消/改属性/导入）
+        // 都会再生成一份，旧的不清就会在地图上叠出重影标签。重绘前先把旧标签 DOM 抹掉。
+        Array.prototype.forEach.call(document.querySelectorAll('.cf-tag'), function (n) {
+            if (n.parentNode) n.parentNode.removeChild(n);
+        });
+        customLayer.clearLayers();
+        customFeatures.forEach(function (f) {
+            if (cfEditing && String(cfEditing.id) === String(f.id)) return;
+            if (cfKindOn[f.properties.kind] === false) return;
+            // v114 加固：单条记录坐标畸形（例如 Polygon 少了外环那一层）时只跳过它，
+            // 不能让一条坏数据把整个自建图层和选中/弹卡链路一起打挂
+            try {
+            var coords = cfCoordList(f);
+            if (!coords.length) return;
+            var lls = cfLatLngs(f);
+            if (!lls.length || lls.some(function (l) { return !l || !isFinite(l.lat) || !isFinite(l.lng); })) return;
+            var sel = String(cfSelId) === String(f.id);
+            var col = cfColor(f.properties.kind);
+            // 选中光晕：白色描边衬底，任何底图上都能看出"被选中"
+            if (sel && f.geometry.type === 'LineString') {
+                customLayer.addLayer(L.polyline(lls, { color: '#ffffff', weight: 11, opacity: .9, lineJoin: 'round' }));
+            } else if (sel && f.geometry.type === 'Polygon') {
+                customLayer.addLayer(L.polygon(lls, { color: '#ffffff', weight: 9, opacity: .85, fillColor: '#ffffff', fillOpacity: .12 }));
+            }
+            var layer;
+            if (f.geometry.type === 'Point') layer = L.circleMarker(lls[0], cfStyle(f, sel));
+            else if (f.geometry.type === 'LineString') {
+                layer = L.polyline(lls, cfStyle(f, sel));
+                if (f.properties.kind === '道路') layer.setStyle({ dashArray: '9 6' });
+            } else {
+                layer = L.polygon(lls, cfStyle(f, sel));
+            }
+            layer.bindTooltip(
+                '<span class="cf-tip-name">' + esc(f.properties.name) + '</span>' +
+                '<span class="cf-tip-meta">' + esc(f.properties.kind) + ' · ' + cfGeoLabel(f.geometry.type) + '</span>',
+                { permanent: true, direction: f.geometry.type === 'Point' ? 'top' : 'center', offset: f.geometry.type === 'Point' ? [0, -10] : [0, 0], className: 'cf-tag', opacity: 1 }
+            );
+            layer.on('click', function (e) {
+                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
+                if (markMode || measure.mode || cfEditing) return;
+                cfHitTs = Date.now();
+                selectCf(f.id, false);
+            });
+            layer.on('mouseover', function () { if (!sel) layer.setStyle({ weight: f.geometry.type === 'Point' ? 10 : (f.geometry.type === 'LineString' ? 6.5 : 4) }); });
+            layer.on('mouseout', function () { layer.setStyle(cfStyle(f, sel)); if (f.geometry.type === 'LineString' && f.properties.kind === '道路') layer.setStyle({ dashArray: '9 6' }); });
+            customLayer.addLayer(layer);
+            } catch (eOne) {
+                if (window.console && console.warn) console.warn('[cf] 跳过畸形要素', f && f.id, eOne);
+            }
+        });
+        syncCfCounts();
+    }
+
+    function selectCf(id, zoom) {
+        var f = cfById(id);
+        if (!f) return;
+        setAppMode('select');
+        cfSelId = f.id;
+        cfKindOn[f.properties.kind] = true;
+        renderCustom();
+        openCfCard(f);
+        if (zoom) {
+            var lls = cfLatLngs(f);
+            if (lls.length === 1) map.setView(lls[0], Math.max(map.getZoom(), 16));
+            else map.fitBounds(L.latLngBounds(lls).pad(0.25));
+        }
+    }
+    function clearCfSel() {
+        if (cfEditing) stopCfEdit();
+        cfSelId = null;
+        var card = document.getElementById('cf-card');
+        if (card) card.classList.remove('open');
+        if (APP_MODE === 'select') APP_MODE = 'idle';
+        renderCustom();
+    }
+    function showCfKind(kind, on) {
+        if (on) { cfKindOn[kind] = true; renderCustom(); }
+    }
+
+    // ---- v114 P1-I：模式互斥状态机（idle / measure / mark(绘制) / select / edit(顶点) / move(整体移动)）----
+    // 所有入口统一走 setAppMode(next)：先把不属于 next 的模式全部收干净，再切过去。
+    // 这样「绘制中切测距」「编辑中开面板」「测量中开详情卡」都不会留下草稿或点不动的按钮。
+    var APP_MODE = 'idle';
+    var appModeBusy = false;
+    function setAppMode(next) {
+        if (appModeBusy) return APP_MODE;
+        appModeBusy = true;
+        try {
+            if (next !== 'measure' && (measure.mode || measure.pts.length || (measure.dots && measure.dots.length))) clearMeasure();
+            if (next !== 'mark' && (markMode || markPts.length || markLayer || markLine)) exitMark();
+            if (next !== 'edit' && cfEditing) stopCfEdit();   // 顶点编辑与任何其他模式都不共存（含 move）
+            if (next !== 'select' && next !== 'edit' && next !== 'move' && cfSelId !== null) clearCfSel();
+            // 面板也归模式管：非 mark 模式一律收起自建要素面板，避免它和详情卡/测量卡叠在一起
+            if (next !== 'mark') {
+                var mpn = document.getElementById('mark-panel');
+                if (mpn && mpn.classList.contains('open')) mpn.classList.remove('open');
+            }
+            APP_MODE = next;
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[mode] 切换异常', next, e);
+        }
+        appModeBusy = false;
+        try {
+            if (next === 'edit' || next === 'move') map.dragging.disable();
+            else map.dragging.enable();
+        } catch (e2) { }
+        return APP_MODE;
+    }
+    // 验收探针：不改变任何状态，只报当前模式与各分支残留
+    window.__appMode = function () {
+        return JSON.stringify({
+            mode: APP_MODE,
+            measure: measure.mode || null,
+            measurePts: measure.pts.length,
+            mark: markMode,
+            markPts: markPts.length,
+            editing: !!cfEditing,
+            sel: cfSelId,
+            handles: document.querySelectorAll('.cf-handle-icon').length,
+            dragging: !!(map.dragging && map.dragging.enabled()),
+            distBtn: document.getElementById('btn-distance') ? document.getElementById('btn-distance').classList.contains('active') : null,
+            areaBtn: document.getElementById('btn-area') ? document.getElementById('btn-area').classList.contains('active') : null,
+            markBtn: btnMark ? btnMark.classList.contains('active') : null
+        });
+    };
+
+    function openCfCard(f) {
+        var card = document.getElementById('cf-card');
+        if (!card) return;
+        document.getElementById('cf-name').value = f.properties.name || '';
+        document.getElementById('cf-kind').value = f.properties.kind || '设施点';
+        document.getElementById('cf-remark').value = f.properties.remark || '';
+        var badge = document.getElementById('cf-badge');
+        if (badge) badge.innerHTML = '<span class="cf-badge-dot" style="background:' + cfColor(f.properties.kind) + '"></span>' + esc(f.properties.kind) + ' · ' + cfGeoLabel(f.geometry.type) + ' · ' + cfCoordList(f).length + ' 节点';
+        var hint = document.getElementById('cf-hint');
+        if (hint) hint.textContent = '改属性点「保存属性」；拖动顶点改形状，或「整体移动」拖动整个要素，改动即时落库';
+        // 窄屏：详情卡整宽铺在底部，会和左侧「自建要素」面板叠在一起，开卡时先把面板收起
+        if (window.innerWidth <= 1024) {
+            var mp = document.getElementById('mark-panel');
+            if (mp && mp.classList.contains('open')) {
+                mp.classList.remove('open');
+                if (markMode) { exitMark(); toast('已退出绘制，查看要素详情'); }
+            }
+        }
+        syncCardEditBtns(f);   // v114 P2-2：卡片打开即按当前编辑权限决定三个几何按钮能否点
+        card.classList.add('open');
+        if (typeof forceBackdropResample === 'function') forceBackdropResample(card);
+    }
+
+    function saveCfCard() {
+        var f = cfById(cfSelId);
+        if (!f) return;
+        var name = (document.getElementById('cf-name').value || '').trim();
+        if (!name) { toast('名称不能为空', true); return; }
+        var kind = document.getElementById('cf-kind').value;
+        var remark = (document.getElementById('cf-remark').value || '').trim();
+        f.properties.name = name;
+        f.properties.kind = kind;
+        f.properties.remark = remark;
+        f.ts = Date.now();
+        saveCustom();
+        renderCustom();
+        syncCfCats();
+        refreshSearch();
+        // v114i 修：改名/改类型后左栏「我的自建要素」列表行仍是旧名称与旧类型（列表由 renderMarkList 生成，
+        // 这里此前漏了刷新），补上后名称、类型徽标、节点数一并同步
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        openCfCard(f);
+        toast('属性已保存：' + name + '（' + kind + '），图层 / 搜索 / 图例已同步');
+    }
+
+    function deleteCf(id) {
+        var f = cfById(id);
+        if (!f) return;
+        if (!editAllowed(f)) { toast('删除已锁定：' + editOffTip(f.geometry.type).replace(/[（）]/g, ''), true); return; }
+        if (!window.confirm('确定删除「' + f.properties.name + '」？删除后该要素也会从图层、搜索与图例中移除')) return;
+        customFeatures = customFeatures.filter(function (x) { return String(x.id) !== String(id); });
+        if (cfSelId !== null && String(cfSelId) === String(id)) cfSelId = null;
+        if (cfEditing && String(cfEditing.id) === String(id)) stopCfEdit();
+        saveCustom();
+        var card = document.getElementById('cf-card');
+        if (card) card.classList.remove('open');
+        renderCustom();
+        syncCfCats();
+        refreshSearch();
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        toast('已删除「' + f.properties.name + '」，搜索与图例同步移除');
+    }
+
+    // ---- 改形状：顶点拖拽（等价 OpenLayers Modify）----
+    function redrawEditGhost(f) {
+        var g = cfEditing.ghost;
+        g.clearLayers();
+        var col = cfColor(f.properties.kind);
+        if (f.geometry.type === 'Point') {
+            g.addLayer(L.circleMarker(cfEditing.lls[0], { radius: 10, color: '#ffffff', weight: 3, fillColor: col, fillOpacity: .95 }));
+        } else if (f.geometry.type === 'LineString') {
+            g.addLayer(L.polyline(cfEditing.lls, { color: col, weight: 4, opacity: .9, dashArray: '4 6', lineJoin: 'round' }));
+        } else {
+            g.addLayer(L.polygon(cfEditing.lls, { color: col, weight: 2.5, fillColor: col, fillOpacity: .2, dashArray: '4 6' }));
+        }
+    }
+    // 顶点拖拽落库（drag 事件与 document mouseup 双通道，防止个别浏览器只给 drag 不给 dragend）
+    function commitShapeEdit(f) {
+        if (!cfEditing) return;
+        writeGeomFromLatLngs(f, cfEditing.lls);
+        f.ts = Date.now();
+        saveCustom();
+        redrawEditGhost(f);
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+    }
+    function buildHandles(f) {
+        var h = cfEditing.handles;
+        h.clearLayers();
+        var lls = cfEditing.lls;
+        var idxs = [];
+        if (f.geometry.type === 'Polygon') {
+            for (var i = 0; i < lls.length - 1; i++) idxs.push(i);
+        } else {
+            for (var j = 0; j < lls.length; j++) idxs.push(j);
+        }
+        idxs.forEach(function (i) {
+            var m = L.marker(lls[i], {
+                draggable: true, keyboard: false,
+                icon: L.divIcon({ className: 'cf-handle-icon', html: '<div class="cf-handle"></div>', iconSize: [20, 20], iconAnchor: [10, 10] })
+            });
+            m.on('drag', function (e) {
+                cfEditing.lls[i] = e.target.getLatLng();
+                if (f.geometry.type === 'Polygon' && i === 0) cfEditing.lls[cfEditing.lls.length - 1] = e.target.getLatLng();
+                cfEditing.moved = true;
+                redrawEditGhost(f);
+            });
+            m.on('dragend', function () {
+                if (!cfEditing || !cfEditing.moved) return;
+                cfEditing.moved = false;
+                commitShapeEdit(f);
+            });
+            h.addLayer(m);
+        });
+    }
+    function startShapeEdit(f) {
+        if (!f) return;
+        if (!editAllowed(f)) { toast('改形状已锁定：' + editOffTip(f.geometry.type).replace(/[（）]/g, ''), true); return; }
+        if (cfEditing) stopCfEdit();          // 重复点「改形状」视为重新进入：先收掉旧手柄，防图层泄漏
+        setAppMode('edit');
+        APP_MODE = 'edit';
+        cfEditing = { id: f.id, ghost: L.layerGroup().addTo(map), handles: L.layerGroup().addTo(map), lls: cfLatLngs(f), mapHandlers: [], moved: false };
+        map.dragging.disable();
+        redrawEditGhost(f);
+        buildHandles(f);
+        renderCustom();
+        // 兜底：有些输入通道只派发 drag 不派发 dragend，鼠标/手指一松就落库
+        var onDocUp = function () {
+            if (cfEditing && cfEditing.moved) { cfEditing.moved = false; commitShapeEdit(f); }
+        };
+        document.addEventListener('mouseup', onDocUp, true);
+        document.addEventListener('touchend', onDocUp, true);
+        cfEditing.docUp = onDocUp;
+        var hint = document.getElementById('cf-hint');
+        if (hint) hint.textContent = '拖动彩色顶点调整形状，松开即保存；点「结束编辑」返回';
+        var btn = document.getElementById('cf-shape');
+        if (btn) btn.textContent = '结束编辑';
+        toast('已进入形状编辑：拖动顶点，松手即保存');
+    }
+    function stopCfEdit() {
+        if (!cfEditing) return;
+        var ed = cfEditing;
+        // v114：先摘掉编辑状态，再做图层清理。
+        // 顶点 marker 若停在拖动中途被移除，Leaflet 内部可能抛异常，
+        // 旧写法会让「结束编辑」按一次没反应（按钮文字与手柄都不复位）。
+        cfEditing = null;
+        try { if (ed.ghost) map.removeLayer(ed.ghost); } catch (e) { }
+        try {
+            if (ed.handles) {
+                ed.handles.clearLayers();
+                map.removeLayer(ed.handles);
+            }
+        } catch (e) { }
+        // 兜底：把可能残留的手柄 DOM 直接抹掉，保证退出编辑的视觉是干净的
+        Array.prototype.forEach.call(document.querySelectorAll('.cf-handle-icon'), function (n) {
+            if (n.parentNode) n.parentNode.removeChild(n);
+        });
+        if (ed.docUp) {
+            document.removeEventListener('mouseup', ed.docUp, true);
+            document.removeEventListener('touchend', ed.docUp, true);
+        }
+        if (ed.mapHandlers && ed.mapHandlers.length) {
+            ed.mapHandlers.forEach(function (h) { try { map.off(h[0], h[1]); } catch (e) { } });
+        }
+        try { map.dragging.enable(); } catch (e) { }
+        var btn = document.getElementById('cf-shape');
+        if (btn) btn.textContent = '改形状';
+        var hint = document.getElementById('cf-hint');
+        if (hint) hint.textContent = '改属性点「保存属性」；拖动顶点改形状，或「整体移动」拖动整个要素，改动即时落库';
+        APP_MODE = (cfSelId != null ? 'select' : 'idle');
+        renderCustom();
+    }
+
+    // ---- 整体移动：整要素平移（等价 OpenLayers Translate，形状不变）----
+    function drawMoveGhost(f, lls) {
+        var g = cfEditing.ghost;
+        g.clearLayers();
+        var col = cfColor(f.properties.kind);
+        var shape;
+        if (f.geometry.type === 'Point') shape = L.circleMarker(lls[0], { radius: 11, color: '#ffffff', weight: 3, fillColor: col, fillOpacity: .95 });
+        else if (f.geometry.type === 'LineString') shape = L.polyline(lls, { color: col, weight: 5, opacity: .95 });
+        else shape = L.polygon(lls, { color: col, weight: 3, fillColor: col, fillOpacity: .22 });
+        shape.on('mousedown', function (e) {
+            if (!cfEditing) return;
+            cfEditing.moving = true;
+            cfEditing.start = e.latlng;
+            cfEditing.delta = [0, 0];
+            L.DomEvent.stop(e);
+        });
+        g.addLayer(shape);
+    }
+    function startMoveFeature(f) {
+        if (!f) return;
+        if (!editAllowed(f)) { toast('整体移动已锁定：' + editOffTip(f.geometry.type).replace(/[（）]/g, ''), true); return; }
+        if (cfEditing) stopCfEdit();
+        setAppMode('move');
+        APP_MODE = 'move';
+        var lls0 = cfLatLngs(f);
+        cfEditing = { id: f.id, ghost: L.layerGroup().addTo(map), handles: null, lls: lls0, base: lls0.map(function (ll) { return [ll.lat, ll.lng]; }), mapHandlers: [], moving: false, delta: [0, 0] };
+        map.dragging.disable();
+        var base = cfEditing.base;
+        drawMoveGhost(f, lls0);
+        var onMove = function (e) {
+            if (!cfEditing || !cfEditing.moving) return;
+            var dLat = e.latlng.lat - cfEditing.start.lat;
+            var dLng = e.latlng.lng - cfEditing.start.lng;
+            cfEditing.delta = [dLat, dLng];
+            drawMoveGhost(f, base.map(function (p) { return L.latLng(p[0] + dLat, p[1] + dLng); }));
+        };
+        var onUp = function () {
+            if (!cfEditing || !cfEditing.moving) return;
+            cfEditing.moving = false;
+            var d = cfEditing.delta || [0, 0];
+            if (Math.abs(d[0]) < 1e-7 && Math.abs(d[1]) < 1e-7) return;
+            cfEditing.lls = base.map(function (p) { return L.latLng(p[0] + d[0], p[1] + d[1]); });
+            writeGeomFromLatLngs(f, cfEditing.lls);
+            f.ts = Date.now();
+            saveCustom();
+            var id = f.id, nm = f.properties.name;
+            stopCfEdit();
+            selectCf(id, false);
+            try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+            toast('已整体移动「' + nm + '」，形状保持不变');
+        };
+        map.on('mousemove', onMove);
+        map.on('mouseup', onUp);
+        cfEditing.mapHandlers = [['mousemove', onMove], ['mouseup', onUp]];
+        var hint = document.getElementById('cf-hint');
+        if (hint) hint.textContent = '按住图形拖动到新位置，松开即保存（只平移、不变形）';
+        toast('已进入整体移动：按住图形拖动');
+    }
+
+    // ---- v114 P2 挑战 1：删除整类自建图层（一次确认，整组清掉；清空后该行由 syncCfCats 自动移除）----
+    function deleteCfKind(k) {
+        var hit = customFeatures.filter(function (f) { return (f.properties.kind || '设施点') === k; });
+        if (!hit.length) return;
+        if (!window.confirm('删除「我的·' + k + '」整个分类？该分类下 ' + hit.length + ' 个要素会被一并移除，图层、列表、搜索与图例同步清理')) return;
+        if (cfEditing) stopCfEdit();
+        if (cfSelId !== null && hit.some(function (f) { return String(f.id) === String(cfSelId); })) {
+            cfSelId = null;
+            var card = document.getElementById('cf-card');
+            if (card) card.classList.remove('open');
+            if (APP_MODE === 'select' || APP_MODE === 'edit' || APP_MODE === 'move') APP_MODE = 'idle';
+        }
+        customFeatures = customFeatures.filter(function (f) { return (f.properties.kind || '设施点') !== k; });
+        try { delete cfKindOn[k]; } catch (e) { }
+        saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        toast('已删除「我的·' + k + '」共 ' + hit.length + ' 个要素');
+    }
+
+    // ---- 分类同步：图层管理动态分组 / 搜索类型下拉 / 图例色带 ----
+    function syncCfCats() {
+        var kinds = [];
+        customFeatures.forEach(function (f) {
+            var k = f.properties.kind || '设施点';
+            if (kinds.indexOf(k) < 0) kinds.push(k);
+        });
+        kinds.sort(function (a, b) {
+            var ia = CF_KINDS.indexOf(a), ib = CF_KINDS.indexOf(b);
+            return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+        });
+
+        var list = document.getElementById('layer-list');
+        var box = document.getElementById('cf-layer-box');
+        if (list) {
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'cf-layer-box';
+                box.className = 'cf-layer-box';
+                box.addEventListener('change', function (e) {
+                    var cb = e.target;
+                    if (!cb || cb.type !== 'checkbox') return;
+                    var k = cb.getAttribute('data-cf-kind');
+                    if (k === null) return;
+                    cfKindOn[k] = cb.checked;
+                    renderCustom();
+                });
+                // v114 P2-1：分类行右侧的 × 删整组。label 内的点击会顺带切换 checkbox，这里必须拦掉
+                box.addEventListener('click', function (e) {
+                    var t = e.target;
+                    if (!t || typeof t.getAttribute !== 'function') return;
+                    var k = t.getAttribute('data-cf-del-kind');
+                    if (k === null) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteCfKind(k);
+                });
+                var anchor = list.querySelector('.cluster-toggle');
+                if (anchor) list.insertBefore(box, anchor); else list.appendChild(box);
+            }
+            if (!kinds.length) {
+                // v114i 修：删掉最后一个自建要素后，光隐藏分组盒不够——旧的「我的·xx」行仍留在 DOM 里，
+                // 一旦图层管理面板被重开就会闪出一行已不存在的分类，这里连同内容一起清掉
+                box.style.display = 'none';
+                box.innerHTML = '';
+            } else {
+                box.style.display = '';
+                var rows = kinds.map(function (k) {
+                    var n = 0;
+                    customFeatures.forEach(function (f) { if ((f.properties.kind || '设施点') === k) n++; });
+                    var on = cfKindOn[k] !== false;
+                    return '<label class="layer-item cf-layer-item">' +
+                        '<input type="checkbox" data-cf-kind="' + k + '"' + (on ? ' checked' : '') + '>' +
+                        '<span class="dot" style="background:' + cfColor(k) + '"></span>' +
+                        '<span class="layer-name">我的·' + esc(k) + '</span>' +
+                        '<span class="count">' + n + '</span>' +
+                        '<button type="button" class="cf-layer-del" data-cf-del-kind="' + esc(k) + '" title="删除「我的·' + esc(k) + '」整个分类（' + n + ' 个要素）" aria-label="删除该分类">×</button>' +
+                        '</label>';
+                }).join('');
+                box.innerHTML = '<div class="cf-layer-head">我的要素（自建）</div>' + rows;
+            }
+        }
+
+        var sel = document.getElementById('search-type');
+        if (sel) {
+            Array.prototype.slice.call(sel.querySelectorAll('option[data-cf="1"]')).forEach(function (o) { o.parentNode.removeChild(o); });
+            kinds.forEach(function (k) {
+                var o = document.createElement('option');
+                o.value = k;
+                o.textContent = '我的·' + k;
+                o.setAttribute('data-cf', '1');
+                sel.appendChild(o);
+            });
+            var baseVals = ['', 'school', 'hospital', 'scenic', 'road'];
+            if (baseVals.indexOf(sel.value) < 0 && kinds.indexOf(sel.value) < 0) sel.value = '';
+        }
+
+        var lp = document.getElementById('legend-panel');
+        if (lp) {
+            Array.prototype.slice.call(lp.querySelectorAll('.cf-legend-row')).forEach(function (r) { r.parentNode.removeChild(r); });
+            var note = lp.querySelector('.legend-note');
+            kinds.forEach(function (k) {
+                var row = document.createElement('div');
+                row.className = 'legend-row cf-legend-row';
+                row.innerHTML = '<span class="lg-dot" style="background:' + cfColor(k) + '"></span>我的·' + esc(k);
+                if (note) lp.insertBefore(row, note); else lp.appendChild(row);
+            });
+        }
+    }
+    function syncCfCounts() {
+        var box = document.getElementById('cf-layer-box');
+        if (!box) return;
+        var rows = box.querySelectorAll('.cf-layer-item');
+        Array.prototype.forEach.call(rows, function (row) {
+            var cb = row.querySelector('input[data-cf-kind]');
+            if (!cb) return;
+            var k = cb.getAttribute('data-cf-kind');
+            var n = 0;
+            customFeatures.forEach(function (f) { if ((f.properties.kind || '设施点') === k) n++; });
+            var cnt = row.querySelector('.count');
+            if (cnt) cnt.textContent = n;
+        });
+    }
+
+    // ---- 详情卡（属性表单 + 操作）----
+    (function injectCfCard() {
+        if (document.getElementById('cf-card')) return;
+        var card = document.createElement('div');
+        card.id = 'cf-card';
+        card.className = 'mark-panel cf-card';
+        card.innerHTML =
+            '<div class="settings-title">自建要素详情<span class="settings-close" id="cf-close" title="关闭">×</span></div>' +
+            '<div class="cf-badge" id="cf-badge"></div>' +
+            '<div class="set-row"><span class="set-name" style="width:52px">名称</span><input type="text" id="cf-name" maxlength="24"></div>' +
+            '<div class="set-row"><span class="set-name" style="width:52px">类型</span><select id="cf-kind">' +
+            CF_KINDS.map(function (k) { return '<option value="' + k + '">' + k + '</option>'; }).join('') +
+            '</select></div>' +
+            '<textarea id="cf-remark" class="cf-remark" placeholder="备注（选填，如：现场核对 / 待补充开放时间）"></textarea>' +
+            '<div class="cf-btns">' +
+            '<button type="button" id="cf-save" class="mark-btn small">保存属性</button>' +
+            // v114 P2-4 续：卡片三个几何按钮也换图标 + 悬浮提示，「保存属性」保留文字（主操作需要有字）
+            '<button type="button" id="cf-shape" class="mark-btn small ghost cf-ico" title="改形状（拖顶点改轮廓）" aria-label="改形状"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5l-4-4L4 16v4z"/><path d="M14.5 5.5l4 4"/></svg></button>' +
+            '</div>' +
+            '<div class="cf-btns">' +
+            '<button type="button" id="cf-move" class="mark-btn small ghost cf-ico" title="整体移动（拖动整个要素）" aria-label="整体移动"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M2.5 12h19"/><path d="M9 5.5L12 2.5l3 3M9 18.5l3 3 3-3M5.5 9l-3 3 3 3M18.5 9l3 3-3 3"/></svg></button>' +
+            '<button type="button" id="cf-del" class="mark-btn small danger cf-ico" title="删除该要素" aria-label="删除"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9.5 7V4.5h5V7M7.5 7l1 12.5h7l1-12.5"/></svg></button>' +
+            '</div>' +
+            '<div class="cf-editmod-note">改形状 / 移动 / 删除受「编辑权限」控制</div>' +
+            '<div id="cf-hint" class="mark-status"></div>';
+        var host = document.getElementById('map') || document.body;
+        host.appendChild(card);
+        ['mousedown', 'pointerdown', 'click', 'dblclick', 'touchstart', 'touchmove', 'touchend'].forEach(function (t) {
+            card.addEventListener(t, function (e) { e.stopPropagation(); });
+        });
+        document.getElementById('cf-close').addEventListener('click', function () { clearCfSel(); });
+        document.getElementById('cf-save').addEventListener('click', saveCfCard);
+        document.getElementById('cf-shape').addEventListener('click', function () {
+            if (cfEditing && cfEditing.handles) { stopCfEdit(); return; }
+            var f = cfById(cfSelId);
+            if (f) startShapeEdit(f);
+        });
+        document.getElementById('cf-move').addEventListener('click', function () {
+            var f = cfById(cfSelId);
+            if (f) startMoveFeature(f);
+        });
+        document.getElementById('cf-del').addEventListener('click', function () {
+            if (cfSelId !== null) deleteCf(cfSelId);
+        });
+    })();
+
+    // 空点地图 → 取消选中；Esc 退出编辑 / 取消选中
+    map.on('click', function (e) {
+        if (uiHit(e)) return;
+        if (markMode || measure.mode || cfEditing) return;
+        if (Date.now() - cfHitTs < 90) return;   // v114：这一下点中的是自建要素，不是空白
+        if (cfSelId !== null) clearCfSel();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
+        if (cfSelId !== null) clearCfSel();
+    });
+
+    syncCfCats();
+    renderCustom();
+    try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
 
     // ---------------- 14. 启动 ----------------
     loadTheme();
