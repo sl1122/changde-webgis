@@ -3499,3 +3499,34 @@ body.theme-paper .legend-title { font-family: var(--paper-serif); color: var(--i
 body.theme-paper .set-name { color: var(--ink-0); }
 body.theme-paper .set-val { color: var(--ink-1); }
 body.theme-paper .set-note { color: var(--ink-2); }
+
+/* ---------- v116 · 图层列表折叠（挑战 5）+ 拖拽排序（挑战 2） ---------- */
+.panel-title .panel-fold {
+    margin-left: auto;
+    width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--text-1, #5d5449);
+    font-size: 13px; font-weight: 600; line-height: 1;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    transition: transform .22s cubic-bezier(.32, .72, 0, 1), background-color .18s ease, border-color .18s ease;
+    user-select: none;
+}
+.panel-title .panel-fold:hover { background: rgba(0, 0, 0, .07); border-color: rgba(0, 0, 0, .1); }
+@media (max-width: 640px) {
+    .panel-title .panel-fold { width: 34px; height: 34px; font-size: 15px; }
+}
+.panel.folded .panel-fold { transform: rotate(-90deg); }
+.panel.folded #layer-list,
+.panel.folded .layer-actions,
+.panel.folded #btn-layer-restore,
+.panel.folded .count-tip { display: none !important; }
+.layer-item[draggable="true"] { cursor: grab; }
+.layer-item.dragging { opacity: .42; }
+.layer-item.drop-after { box-shadow: inset 0 -2px 0 var(--accent, #8e2a52); }
+.layer-item.drop-before { box-shadow: inset 0 2px 0 var(--accent, #8e2a52); }
+body.theme-paper .panel-title .panel-fold { color: var(--ink-1); border-radius: 2px; }
+body.theme-paper .panel-title .panel-fold:hover { background: rgba(42, 36, 29, .07); border-color: var(--rule); }
+body.theme-paper .layer-item.drop-after { box-shadow: inset 0 -2px 0 var(--accent, #7d6a4f); }
+body.theme-paper .layer-item.drop-before { box-shadow: inset 0 2px 0 var(--accent, #7d6a4f); }
