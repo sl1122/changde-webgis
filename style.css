@@ -2355,50 +2355,134 @@ body.theme-night #fab:not(.fab-open) {
 #fab-trigger span { font-size: 9px; font-weight: 600; line-height: 1; }
 #fab-trigger svg { width: 16px; height: 16px; }
 
-/* 展开态：双排矩形（2 列 × 6 行，v86 新增「记录」按钮共 11 个功能钮） */
+/* 展开态：双列纵向面板（v119 重做，替换 v86 双排矩形）
+   尺寸体系：面板宽 224 = 内边距 10×2 + 列宽 98×2 + 间距 8；按钮 98×42；圆角 16 / 8 = 2:1 同族；
+   字号：正文 11.5px + 单行 nowrap —— 「我的位置」「清除测量」不再折行；
+   分组标题横跨两列（字距 + 细线分隔），让 11 个功能钮有结构，而不是一片等大方块 */
 #fab.fab-open {
-    width: 180px; height: auto;
+    width: 224px; height: auto;
     display: grid;
-    grid-template-columns: repeat(2, 84px);
-    gap: 7px;
-    padding: 7px;
-    border-radius: 18px;
+    grid-template-columns: repeat(2, 98px);
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
     cursor: default;
-    /* v106：接入 --glass-alpha（原硬编码 .6 不随滑杆且覆盖前面 .toolbar.fab-open 规则——悬浮球展开面板透明度恒 0.6 的根因）；v107 子属性化 */
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .78));
-    box-shadow: 0 14px 40px rgba(31, 45, 78, .24);
+    /* v106：接入 --glass-alpha；展开面积大，blur 降到 10px 换取流畅 */
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .82));
+    backdrop-filter: blur(10px) saturate(125%);
+    -webkit-backdrop-filter: blur(10px) saturate(125%);
+    box-shadow:
+        0 18px 44px -14px rgba(31, 45, 78, .3),
+        0 0 0 .5px rgba(255, 255, 255, calc(.62 * var(--glass-sheen)));
+    contain: layout style;
 }
 #fab.fab-open > button { display: flex; }
+/* 分组标题：跨两列，两端对齐的极简分隔（字距 + 细线，不做色块） */
+#fab.fab-open .fab-group {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 16px;
+    margin: 2px 0 0;
+    padding: 0 2px;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .16em;
+    color: var(--text-2);
+    opacity: .72;
+    user-select: none;
+}
+#fab.fab-open .fab-group::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: currentColor;
+    opacity: .3;
+}
+#fab.fab-open .fab-group:first-of-type { margin-top: 0; }
 #fab.fab-open #fab-trigger {
     position: static; transform: none;
     grid-column: 1 / -1;
-    width: 100%; height: 34px;
-    flex-direction: row; gap: 6px;
-    border-radius: 12px;
+    width: 100%; height: 36px;
+    flex-direction: row; justify-content: center; gap: 7px;
+    border-radius: 8px;
     /* v106：接入 --glass-alpha（原硬编码 .62——展开态收起按钮白底不随滑杆）；v107 子属性化 */
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .74));
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .7));
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, calc(.8 * var(--glass-sheen))),
-        0 1px 4px rgba(31, 45, 78, .08);
+        0 1px 3px rgba(31, 45, 78, .07);
     color: var(--plum);
 }
-#fab.fab-open #fab-trigger .fab-collapse { width: 16px; height: 16px; }
-#fab.fab-open #fab-trigger span { font-size: 11px; }
+#fab.fab-open #fab-trigger .fab-collapse { width: 15px; height: 15px; }
+#fab.fab-open #fab-trigger span { font-size: 11.5px; letter-spacing: .04em; }
 #fab.fab-open button:not(#fab-trigger) {
-    width: 84px; height: 40px;
-    justify-content: flex-start; gap: 6px;
-    padding: 0 9px;
-    border-radius: 11px;
+    width: 98px; height: 42px;
+    align-items: center;
+    justify-content: center; gap: 7px;
+    padding: 0 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 #fab.fab-open button:not(#fab-trigger) span {
-    display: inline-block; font-size: 11px; font-weight: 600;
+    display: inline-block; font-size: 11.5px; font-weight: 600;
+    letter-spacing: .01em;
     color: var(--text); line-height: 1;
+    white-space: nowrap;
 }
-#fab.fab-open button:not(#fab-trigger) svg { width: 16px; height: 16px; }
-/* 停靠边不再改变展开形态（双排统一）；位置吸附保留 */
+#fab.fab-open button:not(#fab-trigger) svg { width: 17px; height: 17px; flex: 0 0 17px; }
+/* 折叠态只留液态玻璃球：分组标题是展开态的新增结构，折叠时必须一起收起，
+   否则「视图 / 测量 / 要素」三个词会露在球里 */
+#fab:not(.fab-open) .fab-group { display: none; }
+/* 11 个功能钮在双列里必然落单一个。把视图组第 5 个「图例」拉成通栏，
+   末行不再出现「左半边有钮、右半边空着」的不规则，也让 2×2 + 1 通栏的节奏收口 */
+#fab.fab-open button#btn-legend {
+    grid-column: 1 / -1;
+    width: auto;
+    justify-content: center;
+}
+/* 停靠边不再改变展开形态（双列统一）；位置吸附保留 */
 #fab.fab-open[data-anchor] { max-height: none; overflow: visible; }
 /* 展开态已有文字说明，隐藏 hover tooltip */
 #fab.fab-open button::before { display: none; }
+/* 纸笺：纸面 + 细描边 + 直角，与纸包其它面板同一族 */
+body.theme-paper #fab.fab-open {
+    background-color: var(--paper-1);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 2px 3px rgba(42, 36, 29, .05), 0 16px 32px -24px rgba(42, 36, 29, .55);
+}
+body.theme-paper #fab.fab-open .fab-group {
+    color: var(--ink-1);
+    letter-spacing: .14em;
+    opacity: .85;
+}
+body.theme-paper #fab.fab-open .fab-group::after { opacity: .42; }
+body.theme-paper #fab.fab-open #fab-trigger {
+    background-color: var(--paper-2) !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: 2px !important;
+}
+body.theme-paper #fab.fab-open button:not(#fab-trigger) {
+    border-radius: 2px !important;
+    font-family: inherit;
+}
+body.theme-paper #fab.fab-open button:not(#fab-trigger) span {
+    font-size: 11px;
+    letter-spacing: .04em;
+}
+/* 夜间：展开面板转近实色深底（关闭 blur，零透底噪点、零合成开销） */
+body.theme-night #fab { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.theme-night #fab.fab-open {
+    background-color: #121a2e;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body.theme-night #fab.fab-open .fab-group { color: #9aa8c8; opacity: .9; }
+body.theme-night #fab.fab-open .fab-group::after { opacity: .38; }
 
 /* ================= v85 修复：显式 display 覆盖 hidden 属性（隐藏失效根因） =================
    .measure-result / .cl-card 显式声明 display:flex，优先级高于 UA 样式 [hidden]{display:none}，
@@ -2668,9 +2752,9 @@ body.theme-night .panel-title, body.theme-night .legend-title, body.theme-night 
 body.theme-night .cl-head, body.theme-night .rp-head, body.theme-night .iw-card .iw-title {
     font-weight: 600; color: #ffffff;
 }
-/* 悬浮球展开动画减负：取消按钮 stagger（统一同弹）、过渡缩短到 0.22s 内，展开更跟手 */
-.toolbar.fab-open { transition: width .22s cubic-bezier(.34, 1.56, .64, 1), height .22s cubic-bezier(.34, 1.56, .64, 1), transform .22s cubic-bezier(.34, 1.56, .64, 1), opacity .2s ease !important; }
-.toolbar.fab-open button { transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), opacity .16s ease !important; transition-delay: 0s !important; }
+/* 悬浮球展开动画减负：v119 过渡再收紧到 0.18s、曲线去回弹（原 1.56 弹簧在 224px 面板上显得拖沓） */
+.toolbar.fab-open { transition: width .18s cubic-bezier(.22, .9, .3, 1), height .18s cubic-bezier(.22, .9, .3, 1), transform .18s cubic-bezier(.22, .9, .3, 1), opacity .14s ease !important; }
+.toolbar.fab-open button { transition: transform .14s cubic-bezier(.22, .9, .3, 1), opacity .12s ease !important; transition-delay: 0s !important; }
 
 /* ================= v95 夜间可读性终极方案：玻璃面板转 Apple 深色实底卡片 =================
    背景：三轮提亮（v92 #eef2ff / v93 #f5f8ff / v94 纯白加粗）后用户仍反馈夜间看不清——
@@ -3426,20 +3510,10 @@ body.theme-paper .poi-tip {
 .layer-item .layer-del:hover { color: #9a4436; border-color: rgba(154, 68, 54, .4); background: rgba(154, 68, 54, .08); }
 body.theme-paper .layer-item .layer-del { color: var(--ink-2); }
 body.theme-paper .layer-item .layer-del:hover { color: var(--hospital); border-color: rgba(154, 68, 54, .45); background: rgba(154, 68, 54, .07); }
-/* 动态图层行（由导入数据生成） */
+/* 动态图层行（由导入数据生成）
+   v119：去掉名称后的「导入」内联小标签——分类行多了地区徽标，行内空间不够，标签会把
+   名称挤成省略号；来源信息移到名称 title 与分组标题「我的要素（自建）」里表达 */
 .layer-item .layer-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.layer-item.is-dyn .layer-name::after {
-    content: "导入";
-    margin-left: 5px;
-    font-size: 9.5px;
-    letter-spacing: .06em;
-    color: var(--text-2, #94897a);
-    border: 1px solid currentColor;
-    border-radius: 2px;
-    padding: 0 3px;
-    opacity: .7;
-    vertical-align: 1px;
-}
 /* v116：整层删除后的一键恢复 */
 .layer-actions { flex-wrap: wrap; }
 .layer-actions button { flex: 1 1 auto; white-space: nowrap; }
@@ -3555,3 +3629,34 @@ body.theme-paper .pw-del {
     color: #8a3b2e;
 }
 body.theme-paper .pw-del:hover { background: rgba(154, 68, 54, .08); }
+/* ================= v119：图层地区归属徽标 =================
+   导入外部数据（常德地区 js）后，图层行与面板标题都标出「按坐标判定的所属地区」。
+   徽标用极细描边 + 9px 字号，与图层行同一行高，不抢名称与数量的位置。 */
+.panel-region {
+    display: inline-flex; align-items: center;
+    height: 15px; margin-left: 6px; padding: 0 5px;
+    border: 1px solid currentColor; border-radius: 3px;
+    font-size: 9.5px; font-weight: 500; letter-spacing: .04em;
+    color: var(--accent, var(--plum)); opacity: .82; vertical-align: middle;
+    cursor: default;
+}
+.cf-region {
+    flex: 0 0 auto; margin-right: auto; margin-left: -2px;
+    display: inline-flex; align-items: center; height: 14px; padding: 0 4px;
+    border: 1px solid currentColor; border-radius: 3px;
+    font-size: 9px; line-height: 1; letter-spacing: .02em; white-space: nowrap;
+    color: #94a3b8;
+}
+.cf-region[data-region="常德"] { color: var(--accent, #8e2a52); }
+.cf-region[data-region="外地"], .cf-region[data-region="常德+外"] { color: #b45309; }
+/* 动态行名称不再撑满：让地区徽标紧贴名称，数量与删除钮靠右 */
+.cf-layer-item .layer-name {
+    flex: 0 1 auto; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+body.theme-paper .panel-region,
+body.theme-paper .cf-region { border-radius: 1px; border-color: var(--rule); color: var(--ink-1); }
+body.theme-paper .panel-region { color: var(--ink-1); }
+body.theme-night .panel-region { color: #d9c8a8; }
+body.theme-night .cf-region[data-region="常德"] { color: #d9c8a8; }
+body.theme-night .cf-region[data-region="外地"], body.theme-night .cf-region[data-region="常德+外"] { color: #f0b072; }

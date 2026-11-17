@@ -256,6 +256,29 @@
     var CF_KINDS = ['设施点', '公交站', '公园', '自定区域', '道路'];
     var CF_KIND_COLORS = { '设施点': '#2563eb', '公交站': '#0d9488', '公园': '#16a34a', '自定区域': '#a855f7', '道路': '#6d28d9' };
     function cfColor(kind) { return CF_KIND_COLORS[kind] || '#6d28d9'; }
+    // v119：外部数据（如常德地区 js）的业务类型五花八门——先归一到本站的四类点/线，再成层，
+    // 避免「高等院校」「卫生院」「风景名胜」各占一行，图层列表被同义类型撑散
+    var KIND_EXACT = {
+        '学校': '学校', '高校': '学校', '大学': '学校', '学院': '学校', '中学': '学校', '小学': '学校', '幼儿园': '学校',
+        '医院': '医院', '医疗': '医院', '卫生院': '医院', '诊所': '医院', '医疗机构': '医院',
+        '景点': '景点', '景区': '景点', '风景名胜': '景点', '公园': '景点', '旅游景点': '景点', '古迹': '景点',
+        '道路': '道路', '公路': '道路', '主干道': '道路', '街道': '道路',
+        '公交站': '公交站', '公交站点': '公交站', '站台': '公交站',
+        '区域': '自定区域', '片区': '自定区域', '自定区域': '自定区域',
+        '设施点': '设施点'
+    };
+    // 只对强特征词做包含匹配，避免「公园路」被判成景点、「学院路」被判成学校
+    var KIND_CONTAIN = ['高校', '大学', '学院', '中学', '小学', '幼儿园', '卫生院', '诊所', '景区', '风景名胜', '公交站', '公交站点'];
+    function normKind(raw) {
+        var s = String(raw == null ? '' : raw).trim().slice(0, 12);
+        if (!s) return '设施点';
+        if (KIND_EXACT[s]) return KIND_EXACT[s];
+        if (s.indexOf('路') >= 0 && s.length <= 6) return '道路';
+        for (var i = 0; i < KIND_CONTAIN.length; i++) {
+            if (s.indexOf(KIND_CONTAIN[i]) >= 0) return KIND_EXACT[KIND_CONTAIN[i]];
+        }
+        return s;
+    }
     function cfCoordList(f) {
         if (!f || !f.geometry) return [];
         var g = f.geometry;
@@ -267,6 +290,25 @@
     function cfById(id) {
         for (var i = 0; i < customFeatures.length; i++) if (String(customFeatures[i].id) === String(id)) return customFeatures[i];
         return null;
+    }
+    // v119：地区归属——按坐标粗判常德市域框，导入数据在图层行上直接标出所属地区
+    var REGION_BOX = { w: 110.9, e: 112.4, s: 28.5, n: 30.1 };
+    function regionOfPoint(c) {
+        if (!c || c.length < 2) return '未标注';
+        if (c[0] >= REGION_BOX.w && c[0] <= REGION_BOX.e && c[1] >= REGION_BOX.s && c[1] <= REGION_BOX.n) return '常德';
+        return '外地';
+    }
+    function regionOfKind(k) {
+        var cd = 0, out = 0;
+        customFeatures.forEach(function (f) {
+            if ((f.properties.kind || '设施点') !== k) return;
+            var r = regionOfPoint((cfCoordList(f) || [])[0]);
+            if (r === '常德') cd++; else if (r === '外地') out++;
+        });
+        if (!cd && !out) return '未标注';
+        if (cd && !out) return '常德';
+        if (out && !cd) return '外地';
+        return '常德+外';
     }
     function saveCustom() {
         try { localStorage.setItem(CF_KEY, JSON.stringify(customFeatures)); } catch (e) { }
@@ -1461,8 +1503,9 @@
                     var id = String(ft.id || p.id || ('cfimp' + Date.now() + '_' + added));
                     if (cfById(id)) { dup++; return; }               // 按 id 去重：同一个要素重复导入不会翻倍
                     // v116：类型不再限于内置 5 类——按数据自带的业务类型成层（笔记「图层由数据决定」）
+                    // v119：先归一同义类型（高校→学校、卫生院→医院），再成层，图层列表不被同义类型撑散
                     var rawKind = String(p.kind || p.KIND || p.type || p.类型 || '').trim().slice(0, 12);
-                    var kind = rawKind || '设施点';
+                    var kind = normKind(rawKind);
                     customFeatures.push({
                         id: id,
                         geometry: { type: type, coordinates: coords },
@@ -2232,6 +2275,19 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v119', t: '悬浮球展开面板重做 + 导入图层类型归并与地区归属 + 面板流畅性收紧',
+            pts: [
+                '展开面板从 180px / 84px 按钮 / 11px 字重排为 224px / 98×42 按钮 / 11.5px 单行，字号与尺寸同步放大，「我的位置」「清除测量」不再折行',
+                '按钮圆角 8、面板圆角 16（2:1 同族），不用无关圆角值，消掉原来的"方块拼贴"感',
+                '新增分组标题「视图 / 测量 / 要素」横跨两列，字距 .16em + 细线分隔，11 个功能钮有了结构层次',
+                '三材质分别适配：玻璃面板 blur 降到 10px 换流畅；纸笺改纸面 + 直角 + 无 blur；夜间转实色深底并关闭 blur',
+                '展开/收起过渡由 0.22s 弹簧收紧为 0.18s 无回弹曲线，减少整块重排的拖沓感',
+                '导入外部数据先归一同义类型（高校/大学/学院→学校，卫生院/诊所→医院，景区/风景名胜→景点，公路/主干道→道路），图层列表不再被同义类型撑散',
+                '图层管理标题显示本站归属「常德」；导入生成的分类行按坐标判定标出「常德 / 常德+外 / 外地」徽标，行名去掉「我的·」前缀与「导入」小标签，名称不再被挤成省略号',
+                '「图例」拉成两列通栏收口，消掉双列布局里必然落单的半行空白；折叠态同步隐藏分组标题，玻璃球里不再露出「视图 / 测量 / 要素」'
+            ]
+        },
         {
             v: 'v118', t: '删除单个地物点：点位信息卡内「删除此点」+ 坐标指纹记忆 + 一键恢复已删点位',
             pts: [
@@ -3513,10 +3569,12 @@
                     var n = 0;
                     customFeatures.forEach(function (f) { if ((f.properties.kind || '设施点') === k) n++; });
                     var on = cfKindOn[k] !== false;
+                    var reg = regionOfKind(k);
                     return '<label class="layer-item cf-layer-item is-dyn" draggable="true">' +
                         '<input type="checkbox" data-cf-kind="' + k + '"' + (on ? ' checked' : '') + '>' +
                         '<span class="dot" style="background:' + cfColor(k) + '"></span>' +
-                        '<span class="layer-name">我的·' + esc(k) + '</span>' +
+                        '<span class="layer-name" title="我的·' + esc(k) + '（自建）">' + esc(k) + '</span>' +
+                        '<span class="cf-region" data-region="' + esc(reg) + '" title="按坐标判定的所属地区">' + esc(reg) + '</span>' +
                         '<span class="count">' + n + '</span>' +
                         '<button type="button" class="cf-layer-del" data-cf-del-kind="' + esc(k) + '" title="删除「我的·' + esc(k) + '」整个分类（' + n + ' 个要素）" aria-label="删除该分类">×</button>' +
                         '</label>';
