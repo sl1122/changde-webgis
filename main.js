@@ -415,6 +415,91 @@
             '<g fill="' + c + '" transform="translate(2,1)">' + (POI_GLYPH[key] || '') + '</g>' +
             '</svg>';
     }
+    // ---- v124：内置设施点多选（Shift 点选 / 多选态点击不弹卡 / 实时淡化预览）----
+    // v122 只在自建要素上做了多选，内置 POI 仍走 bindPopup：卡片必弹、遮住半屏，且无法追加选择。
+    // 这里把卡片改成「受控打开」（不再 bindPopup 自动开），点击语义：
+    //   无选中 + 普通点击 -> 开卡片；Shift/Ctrl/⌘ 点击 -> 进入/追加多选；
+    //   已有多选 + 普通点击 -> 追加/取消（手机上没法按 Shift，也能继续选）；
+    //   多选态一律不开卡片，选中/未选中靠透明度 100% / 34% 实时预览。
+    var POI_MK = {};                 // fid -> marker
+    var poiSel = { ids: [] };        // 多选集合（fid 是坐标指纹，已带图层 key）
+    var poiBatchDel = false;
+    var pwPopup = null;
+    function poiSelHas(id) {
+        for (var i = 0; i < poiSel.ids.length; i++) if (poiSel.ids[i] === id) return true;
+        return false;
+    }
+    // v124b：淡化要按点量自适应。558 个点一律压到 34% 会把整个城区糊成灰雾（实测截图确认），
+    // 所以只有候选点很少（<= 60，如自建要素或单类）时才整体淡化，否则只给选中项加白环高亮。
+    function poiSelPaint() {
+        var ids = Object.keys(POI_MK);
+        var on = poiSel.ids.length > 0;
+        var dimAll = on && ids.length <= 60;
+        ids.forEach(function (id) {
+            var mk = POI_MK[id];
+            var el = mk && mk.getElement ? mk.getElement() : null;
+            if (!el) return;
+            var sel = poiSelHas(id);
+            el.style.opacity = (dimAll && !sel) ? '0.34' : '';
+            el.style.filter = (dimAll && !sel) ? 'saturate(.55)' : '';
+            if (sel) {
+                el.classList.add('poi-sel');
+                el.style.zIndex = '1300';
+            } else {
+                el.classList.remove('poi-sel');
+                el.style.zIndex = '';
+            }
+        });
+    }
+    function clearPoiSel() {
+        if (!poiSel.ids.length) return;
+        poiSel.ids = [];
+        poiSelPaint();
+        updatePoiSelBar();
+    }
+    function poiToggle(id, key) {
+        var i = -1;
+        for (var j = 0; j < poiSel.ids.length; j++) if (poiSel.ids[j] === id) { i = j; break; }
+        if (i >= 0) poiSel.ids.splice(i, 1); else poiSel.ids.push(id);
+        // 自建要素与内置点共用底部一条选择条：进这边就清那边，避免两条叠在一起
+        if (typeof cfSelIds !== 'undefined' && cfSelIds.length) {
+            cfSelIds = [];
+            if (typeof cfSelId !== 'undefined') cfSelId = null;
+            if (typeof renderCustom === 'function') renderCustom();
+            if (typeof updateCfSelBar === 'function') updateCfSelBar();
+        }
+        poiSelPaint();
+        updatePoiSelBar();
+    }
+    function updatePoiSelBar() {
+        var bar = document.getElementById('poi-selbar');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'poi-selbar';
+            bar.className = 'cf-selbar';
+            bar.hidden = true;
+            document.body.appendChild(bar);
+        }
+        if (!poiSel.ids.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+        var byKind = {}, n = 0;
+        poiSel.ids.forEach(function (id) {
+            var mk = POI_MK[id]; if (!mk) return;
+            var k = mk.__pKey;
+            var nm = (LAYER_CONFIG[k] && LAYER_CONFIG[k].name) || k;
+            byKind[nm] = (byKind[nm] || 0) + 1; n++;
+        });
+        bar.hidden = false;
+        bar.innerHTML = '<span class="cf-sel-n">已选 ' + n + ' 个点</span>' +
+            '<span class="cf-sel-kinds">' + esc(Object.keys(byKind).map(function (k) { return k + ' ' + byKind[k]; }).join(' · ')) + '</span>' +
+            '<button type="button" class="cf-sel-btn danger" data-poi-sel="del">删除选中</button>' +
+            '<button type="button" class="cf-sel-btn" data-poi-sel="clear">取消</button>';
+    }
+    function openPwCard(htmlStr, ll) {
+        if (pwPopup) { map.closePopup(pwPopup); pwPopup = null; }
+        pwPopup = L.popup({ autoPan: true, maxWidth: 280, closeButton: true, className: 'pw-pop', offset: [0, -16] })
+            .setLatLng(ll).setContent(htmlStr).openOn(map);
+        return pwPopup;
+    }
     function makePointMarker(key, feat) {
         var p = feat.properties;
         var coords = feat.geometry.coordinates;
@@ -423,9 +508,21 @@
             html: '<div class="poi-node poi-' + key + '">' + poiIconHtml(key) + '</div>',
             iconSize: [24, 26], iconAnchor: [12, 26]
         });
-        return L.marker(toMapCoord(coords), { icon: icon })
-            .bindTooltip(p.name, { direction: 'top', offset: [0, -24], className: 'poi-tip' })
-            .bindPopup(pointPopupHtml(key, p, poiFid(feat)), { autoPan: true, maxWidth: 280 });
+        var fid = String(poiFid(feat));
+        var mk = L.marker(toMapCoord(coords), { icon: icon });
+        mk.bindTooltip(p.name, { direction: 'top', offset: [0, -24], className: 'poi-tip' });
+        mk.__pKey = key;
+        mk.__pFid = fid;
+        POI_MK[fid] = mk;
+        mk.on('click', function (e) {
+            if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
+            if (markMode || (measure && measure.mode) || cfEditing) return;
+            var oe = e.originalEvent || {};
+            var add = !!(oe.shiftKey || oe.ctrlKey || oe.metaKey);
+            if (add || poiSel.ids.length) { poiToggle(fid, key); return; }
+            openPwCard(pointPopupHtml(key, p, fid), mk.getLatLng());
+        });
+        return mk;
     }
 
     function makeCluster(key) {
@@ -527,6 +624,8 @@
             pointsLayer.plains[key] = buildPointLayers(key, false);
             map.addLayer(pointsLayer.plains[key]);
         }
+        // v124：重建 marker 后 DOM 是新的，多选淡化要重新刷一次
+        if (poiSel.ids.length) poiSelPaint();
     }
     function refreshAllLayers() {
         GEO_KEYS.forEach(refreshLayer);
@@ -2314,6 +2413,17 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v124', t: '纸笺详情卡归位 + 内置点多选（不弹卡、可预览）',
+            pts: [
+                '纸笺材质下的设施点详情卡补齐：纸底 + 直角 2px + 宋体 + 墨棕字，标题左侧竖线压成墨棕细线，关闭钮改直角描边方钮——此前 .pw-box 只有「白天玻璃 / 夜间深色」两条分支，纸笺从未被覆盖',
+                '内置设施点支持 Shift / Ctrl / ⌘ 点选多选（原来只有自建要素能多选，内置点走 Leaflet 默认弹窗，卡片必弹且无法追加）',
+                '多选态下点击不再弹卡：卡片只在你单击单个点时才开，避免半屏被挡住；手机上没法按 Shift，已进入多选后普通点击同样按追加/取消处理',
+                '多选有实时预览：未选中的点淡到 34% 并降饱和，选中的保持原样并置顶；底部出现「已选 N 个点 · 学校 3 · 医院 2」选择条，带「删除选中」「取消」',
+                'Esc 清空、Delete / Backspace 删除选中（与自建要素同一套快捷键），批量删除一次确认、逐条记进 cd_poi_gone，仍可一键恢复',
+                '内置点多选与自建要素多选互斥：进一边会清掉另一边，底部只留一条选择条，不再两条叠在一起'
+            ]
+        },
+        {
             v: 'v123', t: '极致流畅：玻璃族背景模糊收敛 + 交互期降载',
             pts: [
                 '定位「除纸笺外其他材质包都卡」的真因：玻璃族全屏 31 个背景模糊元素、覆盖约 78 万像素（占满屏六成），纸笺只有 5 个约 1 万像素——同一个拖动动作，玻璃族要逐帧重采样六成屏幕，纸笺几乎不采样，这就是两者手感差一档的来源',
@@ -3021,6 +3131,7 @@
     }
 
     function selectCf(id, zoom, additive) {
+        if (poiSel.ids.length) { poiSel.ids = []; poiSelPaint(); updatePoiSelBar(); }
         var f = cfById(id);
         if (!f) return;
         setAppMode('select');
@@ -3122,7 +3233,13 @@
         if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
         if (e.key === 'Escape') {
             if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
+            if (poiSel.ids.length) { clearPoiSel(); return; }
             if (cfSelIds.length) clearCfSel();
+            return;
+        }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && poiSel.ids.length) {
+            e.preventDefault();
+            poiBatchDelete(poiSel.ids.slice());
             return;
         }
         if ((e.key === 'Delete' || e.key === 'Backspace') && cfSelIds.length) {
@@ -3133,6 +3250,28 @@
         if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
             if (customFeatures.length) { e.preventDefault(); selectAllCfVisible(); }
         }
+    });
+
+    // v124：内置点多选条的两个按钮 + 批量删除
+    function poiBatchDelete(ids) {
+        if (!ids.length) return;
+        if (!window.confirm('删除选中的 ' + ids.length + ' 个点位？\n\n只删这些点，图层与其它点不受影响；可在图层管理下方的「恢复已删点位」一键还原。')) return;
+        poiBatchDel = true;
+        ids.forEach(function (id) { var mk = POI_MK[id]; if (mk) deletePoi(mk.__pKey, id); });
+        poiBatchDel = false;
+        poiSel.ids = [];
+        poiSelPaint();
+        updatePoiSelBar();
+        toast('已删除选中的 ' + ids.length + ' 个点位');
+    }
+    document.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('[data-poi-sel]') : null;
+        if (!b) return;
+        e.preventDefault();
+        e.stopPropagation();
+        var act = b.getAttribute('data-poi-sel');
+        if (act === 'clear') { clearPoiSel(); return; }
+        if (act === 'del') poiBatchDelete(poiSel.ids.slice());
     });
 
     // ---- v114 P1-I：模式互斥状态机（idle / measure / mark(绘制) / select / edit(顶点) / move(整体移动)）----
@@ -3567,7 +3706,7 @@
         updateCounts();
         refreshSearch();
         renderPoiRestoreBtn();
-        toast('已删除「' + nm + '」这一个点，图层与其它点保留');
+        if (!poiBatchDel) toast('已删除「' + nm + '」这一个点，图层与其它点保留');
     }
     function renderPoiRestoreBtn() {
         var btn = document.getElementById('btn-poi-restore');
