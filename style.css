@@ -3521,6 +3521,7 @@ body.theme-paper .set-note { color: var(--ink-2); }
 .panel.folded #layer-list,
 .panel.folded .layer-actions,
 .panel.folded #btn-layer-restore,
+.panel.folded #btn-poi-restore,
 .panel.folded .count-tip { display: none !important; }
 .layer-item[draggable="true"] { cursor: grab; }
 .layer-item.dragging { opacity: .42; }
@@ -3530,3 +3531,27 @@ body.theme-paper .panel-title .panel-fold { color: var(--ink-1); border-radius: 
 body.theme-paper .panel-title .panel-fold:hover { background: rgba(42, 36, 29, .07); border-color: var(--rule); }
 body.theme-paper .layer-item.drop-after { box-shadow: inset 0 -2px 0 var(--accent, #7d6a4f); }
 body.theme-paper .layer-item.drop-before { box-shadow: inset 0 2px 0 var(--accent, #7d6a4f); }
+
+/* ---------- v117b · 单点删除按钮（Popup 内）--------------- */
+.pw-del {
+    width: 100%;
+    margin-top: 9px;
+    padding: 5px 8px;
+    border: 1px dashed rgba(154, 68, 54, .5);
+    border-radius: 4px;
+    background: rgba(154, 68, 54, .06);
+    color: #8a3b2e;
+    font-family: inherit;
+    font-size: 11.5px;
+    letter-spacing: .03em;
+    cursor: pointer;
+    transition: background-color .16s ease, border-color .16s ease;
+}
+.pw-del:hover { background: rgba(154, 68, 54, .15); border-color: rgba(154, 68, 54, .7); }
+.pw-del:active { background: rgba(154, 68, 54, .22); }
+body.theme-paper .pw-del {
+    border-radius: 2px;
+    background: transparent;
+    color: #8a3b2e;
+}
+body.theme-paper .pw-del:hover { background: rgba(154, 68, 54, .08); }

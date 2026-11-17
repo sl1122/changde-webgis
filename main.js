@@ -303,7 +303,7 @@
             '<div class="pw-row"><span class="pw-k">时间</span><span class="pw-v">' + esc(dt) + '</span></div></div>';
     }
 
-    function pointPopupHtml(key, p) {
+    function pointPopupHtml(key, p, fid) {
         var c = LAYER_CONFIG[key];
         var rows = [
             ['名称', p.name], ['类别', p.type || '-'], ['区域', p.adname || '-'],
@@ -311,7 +311,10 @@
         ].map(function (r) {
             return '<div class="pw-row"><span class="pw-k">' + r[0] + '</span><span class="pw-v">' + esc(r[1]) + '</span></div>';
         }).join('');
-        return '<div class="pw-box"><div class="pw-t" style="border-left-color:' + c.color + '">' + esc(p.name) + '</div>' + rows + '</div>';
+        // v117b：单点删除入口（只删这一个要素，图层与其它点保留）
+        var del = '<button type="button" class="pw-del" data-poi-key="' + key + '" data-poi-id="' + esc(fid) +
+            '" data-poi-name="' + esc(p.name) + '">删除此点</button>';
+        return '<div class="pw-box"><div class="pw-t" style="border-left-color:' + c.color + '">' + esc(p.name) + '</div>' + rows + del + '</div>';
     }
     function roadPopupHtml(p) {
         return '<div class="pw-box"><div class="pw-t" style="border-left-color:#d97706">' + esc(p.name) + '</div>' +
@@ -351,7 +354,7 @@
         });
         return L.marker(toMapCoord(coords), { icon: icon })
             .bindTooltip(p.name, { direction: 'top', offset: [0, -24], className: 'poi-tip' })
-            .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 });
+            .bindPopup(pointPopupHtml(key, p, poiFid(feat)), { autoPan: true, maxWidth: 280 });
     }
 
     function makeCluster(key) {
@@ -2230,6 +2233,16 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v118', t: '删除单个地物点：点位信息卡内「删除此点」+ 坐标指纹记忆 + 一键恢复已删点位',
+            pts: [
+                '点击任意学校 / 医院 / 景点点位，信息卡底部新增「删除此点」——只删这一个要素，所属图层的其它点照旧显示',
+                '被删点位按坐标指纹记进 cd_poi_gone，刷新后不再出现；视野计数与搜索结果同时更新，图层本身保留',
+                '图层管理区下方新增「恢复已删点位（n）」，一次找回全部单点删除；与整层删除互不干扰（整层删除优先）',
+                '删除前二次确认，文案写明只删这一个点、图层保留、可一键还原；删除后关闭弹窗并提示点位名称',
+                '图层列表折叠时恢复按钮随列表一起收起'
+            ]
+        },
+        {
             v: 'v117', t: '第 13 节收尾：图层列表可拖拽排序 + 折叠 + 删除后搜索/图例同步 + 导入复活已删图层 + 导入进度提示',
             pts: [
                 '图层排序可拖拽（挑战 2）：内置图层行与「我的·」动态行都能按住拖动，松手即记住顺序（cd_layer_order / cd_cf_order），刷新后按记忆顺序排列',
@@ -3239,6 +3252,86 @@
         toast('已恢复 ' + keys.length + ' 个图层');
     }
 
+    // ---- v117b：删除单个地物点（按坐标指纹记录，刷新后不再出现；可一键恢复）----
+    var POI_GONE_KEY = 'cd_poi_gone';
+    var gonePois = [];
+    function poiFid(feat) {
+        var c = feat.geometry.coordinates;
+        return (Math.round(c[0] * 1e5) / 1e5) + ',' + (Math.round(c[1] * 1e5) / 1e5);
+    }
+    function loadGonePois() {
+        try { var a = JSON.parse(localStorage.getItem(POI_GONE_KEY) || '[]'); gonePois = Array.isArray(a) ? a : []; } catch (e) { gonePois = []; }
+        gonePois = gonePois.filter(function (g) { return g && g.k && g.id; });
+    }
+    function saveGonePois() { try { localStorage.setItem(POI_GONE_KEY, JSON.stringify(gonePois)); } catch (e) { } }
+    function applyGonePois() {
+        if (!gonePois.length) return;
+        BASE_KEYS.forEach(function (k) {
+            if (k === 'road' || !layerState[k]) return;
+            layerState[k].data = (layerState[k].data || []).filter(function (f) {
+                var fid = poiFid(f);
+                return !gonePois.some(function (g) { return g.k === k && g.id === fid; });
+            });
+        });
+    }
+    function deletePoi(key, fid) {
+        if (!layerState[key]) return;
+        var nm = '';
+        var kept = [];
+        (layerState[key].data || []).forEach(function (f) {
+            if (poiFid(f) === fid) { nm = (f.properties && f.properties.name) || ''; return; }
+            kept.push(f);
+        });
+        if (!nm) { toast('这个点位已经不在图层里了', true); return; }
+        layerState[key].data = kept;
+        if (!gonePois.some(function (g) { return g.k === key && g.id === fid; })) {
+            gonePois.push({ k: key, id: fid, name: nm });
+            saveGonePois();
+        }
+        map.closePopup();
+        refreshLayer(key);
+        updateCounts();
+        refreshSearch();
+        renderPoiRestoreBtn();
+        toast('已删除「' + nm + '」这一个点，图层与其它点保留');
+    }
+    function renderPoiRestoreBtn() {
+        var btn = document.getElementById('btn-poi-restore');
+        if (!btn) return;
+        if (!gonePois.length) { btn.hidden = true; return; }
+        btn.hidden = false;
+        btn.textContent = '恢复已删点位（' + gonePois.length + '）';
+    }
+    function restoreGonePois() {
+        if (!gonePois.length) return;
+        var n = gonePois.length;
+        gonePois = [];
+        saveGonePois();
+        GEO_KEYS.forEach(function (k) {
+            if (k === 'road' || goneLayers[k]) return;
+            layerState[k].data = (DATA[k] && DATA[k].features) || [];
+            refreshLayer(k);
+        });
+        updateCounts();
+        refreshSearch();
+        renderPoiRestoreBtn();
+        toast('已恢复 ' + n + ' 个被删点位');
+    }
+    // popup 里的「删除此点」走事件委托：按钮由 HTML 字符串生成，逐个绑定会随弹窗销毁丢失
+    window.__poiGone = function () { return gonePois.slice(); };
+    document.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('.pw-del') : null;
+        if (!b) return;
+        e.preventDefault();
+        e.stopPropagation();
+        var k = b.getAttribute('data-poi-key');
+        var id = b.getAttribute('data-poi-id');
+        var nm = b.getAttribute('data-poi-name') || '';
+        var ln = LAYER_CONFIG[k] ? LAYER_CONFIG[k].name : k;
+        if (!window.confirm('删除「' + nm + '」这一个点？\n\n只删这一个要素，「' + ln + '」图层的其它点不受影响；刷新后它也不会再出现。\n\n可在图层管理下方的「恢复已删点位」一键还原。')) return;
+        deletePoi(k, id);
+    });
+
     // ---- v116 挑战 5：图层列表折叠（状态存 cd_layer_fold）----
     function initLayerFold() {
         var btn = document.getElementById('layer-fold');
@@ -3538,6 +3631,7 @@
 
     // ---------------- 14. 启动 ----------------
     loadGoneLayers();
+    loadGonePois();
     // v116 挑战 2 / 挑战 5：图层顺序记忆 + 折叠记忆 + 拖拽绑定
     applyLayerOrder();
     bindLayerDrag();
@@ -3553,10 +3647,15 @@
     Promise.all(loaders).then(function () {
         // v116：把历史上整层删除过的图层保持为空，再统一重建
         applyGoneLayers();
+        // v117b：再把历史上单点删除过的点位过滤掉（整层删除优先）
+        applyGonePois();
         renderBuiltinDelBtns();
         renderRestoreBtn();
+        renderPoiRestoreBtn();
         var rBtn = document.getElementById('btn-layer-restore');
         if (rBtn) rBtn.addEventListener('click', restoreGoneLayers);
+        var pBtn = document.getElementById('btn-poi-restore');
+        if (pBtn) pBtn.addEventListener('click', restoreGonePois);
         buildSearchIndex();
         refreshAllLayers();
         fitDataView();
