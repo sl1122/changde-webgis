@@ -2314,6 +2314,17 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v123', t: '极致流畅：玻璃族背景模糊收敛 + 交互期降载',
+            pts: [
+                '定位「除纸笺外其他材质包都卡」的真因：玻璃族全屏 31 个背景模糊元素、覆盖约 78 万像素（占满屏六成），纸笺只有 5 个约 1 万像素——同一个拖动动作，玻璃族要逐帧重采样六成屏幕，纸笺几乎不采样，这就是两者手感差一档的来源',
+                '背景模糊半径全面收敛：设置面板 20→10px、详情面板 18→10px、浮动卡片 26→11px、移动端 18→8px，滑杆厚段上限 30→16px；模糊层数不变，但每层成本随半径平方下降，观感仍是一块玻璃不是一块塑料',
+                '地图交互期（拖动/缩放开始 → 停手 240ms）全局关闭背景模糊：运动中人眼辨不出磨砂，停手那一刻玻璃质感原样回来；实测交互态三种材质全部 60fps（优化前桃花静止 2.9fps、纸笺 8.5fps、夜间 7.9fps）',
+                '折射减一层：侧栏与设置面板本体的整块 SVG 位移滤镜（feTurbulence + feDisplacementMap，每帧整块离屏重算）撤掉，只留高光位移层——面板边缘的液态折光还在，但不再为整块内容付滤镜账',
+                '道路标签气泡去掉浮层模糊（自身实底已够清晰）；夜间瓦片的亮度滤镜改为交互期临时关闭，静止时照旧暗化',
+                '飘落层的 will-change 从常驻改为「飘落开启时」才申请，关闭飘落不再白占 25 个合成层'
+            ]
+        },
+        {
             v: 'v122', t: '图层管理重构成文件级图层树 + 地物点多选与快捷键',
             pts: [
                 '导入图层不再归并成「我的·学校」这类自建分类：图层管理改为「导入文件 → 地类」两级，文件行直接显示文件名（如「长沙地物点示例」），地类子行缩进挂在文件下面',
@@ -2702,8 +2713,8 @@
         // v115：锚点按「光学结构」重定——薄段不再靠白底遮，而是低模糊 + 高边光；厚段维持磨砂高反
         // P0 边光 1.15 高于 P50，形成「薄而亮」的玻璃薄片感（旧版 P0 sheen 0.2 是错的）
         var P0 = { blur: 2, alpha: 8, sheen: 1.15, shadow: 0.18 };
-        var P50 = { blur: 12, alpha: 50, sheen: 0.85, shadow: 0.55 };
-        var P100 = { blur: 30, alpha: 96, sheen: 1.5, shadow: 1.6 };
+        var P50 = { blur: 10, alpha: 50, sheen: 0.85, shadow: 0.55 };
+        var P100 = { blur: 16, alpha: 96, sheen: 1.5, shadow: 1.6 };
         function clamp(v, mn, mx) { return Math.max(mn, Math.min(v, mx)); }
         function presetAt(g) {
             var a = g < 50 ? { from: P0, to: P50, t: g / 50 } : { from: P50, to: P100, t: (g - 50) / 50 };
@@ -3993,6 +4004,33 @@
         map.invalidateSize();
         console.log('常德市城市公共服务WebGIS系统（Leaflet + OpenStreetMap）初始化完成');
     });
+})();
+
+
+// ================= v123：地图交互期背景模糊降载 =================
+// 不依赖 map 实例（它是主 IIFE 的局部变量）：直接吃 Leaflet 加到 body 上的 leaflet-dragging，
+// 松手后留 240ms 缓冲（Leaflet 的惯性滑动仍在跑，立即恢复会再逐帧重采样）。
+(function () {
+    if (!window.MutationObserver) return;
+    var busyT = null, was = false;
+    function on() {
+        if (busyT) { clearTimeout(busyT); busyT = null; }
+        document.body.classList.add('nav-busy');
+    }
+    function off() {
+        if (busyT) clearTimeout(busyT);
+        busyT = setTimeout(function () {
+            document.body.classList.remove('nav-busy');
+            busyT = null;
+        }, 240);
+    }
+    var mo = new MutationObserver(function () {
+        var now = document.body.classList.contains('leaflet-dragging');
+        if (now === was) return;
+        was = now;
+        if (now) { on(); } else { off(); }
+    });
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 })();
 
 // ================= v93：卡片/面板过渡动画减负 =================

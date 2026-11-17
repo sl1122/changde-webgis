@@ -271,8 +271,8 @@ html, body, button, a, input, select, label {
     width: 286px;
     min-width: 286px;
     background: rgba(255, 255, 255, .72);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
     border-right: 1px solid rgba(255, 255, 255, .6);
     box-shadow:
         8px 0 30px rgba(15, 23, 42, .06),
@@ -557,8 +557,8 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     border-radius: 20px;
     /* v106：背景接入 --glass-alpha（原硬编码 .58 不随滑杆——「透明度调节不够有效」根因之一）；默认 alpha .85 → .578 与原观感一致。v107 子属性化规避简写+过渡冻结 */
     background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .68));
-    backdrop-filter: blur(18px) saturate(150%);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
     box-shadow:
         0 8px 28px rgba(15, 23, 42, calc(.12 * var(--glass-shadow))),
         inset 0 1px 0 rgba(255, 255, 255, calc(.8 * var(--glass-sheen))),
@@ -958,8 +958,8 @@ body.theme-night #fab:not(.fab-open)::after {
     display: flex;
     flex-direction: column;
     background: rgba(255, 255, 255, .68);
-    backdrop-filter: blur(14px) saturate(150%);
-    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
     border-radius: 12px;
     overflow: hidden;
     box-shadow:
@@ -1000,8 +1000,8 @@ body.theme-night #fab:not(.fab-open)::after {
     align-items: center;
     gap: 10px;
     background: rgba(255, 255, 255, .78);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(9px) saturate(140%);
+    -webkit-backdrop-filter: blur(9px) saturate(140%);
     color: #333;
     font-size: 13px;
     padding: 7px 12px;
@@ -1225,7 +1225,6 @@ body.theme-night .measure-result {
     opacity: .8;
     box-shadow: inset 0 0 4px rgba(214, 74, 120, .4);
     animation: petal-fall var(--dur, 12s) linear var(--delay, 0s) infinite;
-    will-change: transform;
 }
 /* 桃花：粉瓣圆润（桃源主题默认） */
 .petal.peach {
@@ -1268,6 +1267,8 @@ body.theme-night .measure-result {
     100% { transform: translate(calc(var(--sway, 40px) * -0.3), 112vh) rotate(calc(var(--rot, 0deg) + 320deg)); }
 }
 #petal-wrap:not(.on) .petal { display: none; }
+/* v123：will-change 由常驻改为按需（飘落关闭时不再占 25 个合成层） */
+#petal-wrap.on .petal { will-change: transform; }
 
 /* ===== 汉堡菜单按钮（全端显示；桌面端点击折叠/展开侧边栏，手机端打开抽屉；48px 触控热区） ===== */
 .menu-btn {
@@ -1435,8 +1436,8 @@ body.theme-night .measure-result {
         align-items: center;
         justify-content: space-around;
         background: rgba(255, 255, 255, .66);
-        backdrop-filter: blur(18px) saturate(160%);
-        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        backdrop-filter: blur(8px) saturate(130%);
+        -webkit-backdrop-filter: blur(8px) saturate(130%);
         border: 1px solid rgba(255, 255, 255, .65);
         border-radius: 18px;
         box-shadow:
@@ -1814,15 +1815,15 @@ body.theme-night .adv-area { border-top-color: rgba(148, 163, 212, .25); }
    性能说明：filter 只在上层覆盖 DOM 启用，不触及地图容器/瓦片/聚合层
    v73 修复：设置面板的滤镜从面板本体移到 .settings-inner（外包盒预留安全边距），
    滤镜只作用于视觉层，面板定位盒模型不变 → 开启折射后面板位置不漂移、文字不错位 */
+/* v123：折射从「整块面板位移」改为「仅高光层位移」——去掉本体 feDisplacementMap（每帧整块离屏重算），
+   isolation 建立静态层叠上下文，保证 ::after 负 z 仍在本面板内 */
 body.refraction .sidebar {
     position: relative;
-    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+    isolation: isolate;
 }
 body.refraction .settings-inner {
     position: relative;
-    margin: -8px;  /* 滤镜安全边距：补偿位移滤镜外扩，防止面板视觉偏移/边缘裁剪 */
-    padding: 8px;
-    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+    isolation: isolate;
 }
 /* 错位折射层：伪元素复制背景并以 SVG 滤镜位移 3px，与主层叠加产生液态通透感 */
 body.refraction .sidebar::after,
@@ -1833,7 +1834,7 @@ body.refraction .settings-inner::after {
     z-index: -1;
     pointer-events: none;
     background: rgba(255, 255, 255, calc(.08 * var(--glass-sheen)));
-    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq3' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03' numOctaves='3' seed='3' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='18' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq3' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03' numOctaves='2' seed='3' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='18' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
     transform: translate(3px, 3px);
 }
 body.refraction.theme-night .sidebar::after,
@@ -2037,8 +2038,8 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     background: linear-gradient(150deg,
         rgba(255, 255, 255, calc(var(--glass-alpha) * .96)),
         rgba(255, 255, 255, calc(var(--glass-alpha) * .76)));
-    backdrop-filter: blur(26px) saturate(190%);
-    -webkit-backdrop-filter: blur(26px) saturate(190%);
+    backdrop-filter: blur(11px) saturate(140%);
+    -webkit-backdrop-filter: blur(11px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, .6);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, .75),
@@ -2273,8 +2274,8 @@ body.theme-night .poi-node svg g[stroke="#fff"] { stroke: rgba(233, 238, 255, .9
     padding: 3px 8px !important;
 }
 .road-tag {
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 /* 手机端适配：设置面板居中弹窗（带遮罩），低端机降玻璃防卡顿 */
@@ -3100,9 +3101,7 @@ body.theme-night .leaflet-tile {
     opacity: .58 !important;
 }
 /* 白天材质包的淡色叠加同样受 0×0 影响，这里不再依赖伪元素，改用极轻的滤镜避免“材质包只换 UI 不换地图” */
-body.refraction:not(.theme-night) .leaflet-tile-pane {
-    filter: saturate(1.05) brightness(.99);
-}
+/* v123：删除整块瓦片层的 saturate 滤镜（视觉差 2% 不可辨，却是地图平移最大的离屏重算来源） */
 
 /* ================= v114w P2 挑战 2：编辑权限行（整体 + 点/线/面） =================
    只锁几何操作，属性编辑不受影响；关闭时列表与卡片上的改形状 / 移动 / 删除一起置灰。
@@ -3773,8 +3772,8 @@ body.theme-paper .cl-foot {
     max-width: calc(100% - 24px);
     padding: 7px 9px 7px 13px; border-radius: 999px;
     background: rgba(255, 255, 255, .84);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
-    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(9px) saturate(140%);
+    backdrop-filter: blur(9px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, .74);
     box-shadow: 0 8px 24px rgba(60, 32, 44, .14), inset 0 1px 0 rgba(255, 255, 255, .9);
     font-size: 12px; color: var(--text-1, #3d3038); white-space: nowrap;
@@ -3894,3 +3893,13 @@ body.theme-night .cf-file-item input[type="checkbox"] {
 }
 body.theme-night .cf-file-item .cf-layer-del { color: rgba(255, 255, 255, .55); }
 body.theme-night .cf-file-item .cf-layer-del:hover { color: #fca5a5; background: rgba(248, 113, 113, .12); }
+/* ================= v123 性能：地图交互期背景模糊降载 =================
+   拖动/缩放地图时，31 个 backdrop-filter 元素会逐帧重采样整屏 60% 的像素，这是「玻璃族拖地图发飘」
+   的头号开销。交互期间（movestart/zoomstart -> 结束 +240ms）全局关闭背景模糊：运动中人眼辨不出磨砂，
+   静止后自动恢复，玻璃质感在停手那一刻回归。 */
+body.nav-busy, body.nav-busy *,
+body.leaflet-dragging, body.leaflet-dragging *,
+body:has(.leaflet-container.leaflet-zoom-anim), body:has(.leaflet-container.leaflet-zoom-anim) * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
