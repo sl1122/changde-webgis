@@ -3735,3 +3735,162 @@ body.theme-paper .cl-foot {
     font-family: var(--paper-serif);
     letter-spacing: .06em;
 }
+/* ===== v122：两级图层树（导入文件 → 地类）与多选条 ===== */
+.cf-layer-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.cf-layer-sub {
+    font-size: 10.5px; font-weight: 500; letter-spacing: .02em;
+    color: var(--text-2, #8b7d84); opacity: .78; white-space: nowrap;
+}
+.cf-file-group { margin: 0 0 3px; }
+.cf-file-item {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 5px 6px 7px; margin-top: 3px; border-radius: 9px;
+    cursor: pointer; position: relative; transition: background .15s ease;
+}
+.cf-file-item:hover { background: var(--rose-soft); }
+.cf-file-item input[type="checkbox"] { flex: 0 0 auto; }
+.cf-file-name {
+    flex: 0 1 auto; min-width: 0;
+    font-size: 12.5px; font-weight: 600; letter-spacing: .01em;
+    color: var(--text-1, #3d3038);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 子类行：左侧 1px 引导线 + 缩进，层级一眼可读 */
+.cf-kind-subs {
+    margin: 0 0 6px 16px; padding-left: 9px;
+    border-left: 1px solid rgba(42, 36, 29, .08);
+}
+.cf-kind-subs .cf-layer-item { margin-top: 2px; }
+.cf-kind-subs .cf-layer-item .layer-name { font-weight: 500; }
+
+/* 选择条：多选的实时预览（数量 + 地类分布 + 批量动作） */
+.cf-selbar {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: 84px; z-index: 1200;
+    display: flex; align-items: center; gap: 8px;
+    max-width: calc(100% - 24px);
+    padding: 7px 9px 7px 13px; border-radius: 999px;
+    background: rgba(255, 255, 255, .84);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, .74);
+    box-shadow: 0 8px 24px rgba(60, 32, 44, .14), inset 0 1px 0 rgba(255, 255, 255, .9);
+    font-size: 12px; color: var(--text-1, #3d3038); white-space: nowrap;
+}
+.cf-selbar[hidden] { display: none; }
+.cf-sel-n { font-weight: 600; flex: 0 0 auto; }
+.cf-sel-kinds {
+    flex: 0 1 auto; min-width: 0; max-width: 44vw;
+    font-size: 11px; color: var(--text-2, #8b7d84);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cf-sel-btn {
+    flex: 0 0 auto;
+    padding: 4px 11px; border-radius: 999px;
+    border: 1px solid rgba(42, 36, 29, .10); background: rgba(255, 255, 255, .62);
+    font-family: inherit; font-size: 11.5px; color: var(--text-1, #3d3038);
+    cursor: pointer; transition: background .15s ease, border-color .15s ease;
+}
+.cf-sel-btn:hover { background: rgba(255, 255, 255, .92); }
+.cf-sel-btn.danger { color: #b4344a; border-color: rgba(180, 52, 74, .28); background: rgba(180, 52, 74, .06); }
+.cf-sel-btn.danger:hover { background: rgba(180, 52, 74, .12); }
+
+body.theme-night .cf-file-name { color: #e2e8f0; }
+body.theme-night .cf-file-item:hover { background: rgba(129, 140, 248, .12); }
+body.theme-night .cf-kind-subs { border-left-color: rgba(165, 180, 252, .18); }
+body.theme-night .cf-selbar {
+    background: rgba(24, 26, 38, .84);
+    border-color: rgba(165, 180, 252, .22);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .06);
+    color: #e6ecf7;
+}
+body.theme-night .cf-sel-kinds { color: rgba(203, 213, 225, .78); }
+body.theme-night .cf-sel-btn {
+    background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .16); color: #dbe7ff;
+}
+body.theme-night .cf-sel-btn:hover { background: rgba(255, 255, 255, .12); }
+body.theme-night .cf-sel-btn.danger { color: #fca5a5; border-color: rgba(248, 113, 113, .32); background: rgba(248, 113, 113, .10); }
+
+/* 纸笺：直角纸片 + 宋体，与左侧图层管理恒定质感一致 */
+body.theme-paper .cf-file-name,
+body.theme-paper .cf-layer-sub { font-family: var(--paper-serif); letter-spacing: .02em; }
+body.theme-paper .cf-file-name { color: var(--ink-0); font-weight: 600; }
+body.theme-paper .cf-file-item { border-radius: 2px; }
+body.theme-paper .cf-file-item:hover { background: rgba(125, 106, 79, .07); }
+body.theme-paper .cf-kind-subs { border-left: 1px solid var(--rule); margin-left: 14px; padding-left: 8px; }
+body.theme-paper .cf-selbar {
+    border-radius: 2px;
+    background: var(--paper-1);
+    border: 1px solid var(--rule);
+    box-shadow: 0 6px 18px rgba(42, 36, 29, .10);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    font-family: var(--paper-serif); color: var(--ink-0);
+    letter-spacing: .04em;
+}
+body.theme-paper .cf-sel-kinds { color: var(--ink-2); letter-spacing: .02em; }
+body.theme-paper .cf-sel-btn {
+    border-radius: 1px; border: 1px solid var(--rule);
+    background: var(--paper-2); color: var(--ink-0); letter-spacing: .04em;
+}
+body.theme-paper .cf-sel-btn:hover { background: #e6dfcf; }
+body.theme-paper .cf-sel-btn.danger { color: #9a4436; border-color: rgba(154, 68, 54, .42); background: rgba(154, 68, 54, .06); }
+
+@media (max-width: 640px) {
+    .cf-selbar { bottom: 112px; gap: 6px; padding: 6px 8px 6px 11px; font-size: 11.5px; max-width: calc(100vw - 82px); }
+    .cf-sel-kinds { max-width: 34vw; }
+    .cf-sel-btn { padding: 5px 9px; font-size: 11px; }
+    .cf-kind-subs { margin-left: 12px; padding-left: 7px; }
+}
+/* ===== v122 收口：文件行勾选框接入统一控件皮肤、删除钮补样式、分组标题 ===== */
+.layer-sub-head {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .06em;
+    color: var(--text-2, #8b7d84); opacity: .8;
+    padding: 0 0 2px 2px;
+}
+.cf-file-item input[type="checkbox"] {
+    width: 16px; height: 16px;
+    appearance: none; -webkit-appearance: none;
+    background: #fff; border: 1.5px solid #cbd5e1; border-radius: 4px;
+    cursor: pointer; flex-shrink: 0; position: relative;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s ease, background .15s ease;
+}
+.cf-file-item input[type="checkbox"]:checked,
+.cf-file-item input[type="checkbox"]:indeterminate {
+    border-color: var(--accent, var(--plum)); background: var(--accent, var(--plum));
+}
+.cf-file-item input[type="checkbox"]:checked::after {
+    content: '✓'; color: #fff; font-size: 11px; font-weight: 600; line-height: 1;
+}
+.cf-file-item input[type="checkbox"]:indeterminate::after {
+    content: ''; width: 7px; height: 2px; background: #fff;
+}
+.cf-file-item .cf-layer-del {
+    flex: 0 0 auto; margin-left: 3px; width: 20px; height: 20px; padding: 0;
+    border: none; border-radius: 5px; background: transparent;
+    cursor: pointer; color: var(--text-2, #8b7d84);
+    font-size: 14px; line-height: 18px; font-family: inherit;
+    transition: color .15s ease, background .15s ease;
+}
+.cf-file-item .cf-layer-del:hover { color: #dc2626; background: rgba(220, 38, 38, .1); }
+.cf-kind-subs { border-left-color: rgba(42, 36, 29, .14); }
+.cf-selbar { gap: 10px; }
+
+body.theme-paper .layer-sub-head { font-family: var(--paper-serif); letter-spacing: .1em; color: var(--ink-1); }
+body.theme-paper .cf-file-item input[type="checkbox"] {
+    border-radius: 1px; border-color: rgba(42, 36, 29, .34); background: transparent;
+}
+body.theme-paper .cf-file-item input[type="checkbox"]:checked,
+body.theme-paper .cf-file-item input[type="checkbox"]:indeterminate {
+    background: var(--accent, #7d6a4f); border-color: var(--accent, #7d6a4f);
+}
+body.theme-paper .cf-file-item .cf-layer-del { color: var(--ink-2); border-radius: 1px; }
+body.theme-paper .cf-file-item .cf-layer-del:hover { color: #9a4436; background: rgba(154, 68, 54, .08); }
+body.theme-night .layer-sub-head { color: rgba(203, 213, 225, .7); }
+body.theme-night .cf-file-item input[type="checkbox"] {
+    background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .22);
+}
+body.theme-night .cf-file-item .cf-layer-del { color: rgba(255, 255, 255, .55); }
+body.theme-night .cf-file-item .cf-layer-del:hover { color: #fca5a5; background: rgba(248, 113, 113, .12); }

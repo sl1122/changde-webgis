@@ -263,6 +263,24 @@
         if (lk && LAYER_CONFIG[lk]) return LAYER_CONFIG[lk].color;
         return CF_KIND_COLORS[kind] || '#6d28d9';
     }
+    // ===== v122：导入文件即图层 =====
+    // 每个要素记住自己的来源文件（properties.source），图层管理按「文件 → 地类」两级呈现。
+    // 显隐的唯一真源是 pair 开关（source|kind）；文件行的勾选只是该文件全部 pair 的批量镜像，
+    // 不再另存一份 cfFileOn —— 双真源必然出现「文件勾着、子类全关」的自相矛盾态。
+    var CF_SRC_MANUAL = '手工绘制';
+    function cfSource(f) {
+        var s = f && f.properties && f.properties.source;
+        s = s ? String(s).trim() : '';
+        return s || CF_SRC_MANUAL;
+    }
+    function cfKindOf(f) { return (f && f.properties && f.properties.kind) || '设施点'; }
+    function cfPairKey(srcOrF, kind) {
+        var s = (typeof srcOrF === 'string') ? srcOrF : cfSource(srcOrF);
+        var k = (kind == null) ? cfKindOf(srcOrF) : kind;
+        return s + '\u0001' + k;
+    }
+    var cfPairOn = {};        // pairKey -> false 表示「该文件下的该类」隐藏
+    function cfRowVisible(f) { return cfPairOn[cfPairKey(f)] !== false; }
     // v119：外部数据（如常德地区 js）的业务类型五花八门——先归一到本站的四类点/线，再成层，
     // 避免「高等院校」「卫生院」「风景名胜」各占一行，图层列表被同义类型撑散
     var KIND_EXACT = {
@@ -306,10 +324,10 @@
         if (c[0] >= REGION_BOX.w && c[0] <= REGION_BOX.e && c[1] >= REGION_BOX.s && c[1] <= REGION_BOX.n) return '常德';
         return '外地';
     }
-    function regionOfKind(k) {
+    // v122：地区判定下沉到"要素集合"层——文件与地类各自用自己那批点算归属，互不串味
+    function regionOfList(list) {
         var cd = 0, out = 0;
-        customFeatures.forEach(function (f) {
-            if ((f.properties.kind || '设施点') !== k) return;
+        (list || []).forEach(function (f) {
             var r = regionOfPoint((cfCoordList(f) || [])[0]);
             if (r === '常德') cd++; else if (r === '外地') out++;
         });
@@ -317,6 +335,9 @@
         if (cd && !out) return '常德';
         if (out && !cd) return '外地';
         return '常德+外';
+    }
+    function regionOfKind(k) {
+        return regionOfList(customFeatures.filter(function (f) { return (f.properties.kind || '设施点') === k; }));
     }
     function saveCustom() {
         try { localStorage.setItem(CF_KEY, JSON.stringify(customFeatures)); } catch (e) { }
@@ -1492,7 +1513,15 @@
         }
         function importCfText(text, fname) {
             var data;
-            try { data = JSON.parse(text); } catch (e) { toast('导入失败：不是合法 JSON', true); return; }
+            try { data = JSON.parse(text); } catch (e) {
+                // v122：常德地区的图层数据常以 .js 交付（var 名 = {...}; / window.DATA = {...}），
+                // JSON.parse 直接失败，这里截取首个 { 到最后一个 } 再试一次，仍失败才报错
+                var s0 = String(text || ''), a = s0.indexOf('{'), b = s0.lastIndexOf('}');
+                if (a >= 0 && b > a) { try { data = JSON.parse(s0.slice(a, b + 1)); } catch (e2) { data = null; } }
+                if (!data) { toast('导入失败：不是合法 JSON（.js 数据文件需形如 var 名 = {...};）', true); return; }
+            }
+            // v122：图层名 = 文件名（去扩展名），同一文件重复导入自动并回同一图层行
+            var srcName = String(fname || '导入图层').replace(/\.(geojson|json|js|txt)$/i, '').trim().slice(0, 40) || '导入图层';
             var arr = [];
             if (data && data.type === 'FeatureCollection' && Array.isArray(data.features)) arr = data.features;
             else if (data && data.type === 'Feature') arr = [data];
@@ -1520,7 +1549,8 @@
                         properties: {
                             name: String(p.name || p.NAME || ('导入要素 ' + (added + 1))).slice(0, 40),
                             kind: kind,
-                            remark: String(p.remark || p.note || '').slice(0, 120)
+                            remark: String(p.remark || p.note || '').slice(0, 120),
+                            source: srcName
                         },
                         crs: p.crs || 'GCJ-02',
                         ts: Date.now() + added
@@ -2284,6 +2314,19 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v122', t: '图层管理重构成文件级图层树 + 地物点多选与快捷键',
+            pts: [
+                '导入图层不再归并成「我的·学校」这类自建分类：图层管理改为「导入文件 → 地类」两级，文件行直接显示文件名（如「长沙地物点示例」），地类子行缩进挂在文件下面',
+                '文件行勾选框 = 该文件全部地类的批量开关，部分隐藏时进入半选态；地类子行只管自己的「文件|地类」这一对，显隐只有这一个真源，不再出现文件勾着而子类全关的矛盾态',
+                '两级各带一个 ×：删文件 = 移除该文件下全部地物点，删地类 = 只移除该文件下的这一类；删完图层行、搜索下拉、图例与点数同步清理',
+                '「我的图层」标题右侧给出总账（N 个文件 · M 个要素），每行继续标地区归属，长沙数据导入后文件行与三个地类子行一律标「外地」',
+                'Shift 点击地图要素 = 追加 / 取消多选；Ctrl（⌘）+A 全选当前可见要素（超过 300 个先提示收起分类），Esc 清空，Delete / Backspace 删除选中，输入框聚焦时不响应',
+                '多选有实时预览：未选中要素淡到 45% 退成背景，选中项保持原样跳出来；地图底部出现选择条，实时报「已选 N 个」与地类分布（学校 4 · 医院 2 · 景点 3），旁边就是「删除选中」「取消」',
+                '批量删除一次确认、逐条过编辑权限校验，被锁要素计数提示而不是顺手删掉；内置图层与导入图层加了分组标题（内置图层 · 常德 / 我的图层），两组不再交叉',
+                '文件行勾选框接入与内置图层同一套控件皮肤（玻璃圆角 4、纸笺直角 1），纸包与夜间各自适配，消掉浏览器默认复选框的毛边'
+            ]
+        },
+        {
             v: 'v121', t: '更新日志弹层按材质分道 + 条目排版重做',
             pts: [
                 '纸笺材质下的日志头不再沿用桃花粉渐变：改纸底 + 墨棕细线 + 宋体标题，与侧栏面板、纸片按钮同一套语言',
@@ -2837,6 +2880,7 @@
     // ---------------- 13.10 v114：自建要素渲染 / 选中 / 改形状 / 整体移动 / 删除 ----------------
     var customLayer = L.layerGroup().addTo(map);
     var cfSelId = null;
+    // v122：显隐由 cfPairOn（文件|地类）接管，旧的全局 cfKindOn 已废弃（保留空对象只为极端老代码不炸）
     var cfKindOn = {};
     var cfEditing = null;
     // v114：要素自身被点中的时间戳。Leaflet 会先派发图层 click、再派发地图 click，
@@ -2882,7 +2926,7 @@
         customLayer.clearLayers();
         customFeatures.forEach(function (f) {
             if (cfEditing && String(cfEditing.id) === String(f.id)) return;
-            if (cfKindOn[f.properties.kind] === false) return;
+            if (!cfRowVisible(f)) return;
             // v114 加固：单条记录坐标畸形（例如 Polygon 少了外环那一层）时只跳过它，
             // 不能让一条坏数据把整个自建图层和选中/弹卡链路一起打挂
             try {
@@ -2890,7 +2934,8 @@
             if (!coords.length) return;
             var lls = cfLatLngs(f);
             if (!lls.length || lls.some(function (l) { return !l || !isFinite(l.lat) || !isFinite(l.lng); })) return;
-            var sel = String(cfSelId) === String(f.id);
+            var sel = cfSelHas(f.id);
+            var dim = cfSelIds.length > 1 && !sel;   // 多选时未选中的退到背景，选中项自己跳出来
             var col = cfColor(f.properties.kind);
             // 选中光晕：白色描边衬底，任何底图上都能看出"被选中"
             if (sel && f.geometry.type === 'LineString') {
@@ -2898,13 +2943,19 @@
             } else if (sel && f.geometry.type === 'Polygon') {
                 customLayer.addLayer(L.polygon(lls, { color: '#ffffff', weight: 9, opacity: .85, fillColor: '#ffffff', fillOpacity: .12 }));
             }
+            var st = cfStyle(f, sel);
+            if (dim) {
+                st.dim = true;                       // 只做标记，供验收探针统计
+                st.opacity = (st.opacity == null ? 1 : st.opacity) * .32;
+                if (st.fillOpacity != null) st.fillOpacity *= .5;
+            }
             var layer;
-            if (f.geometry.type === 'Point') layer = L.circleMarker(lls[0], cfStyle(f, sel));
+            if (f.geometry.type === 'Point') layer = L.circleMarker(lls[0], st);
             else if (f.geometry.type === 'LineString') {
-                layer = L.polyline(lls, cfStyle(f, sel));
+                layer = L.polyline(lls, st);
                 if (f.properties.kind === '道路') layer.setStyle({ dashArray: '9 6' });
             } else {
-                layer = L.polygon(lls, cfStyle(f, sel));
+                layer = L.polygon(lls, st);
             }
             layer.bindTooltip(
                 '<span class="cf-tip-name">' + esc(f.properties.name) + '</span>' +
@@ -2915,10 +2966,12 @@
                 if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
                 if (markMode || measure.mode || cfEditing) return;
                 cfHitTs = Date.now();
-                selectCf(f.id, false);
+                // v122：Shift 点击 = 追加/取消该点（多选），普通点击 = 单选并打开详情卡
+                var additive = !!(e.originalEvent && e.originalEvent.shiftKey);
+                selectCf(f.id, false, additive);
             });
             layer.on('mouseover', function () { if (!sel) layer.setStyle({ weight: f.geometry.type === 'Point' ? 10 : (f.geometry.type === 'LineString' ? 6.5 : 4) }); });
-            layer.on('mouseout', function () { layer.setStyle(cfStyle(f, sel)); if (f.geometry.type === 'LineString' && f.properties.kind === '道路') layer.setStyle({ dashArray: '9 6' }); });
+            layer.on('mouseout', function () { layer.setStyle(st); });
             customLayer.addLayer(layer);
             } catch (eOne) {
                 if (window.console && console.warn) console.warn('[cf] 跳过畸形要素', f && f.id, eOne);
@@ -2927,14 +2980,57 @@
         syncCfCounts();
     }
 
-    function selectCf(id, zoom) {
+    // ------- v122：多选（Shift 点选追加 / Ctrl+A 全选可见 / Esc 清空 / Delete 删选中） -------
+    var cfSelIds = [];                     // 多选集合（唯一真源）；cfSelId 仍表示"主选中"，兼容旧链路
+    function cfSelHas(id) {
+        for (var i = 0; i < cfSelIds.length; i++) if (String(cfSelIds[i]) === String(id)) return true;
+        return false;
+    }
+    function cfSelIndexOf(id) {
+        for (var i = 0; i < cfSelIds.length; i++) if (String(cfSelIds[i]) === String(id)) return i;
+        return -1;
+    }
+    function updateCfSelBar() {
+        var bar = document.getElementById('cf-selbar');
+        if (!bar) return;
+        if (!cfSelIds.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+        var byKind = {}, n = 0;
+        cfSelIds.forEach(function (id) {
+            var f = cfById(id);
+            if (!f) return;
+            var k = cfKindOf(f);
+            byKind[k] = (byKind[k] || 0) + 1; n++;
+        });
+        var parts = Object.keys(byKind).map(function (k) { return k + ' ' + byKind[k]; });
+        bar.hidden = false;
+        bar.innerHTML = '<span class="cf-sel-n">已选 ' + n + ' 个</span>' +
+            '<span class="cf-sel-kinds">' + esc(parts.join(' · ')) + '</span>' +
+            '<button type="button" class="cf-sel-btn danger" data-cf-sel="del">删除选中</button>' +
+            '<button type="button" class="cf-sel-btn" data-cf-sel="clear">取消</button>';
+    }
+
+    function selectCf(id, zoom, additive) {
         var f = cfById(id);
         if (!f) return;
         setAppMode('select');
+        var card = document.getElementById('cf-card');
+        if (additive) {
+            // Shift：只增减集合，不弹详情卡，靠底部选择条与地图高亮做实时预览
+            var i = cfSelIndexOf(f.id);
+            if (i >= 0) cfSelIds.splice(i, 1); else cfSelIds.push(String(f.id));
+            cfSelId = cfSelIds.length ? cfSelIds[cfSelIds.length - 1] : null;
+            if (card && cfSelIds.length !== 1) card.classList.remove('open');
+            renderCustom();
+            updateCfSelBar();
+            if (cfSelIds.length === 1) openCfCard(cfById(cfSelIds[0]));
+            return;
+        }
+        cfPairOn[cfPairKey(f)] = true;      // 从列表点进来时，即使该类被隐藏也先恢复可见
+        cfSelIds = [String(f.id)];
         cfSelId = f.id;
-        cfKindOn[f.properties.kind] = true;
         renderCustom();
         openCfCard(f);
+        updateCfSelBar();
         if (zoom) {
             var lls = cfLatLngs(f);
             if (lls.length === 1) map.setView(lls[0], Math.max(map.getZoom(), 16));
@@ -2944,14 +3040,89 @@
     function clearCfSel() {
         if (cfEditing) stopCfEdit();
         cfSelId = null;
+        cfSelIds = [];
         var card = document.getElementById('cf-card');
         if (card) card.classList.remove('open');
         if (APP_MODE === 'select') APP_MODE = 'idle';
         renderCustom();
+        updateCfSelBar();
     }
     function showCfKind(kind, on) {
-        if (on) { cfKindOn[kind] = true; renderCustom(); }
+        if (!on) return;
+        customFeatures.forEach(function (f) { if (cfKindOf(f) === kind) cfPairOn[cfPairKey(f)] = true; });
+        renderCustom();
     }
+    // 批量删除：一次确认，逐条走编辑权限校验（锁定的线要素不会被顺手删掉）
+    function deleteCfIds(ids) {
+        ids = (ids || []).filter(function (id) { return !!cfById(id); });
+        if (!ids.length) return;
+        var names = ids.map(function (id) { return cfById(id).properties.name; });
+        var sample = names.slice(0, 4).join('、') + (names.length > 4 ? ' 等' : '');
+        if (!window.confirm('删除选中的 ' + ids.length + ' 个要素？\n' + sample + '\n删除后图层计数、搜索与图例同步更新，不可恢复')) return;
+        var blocked = 0;
+        ids.forEach(function (id) {
+            var f = cfById(id);
+            if (!f || !editAllowed(f)) { blocked++; return; }
+            customFeatures = customFeatures.filter(function (x) { return String(x.id) !== String(id); });
+        });
+        cfSelIds = cfSelIds.filter(function (id) { return !!cfById(id); });
+        cfSelId = cfSelIds.length ? cfSelIds[cfSelIds.length - 1] : null;
+        if (cfEditing) stopCfEdit();
+        var card = document.getElementById('cf-card');
+        if (card && !cfSelIds.length) card.classList.remove('open');
+        if (!cfSelIds.length && (APP_MODE === 'select' || APP_MODE === 'edit' || APP_MODE === 'move')) APP_MODE = 'idle';
+        saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        updateCfSelBar();
+        if (blocked) toast('已删除 ' + (ids.length - blocked) + ' 个；' + blocked + ' 个被编辑权限锁定未删', true);
+        else toast('已删除 ' + (ids.length - blocked) + ' 个要素');
+    }
+    function selectAllCfVisible() {
+        var vis = customFeatures.filter(function (f) { return cfRowVisible(f); });
+        if (!vis.length) { toast('当前没有可见的自建要素', true); return; }
+        if (vis.length > 300) { toast('可见要素太多（' + vis.length + '），请先在大分类里取消勾选再全选', true); return; }
+        setAppMode('select');
+        cfSelIds = vis.map(function (f) { return String(f.id); });
+        cfSelId = cfSelIds[cfSelIds.length - 1];
+        var card = document.getElementById('cf-card');
+        if (card && cfSelIds.length > 1) card.classList.remove('open');
+        renderCustom(); updateCfSelBar();
+        toast('已全选 ' + cfSelIds.length + ' 个要素' +
+            (window.innerWidth <= 640 ? '' : '（Shift 点击可增减，Delete 删除）'));
+    }
+    // 选择条：实时预览选中数量与地类分布，并提供批量删除 / 取消
+    (function initCfSelBar() {
+        var host = document.getElementById('map');
+        if (!host || document.getElementById('cf-selbar')) return;
+        var bar = document.createElement('div');
+        bar.id = 'cf-selbar';
+        bar.className = 'cf-selbar';
+        bar.hidden = true;
+        bar.addEventListener('click', function (e) {
+            var t = e.target;
+            var act = (t && t.getAttribute) ? t.getAttribute('data-cf-sel') : null;
+            if (act === 'del') deleteCfIds(cfSelIds.slice());
+            else if (act === 'clear') clearCfSel();
+        });
+        host.appendChild(bar);
+    })();
+    document.addEventListener('keydown', function (e) {
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        if (e.key === 'Escape') {
+            if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
+            if (cfSelIds.length) clearCfSel();
+            return;
+        }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && cfSelIds.length) {
+            e.preventDefault();
+            deleteCfIds(cfSelIds.slice());
+            return;
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+            if (customFeatures.length) { e.preventDefault(); selectAllCfVisible(); }
+        }
+    });
 
     // ---- v114 P1-I：模式互斥状态机（idle / measure / mark(绘制) / select / edit(顶点) / move(整体移动)）----
     // 所有入口统一走 setAppMode(next)：先把不属于 next 的模式全部收干净，再切过去。
@@ -2992,6 +3163,11 @@
             markPts: markPts.length,
             editing: !!cfEditing,
             sel: cfSelId,
+            selCount: cfSelIds.length,
+            selBar: (function () { var b = document.getElementById('cf-selbar'); return b ? (b.hidden ? '' : b.textContent.replace(/\s+/g, ' ').trim()) : null; })(),
+            cfRows: document.querySelectorAll('#cf-layer-box .cf-kind-sub').length,
+            cfFiles: document.querySelectorAll('#cf-layer-box .cf-file-item').length,
+            dim: (function () { var n = 0; customLayer.eachLayer(function (l) { if (l.options && l.options.dim) n++; }); return n; })(),
             handles: document.querySelectorAll('.cf-handle-icon').length,
             dragging: !!(map.dragging && map.dragging.enabled()),
             distBtn: document.getElementById('btn-distance') ? document.getElementById('btn-distance').classList.contains('active') : null,
@@ -3494,23 +3670,123 @@
         });
     }
 
-    // ---- v114 P2 挑战 1：删除整类自建图层（一次确认，整组清掉；清空后该行由 syncCfCats 自动移除）----
+    // ---- v122：删除整类（跨所有文件），旧入口保留兼容；新界面走 deleteCfPair（按文件内单类）----
     function deleteCfKind(k) {
-        var hit = customFeatures.filter(function (f) { return (f.properties.kind || '设施点') === k; });
+        var hit = customFeatures.filter(function (f) { return cfKindOf(f) === k; });
         if (!hit.length) return;
-        if (!window.confirm('删除「我的·' + k + '」整个分类？该分类下 ' + hit.length + ' 个要素会被一并移除，图层、列表、搜索与图例同步清理')) return;
+        if (!window.confirm('删除全部「' + k + '」分类？跨 ' + hit.length + ' 个要素会被一并移除，图层、列表、搜索与图例同步清理')) return;
         if (cfEditing) stopCfEdit();
-        if (cfSelId !== null && hit.some(function (f) { return String(f.id) === String(cfSelId); })) {
-            cfSelId = null;
+        cfDropSelWhere(function (f) { return cfKindOf(f) === k; });
+        customFeatures = customFeatures.filter(function (f) { return cfKindOf(f) !== k; });
+        Object.keys(cfPairOn).forEach(function (key) {
+            if (key.indexOf('\u0001' + k) === key.length - k.length - 1) { try { delete cfPairOn[key]; } catch (e) { } }
+        });
+        saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        toast('已删除「' + k + '」共 ' + hit.length + ' 个要素');
+    }
+
+    // ---- v122：图层树（文件 → 地类），文件行管整层、地类行管单类 ----
+    function buildCfLayerTree() {
+        var tree = {}, order = [];
+        customFeatures.forEach(function (f) {
+            var s = cfSource(f), k = cfKindOf(f);
+            if (!tree[s]) { tree[s] = { kinds: {}, list: [], ts: 1e15 }; order.push(s); }
+            var t = tree[s];
+            t.list.push(f);
+            var ts = Number(f.ts) || 0;
+            if (ts && ts < t.ts) t.ts = ts;
+            if (!t.kinds[k]) t.kinds[k] = [];
+            t.kinds[k].push(f);
+        });
+        var cfOrder = [];
+        try { cfOrder = JSON.parse(localStorage.getItem('cd_cf_order') || '[]') || []; } catch (e) { cfOrder = []; }
+        // 文件按首次导入时间排（老数据 ts 缺失时退化为名称排序），地类沿用 cd_cf_order 的顺序
+        order.sort(function (a, b) { return (tree[a].ts - tree[b].ts) || String(a).localeCompare(String(b)); });
+        var html = '<div class="cf-layer-head"><span>我的图层</span><span class="cf-layer-sub">' +
+            order.length + ' 个文件 · ' + customFeatures.length + ' 个要素</span></div>';
+        order.forEach(function (s) {
+            var t = tree[s];
+            var kindNames = Object.keys(t.kinds);
+            kindNames.sort(function (a, b) {
+                var oa = cfOrder.indexOf(a), ob = cfOrder.indexOf(b);
+                if (oa >= 0 || ob >= 0) return (oa < 0 ? 99 : oa) - (ob < 0 ? 99 : ob);
+                var ia = CF_KINDS.indexOf(a), ib = CF_KINDS.indexOf(b);
+                return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+            });
+            var onCount = kindNames.filter(function (k) { return cfPairOn[cfPairKey(s, k)] !== false; }).length;
+            var reg = regionOfList(t.list);
+            html += '<div class="cf-file-group">' +
+                '<label class="cf-file-item">' +
+                '<input type="checkbox" data-cf-src="' + esc(s) + '"' + (onCount ? ' checked' : '') + (onCount && onCount < kindNames.length ? ' data-indet="1"' : '') + '>' +
+                '<span class="cf-file-name" title="导入文件：' + esc(s) + '">' + esc(s) + '</span>' +
+                '<span class="cf-region" data-region="' + esc(reg) + '" title="按坐标判定的所属地区">' + esc(reg) + '</span>' +
+                '<span class="count">' + t.list.length + '</span>' +
+                '<button type="button" class="cf-layer-del" data-cf-del-src="' + esc(s) + '" title="删除图层「' + esc(s) + '」及其 ' + t.list.length + ' 个要素" aria-label="删除该图层">×</button>' +
+                '</label>' +
+                '<div class="cf-kind-subs">';
+            kindNames.forEach(function (k) {
+                var items = t.kinds[k];
+                var on = cfPairOn[cfPairKey(s, k)] !== false;
+                var rk = regionOfList(items);
+                // 子行只在归属与所属文件不同时才亮地区徽标，避免三行连排「外地」的重复噪音
+                var regHtml = (rk !== reg) ? '<span class="cf-region" data-region="' + esc(rk) + '">' + esc(rk) + '</span>' : '';
+                html += '<label class="layer-item cf-layer-item cf-kind-sub">' +
+                    '<input type="checkbox" data-cf-pair="' + esc(cfPairKey(s, k)) + '"' + (on ? ' checked' : '') + '>' +
+                    '<span class="dot" style="background:' + cfColor(k) + '"></span>' +
+                    '<span class="layer-name" title="' + esc(s) + ' · ' + esc(k) + '">' + esc(k) + '</span>' +
+                    regHtml +
+                    '<span class="count">' + items.length + '</span>' +
+                    '<button type="button" class="cf-layer-del" data-cf-del-pair="' + esc(cfPairKey(s, k)) + '" title="删除「' + esc(s) + '」下的「' + esc(k) + '」（' + items.length + ' 个）">×</button>' +
+                    '</label>';
+            });
+            html += '</div></div>';
+        });
+        return html;
+    }
+    function cfDropSelWhere(pred) {
+        cfSelIds = cfSelIds.filter(function (id) {
+            var f = cfById(id);
+            return !!f && (!pred || !pred(f));
+        });
+        cfSelId = cfSelIds.length ? cfSelIds[cfSelIds.length - 1] : null;
+        if (!cfSelIds.length) {
             var card = document.getElementById('cf-card');
             if (card) card.classList.remove('open');
             if (APP_MODE === 'select' || APP_MODE === 'edit' || APP_MODE === 'move') APP_MODE = 'idle';
         }
-        customFeatures = customFeatures.filter(function (f) { return (f.properties.kind || '设施点') !== k; });
-        try { delete cfKindOn[k]; } catch (e) { }
+        updateCfSelBar();
+    }
+    // 删除整个导入图层（文件行 ×）
+    function deleteCfFile(src) {
+        var hit = customFeatures.filter(function (f) { return cfSource(f) === src; });
+        if (!hit.length) return;
+        if (!window.confirm('删除图层「' + src + '」？\n该图层下 ' + hit.length + ' 个要素会一起移除，图层行、搜索与图例同步清理')) return;
+        if (cfEditing) stopCfEdit();
+        cfDropSelWhere(function (f) { return cfSource(f) === src; });
+        customFeatures = customFeatures.filter(function (f) { return cfSource(f) !== src; });
+        Object.keys(cfPairOn).forEach(function (key) {
+            if (key.indexOf(src + '\u0001') === 0) { try { delete cfPairOn[key]; } catch (e) { } }
+        });
         saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
-        toast('已删除「我的·' + k + '」共 ' + hit.length + ' 个要素');
+        toast('已删除图层「' + src + '」共 ' + hit.length + ' 个要素');
+    }
+    // 删除某个文件下的单个地类（地类行 ×）
+    function deleteCfPair(pair) {
+        var sep = String(pair).indexOf('\u0001');
+        if (sep < 0) return;
+        var src = pair.slice(0, sep), kind = pair.slice(sep + 1);
+        var hit = customFeatures.filter(function (f) { return cfSource(f) === src && cfKindOf(f) === kind; });
+        if (!hit.length) return;
+        if (!window.confirm('删除「' + src + '」下的「' + kind + '」？共 ' + hit.length + ' 个要素，删除后该地类行消失')) return;
+        if (cfEditing) stopCfEdit();
+        cfDropSelWhere(function (f) { return cfSource(f) === src && cfKindOf(f) === kind; });
+        customFeatures = customFeatures.filter(function (f) { return !(cfSource(f) === src && cfKindOf(f) === kind); });
+        try { delete cfPairOn[pair]; } catch (e) { }
+        saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
+        try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        toast('已删除「' + src + ' · ' + kind + '」共 ' + hit.length + ' 个要素');
     }
 
     // ---- 分类同步：图层管理动态分组 / 搜索类型下拉 / 图例色带 ----
@@ -3536,81 +3812,44 @@
                 box = document.createElement('div');
                 box.id = 'cf-layer-box';
                 box.className = 'cf-layer-box';
+                // v122：两级开关——文件行 = 该文件全部地类批量镜像；地类行 = 单个 source|kind
                 box.addEventListener('change', function (e) {
                     var cb = e.target;
                     if (!cb || cb.type !== 'checkbox') return;
-                    var k = cb.getAttribute('data-cf-kind');
-                    if (k === null) return;
-                    cfKindOn[k] = cb.checked;
-                    renderCustom();
+                    var src = cb.getAttribute('data-cf-src');
+                    var pair = cb.getAttribute('data-cf-pair');
+                    if (src !== null) {
+                        customFeatures.forEach(function (f) {
+                            if (cfSource(f) === src) cfPairOn[cfPairKey(f)] = cb.checked;
+                        });
+                    } else if (pair !== null) {
+                        cfPairOn[pair] = cb.checked;
+                    } else return;
+                    renderCustom(); syncCfCats();
                 });
-                // v114 P2-1：分类行右侧的 × 删整组。label 内的点击会顺带切换 checkbox，这里必须拦掉
-                box.addEventListener('dragstart', function (e) {
-                    var row = e.target && e.target.closest ? e.target.closest('.cf-layer-item') : null;
-                    if (!row) return;
-                    box.__dragRow = row;
-                    row.classList.add('dragging');
-                    try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'cf'); } catch (e2) { }
-                });
-                box.addEventListener('dragover', function (e) {
-                    var dr = box.__dragRow;
-                    if (!dr) return;
-                    var row = e.target && e.target.closest ? e.target.closest('.cf-layer-item') : null;
-                    if (!row || row === dr) return;
-                    e.preventDefault();
-                    var r = row.getBoundingClientRect();
-                    var after = e.clientY > r.top + r.height / 2;
-                    box.insertBefore(dr, after ? row.nextSibling : row);
-                });
-                box.addEventListener('drop', function (e) { if (box.__dragRow) e.preventDefault(); });
-                box.addEventListener('dragend', function () {
-                    var dr = box.__dragRow;
-                    if (!dr) return;
-                    dr.classList.remove('dragging');
-                    box.__dragRow = null;
-                    var order = [];
-                    Array.prototype.forEach.call(box.querySelectorAll('.cf-layer-item'), function (r) {
-                        var cb = r.querySelector('input[data-cf-kind]');
-                        if (cb) order.push(cb.getAttribute('data-cf-kind'));
-                    });
-                    try { localStorage.setItem('cd_cf_order', JSON.stringify(order)); } catch (e2) { }
-                    syncCfCats();
-                    toast('图层顺序已保存');
-                });
+                // 删除钮：文件行删整层，地类行删该类；label 内点击会顺带勾选，必须拦掉
                 box.addEventListener('click', function (e) {
                     var t = e.target;
                     if (!t || typeof t.getAttribute !== 'function') return;
-                    var k = t.getAttribute('data-cf-del-kind');
-                    if (k === null) return;
+                    var delSrc = t.getAttribute('data-cf-del-src');
+                    var delPair = t.getAttribute('data-cf-del-pair');
+                    if (delSrc === null && delPair === null) return;
                     e.preventDefault();
                     e.stopPropagation();
-                    deleteCfKind(k);
+                    if (delSrc !== null) deleteCfFile(delSrc);
+                    else deleteCfPair(delPair);
                 });
-                var anchor = list.querySelector('.cluster-toggle');
-                if (anchor) list.insertBefore(box, anchor); else list.appendChild(box);
+                // 文件树排在「内置图层」整组之后（含聚合开关），内置与导入两组不交叉
+                list.appendChild(box);
             }
-            if (!kinds.length) {
-                // v114i 修：删掉最后一个自建要素后，光隐藏分组盒不够——旧的「我的·xx」行仍留在 DOM 里，
-                // 一旦图层管理面板被重开就会闪出一行已不存在的分类，这里连同内容一起清掉
+            if (!customFeatures.length) {
+                // 删掉最后一个要素后连内容一起清掉，避免重开面板闪出已不存在的行
                 box.style.display = 'none';
                 box.innerHTML = '';
             } else {
                 box.style.display = '';
-                var rows = kinds.map(function (k) {
-                    var n = 0;
-                    customFeatures.forEach(function (f) { if ((f.properties.kind || '设施点') === k) n++; });
-                    var on = cfKindOn[k] !== false;
-                    var reg = regionOfKind(k);
-                    return '<label class="layer-item cf-layer-item is-dyn" draggable="true">' +
-                        '<input type="checkbox" data-cf-kind="' + k + '"' + (on ? ' checked' : '') + '>' +
-                        '<span class="dot" style="background:' + cfColor(k) + '"></span>' +
-                        '<span class="layer-name" title="我的·' + esc(k) + '（自建）">' + esc(k) + '</span>' +
-                        '<span class="cf-region" data-region="' + esc(reg) + '" title="按坐标判定的所属地区">' + esc(reg) + '</span>' +
-                        '<span class="count">' + n + '</span>' +
-                        '<button type="button" class="cf-layer-del" data-cf-del-kind="' + esc(k) + '" title="删除「我的·' + esc(k) + '」整个分类（' + n + ' 个要素）" aria-label="删除该分类">×</button>' +
-                        '</label>';
-                }).join('');
-                box.innerHTML = '<div class="cf-layer-head">我的要素（自建）</div>' + rows;
+                box.innerHTML = buildCfLayerTree();
+                Array.prototype.forEach.call(box.querySelectorAll('input[data-indet]'), function (el) { el.indeterminate = true; });
             }
         }
 
@@ -3643,13 +3882,19 @@
     function syncCfCounts() {
         var box = document.getElementById('cf-layer-box');
         if (!box) return;
-        var rows = box.querySelectorAll('.cf-layer-item');
-        Array.prototype.forEach.call(rows, function (row) {
-            var cb = row.querySelector('input[data-cf-kind]');
+        Array.prototype.forEach.call(box.querySelectorAll('.cf-kind-sub'), function (row) {
+            var cb = row.querySelector('input[data-cf-pair]');
             if (!cb) return;
-            var k = cb.getAttribute('data-cf-kind');
-            var n = 0;
-            customFeatures.forEach(function (f) { if ((f.properties.kind || '设施点') === k) n++; });
+            var pair = cb.getAttribute('data-cf-pair');
+            var n = customFeatures.filter(function (f) { return cfPairKey(f) === pair; }).length;
+            var cnt = row.querySelector('.count');
+            if (cnt) cnt.textContent = n;
+        });
+        Array.prototype.forEach.call(box.querySelectorAll('.cf-file-item'), function (row) {
+            var cb = row.querySelector('input[data-cf-src]');
+            if (!cb) return;
+            var src = cb.getAttribute('data-cf-src');
+            var n = customFeatures.filter(function (f) { return cfSource(f) === src; }).length;
             var cnt = row.querySelector('.count');
             if (cnt) cnt.textContent = n;
         });
@@ -3701,17 +3946,14 @@
         });
     })();
 
-    // 空点地图 → 取消选中；Esc 退出编辑 / 取消选中
+    // 空点地图 → 取消选中（多选与单选一起清）
     map.on('click', function (e) {
         if (uiHit(e)) return;
         if (markMode || measure.mode || cfEditing) return;
         if (Date.now() - cfHitTs < 90) return;   // v114：这一下点中的是自建要素，不是空白
-        if (cfSelId !== null) clearCfSel();
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key !== 'Escape') return;
-        if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
-        if (cfSelId !== null) clearCfSel();
+        // v122：Shift 点空白 / 点到内置图层时保留已经攒起来的多选，否则一次误点就全清
+        if (e.originalEvent && e.originalEvent.shiftKey) return;
+        if (cfSelIds.length || cfSelId !== null) clearCfSel();
     });
 
     syncCfCats();
