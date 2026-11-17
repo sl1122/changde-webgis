@@ -1983,9 +1983,9 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 }
 .set-toggle.on { background: var(--accent, var(--plum)); color: #fff; border-color: var(--accent, var(--plum)); }
 /* 材质包切换（桃花/桂花/绿叶/玫瑰） */
-.pack-switch { display: flex; flex-wrap: wrap; gap: 7px; flex: 1; min-width: 0; }
+.pack-switch { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; flex: 1; min-width: 0; }
 .pack-item {
-    flex: 1 1 42%; padding: 4px 6px; border-radius: 999px; font-size: 12px;
+    flex: none; padding: 4px 6px; border-radius: 999px; font-size: 12px;
     border: 1px solid var(--border); background: #fff; color: var(--text);
     cursor: pointer; text-align: center;
     transform-style: preserve-3d;
@@ -3115,3 +3115,387 @@ body.theme-night #map #mark-panel #mark-sec .cf-editmod .cf-em-chip.on {
     border-color: rgba(129, 140, 248, .62) !important;
 }
 body.theme-night #map #mark-panel #mark-sec .cf-editmod .cf-em-chip.is-locked { opacity: .38; }
+
+/* ============================================================
+   v116 · 纸笺材质包（paper）
+   设计取向：米白纸底 + 墨色细线 + 直角纸片 + 衬线标题；
+   关掉全部玻璃模糊与镜面扫光，用 1px 墨线与极浅纸纹代替投影。
+   ============================================================ */
+body.theme-paper {
+    --paper-0: #f3eee2;
+    --paper-1: #faf7ef;
+    --paper-2: #efe9db;
+    --ink-0: #2a241d;
+    --ink-1: #5f574b;
+    --ink-2: #94897a;
+    --rule: rgba(42, 36, 29, .16);
+    --rule-2: rgba(42, 36, 29, .07);
+    --text: #2a241d;
+    --text-2: #5f574b;
+    --rose: #7d6a4f;
+    --rose-soft: rgba(125, 106, 79, .10);
+    --plum: #4b4133;
+    --school: #33556f;
+    --hospital: #9a4436;
+    --scenic: #4a6b4a;
+    --road: #94703c;
+    --paper-serif: "Songti SC", "Source Han Serif SC", "Noto Serif SC", "SimSun", Georgia, serif;
+}
+/* 纸纹：极淡的双向细纹 + 边缘微暗角，肉眼几乎只感到"纸"而看不到纹理 */
+body.theme-paper {
+    background-color: var(--paper-0) !important;
+    background-image:
+        repeating-linear-gradient(90deg, rgba(120, 105, 80, .022) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(0deg, rgba(120, 105, 80, .018) 0 1px, transparent 1px 3px),
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, .55), transparent 70%);
+}
+/* 顶栏：一条压在纸上的细线，去掉毛玻璃与浮起阴影 */
+body.theme-paper .page-header {
+    background: var(--paper-1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 1px solid var(--rule);
+    box-shadow: none;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+body.theme-paper .page-header h1 {
+    font-family: var(--paper-serif);
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--ink-0);
+}
+body.theme-paper .page-header h1 .author {
+    font-weight: 400;
+    color: var(--ink-2);
+    letter-spacing: .04em;
+}
+body.theme-paper .page-header .subtitle {
+    font-family: var(--paper-serif);
+    color: var(--ink-2);
+    letter-spacing: .08em;
+}
+body.theme-paper .blossom-logo { color: var(--ink-1) !important; }
+body.theme-paper .ver-tag {
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-1);
+    border-radius: 2px;
+    font-family: var(--paper-serif);
+}
+/* 侧栏：整张纸（不再是一叠玻璃卡），内部只用分隔线 */
+body.theme-paper .sidebar {
+    background-color: var(--paper-1);
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 42%),
+        repeating-linear-gradient(0deg, rgba(120, 105, 80, .026) 0 1px, transparent 1px 3px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--rule);
+    border-top: none;
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    box-shadow: 1px 0 0 rgba(255, 255, 255, .7), 2px 0 16px -8px rgba(42, 36, 29, .22);
+}
+body.theme-paper .sidebar > .panel {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 2px 0 14px;
+    margin: 0 0 2px;
+    border-bottom: 1px solid var(--rule-2);
+}
+body.theme-paper .sidebar > .panel:first-child { padding-top: 0; }
+body.theme-paper .panel-title {
+    font-family: var(--paper-serif);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    color: var(--ink-0);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 6px;
+}
+body.theme-paper .panel-title::before {
+    content: "";
+    width: 3px;
+    height: 12px;
+    background: var(--accent, #7d6a4f);
+    opacity: .85;
+    flex: 0 0 auto;
+}
+body.theme-paper .panel-close { color: var(--ink-2); }
+body.theme-paper .panel-close:hover { color: var(--ink-0); background: var(--paper-2); }
+/* 图层行：纸表格的双列结构，勾选框做成细线小方框 */
+body.theme-paper .layer-item {
+    padding: 7px 6px 7px 2px;
+    border-radius: 2px;
+    background: transparent;
+    border-bottom: 1px solid var(--rule-2);
+}
+body.theme-paper .layer-item:last-child { border-bottom: none; }
+body.theme-paper .layer-item:hover { background: rgba(125, 106, 79, .07); }
+body.theme-paper .layer-item .layer-name {
+    font-size: 12.5px;
+    letter-spacing: .02em;
+    color: var(--ink-0);
+}
+body.theme-paper .layer-item input[type="checkbox"] {
+    border-radius: 1px;
+    border-color: rgba(42, 36, 29, .34);
+    background: transparent;
+}
+body.theme-paper .layer-item input[type="checkbox"]:checked {
+    background: var(--accent, #7d6a4f);
+    border-color: var(--accent, #7d6a4f);
+}
+body.theme-paper .layer-item .dot { border-radius: 1px; }
+body.theme-paper .layer-item .count {
+    font-family: var(--paper-serif);
+    color: var(--ink-1);
+    font-size: 11.5px;
+    letter-spacing: .02em;
+}
+body.theme-paper .layer-actions button,
+body.theme-paper .panel-restore,
+body.theme-paper .sidebar-quick button {
+    border-radius: 2px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-1);
+    box-shadow: none;
+    font-size: 11.5px;
+    letter-spacing: .06em;
+}
+body.theme-paper .layer-actions button:hover,
+body.theme-paper .sidebar-quick button:hover {
+    background: var(--paper-2);
+    color: var(--ink-0);
+    border-color: rgba(42, 36, 29, .28);
+    transform: none;
+}
+body.theme-paper .count-tip,
+body.theme-paper .note {
+    color: var(--ink-2);
+    font-size: 12px;
+    line-height: 1.72;
+    letter-spacing: .01em;
+}
+body.theme-paper .note { border-left: 2px solid var(--rule); padding-left: 8px; margin: 0 0 6px; }
+/* 输入框 / 下拉：纸面下划线风格 */
+body.theme-paper #search-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    border-radius: 0;
+    color: var(--ink-0);
+    padding: 8px 2px;
+    box-shadow: none;
+}
+body.theme-paper #search-input::placeholder { color: var(--ink-2); opacity: .72; }
+body.theme-paper #search-input:focus { border-bottom-color: var(--accent, #7d6a4f); outline: none; }
+body.theme-paper .search-filter span { color: var(--ink-2); font-size: 11.5px; letter-spacing: .06em; }
+body.theme-paper #search-type {
+    background-color: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink-0);
+    padding: 4px 6px;
+}
+body.theme-paper .sr-item {
+    border-radius: 2px;
+    border-bottom: 1px solid var(--rule-2);
+    background: transparent;
+}
+body.theme-paper .sr-item:hover { background: rgba(125, 106, 79, .07); }
+/* 地图层：所有玻璃面板统一为白纸片 + 1px 墨线，去掉模糊与多层内高光 */
+body.theme-paper #map .panel,
+body.theme-paper #map .settings-panel,
+body.theme-paper #map .basemap-panel,
+body.theme-paper #map .mark-panel,
+body.theme-paper #map .legend-panel,
+body.theme-paper #map .measure-result,
+body.theme-paper #map .map-toast,
+body.theme-paper .scale,
+body.theme-paper .cl-card {
+    background-color: var(--paper-1) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: 3px !important;
+    box-shadow: 0 1px 1px rgba(42, 36, 29, .05), 0 14px 30px -22px rgba(42, 36, 29, .5) !important;
+    color: var(--ink-0);
+}
+body.theme-paper .zoom-ctrl button,
+body.theme-paper .menu-btn,
+body.theme-paper .toolbar button {
+    background-color: var(--paper-1) !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: 2px !important;
+    color: var(--ink-1) !important;
+    box-shadow: 0 1px 2px rgba(42, 36, 29, .06) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+body.theme-paper .zoom-ctrl button:hover,
+body.theme-paper .menu-btn:hover,
+body.theme-paper .toolbar button:hover {
+    background-color: var(--paper-2) !important;
+    color: var(--ink-0) !important;
+    transform: none;
+}
+body.theme-paper .settings-title,
+body.theme-paper #map .panel-title {
+    font-family: var(--paper-serif);
+    letter-spacing: .08em;
+    color: var(--ink-0);
+}
+/* 纸包里不飘花瓣：粒子整体压成"落纸的淡墨点"，密度减半 */
+body.theme-paper .petal { opacity: .28 !important; }
+body.theme-paper .petal-wrap { opacity: .5; }
+/* 夜间色块曾用于"在深底上更亮"，纸包里让图例与底色对比保持一致 */
+body.theme-paper .mc-wrap { filter: none; }
+
+/* ---------- v116 · 地物点：纸章图钉（白纸圆章 + 类别色细环 + 下压尖角） ---------- */
+.poi-node {
+    width: 24px;
+    height: 26px;
+    filter: drop-shadow(0 1px 2px rgba(15, 23, 42, .22));
+}
+.poi-node:hover { transform: translateY(-1px) scale(1.08); }
+body.theme-paper .poi-node {
+    filter: drop-shadow(0 1px 0 rgba(42, 36, 29, .16));
+}
+body.theme-paper .poi-node:hover { filter: drop-shadow(0 2px 3px rgba(42, 36, 29, .22)); }
+/* 聚合数字球：纸包里改为"双环纸章"——米白底 + 类别色内环 + 墨色数字 */
+body.theme-paper .mc-bubble {
+    background-color: #faf7ef !important;
+    color: #2a241d !important;
+    border: 1px solid rgba(42, 36, 29, .28);
+    box-shadow: inset 0 0 0 2.2px var(--accent, #7d6a4f), 0 1px 2px rgba(42, 36, 29, .14);
+    font-family: var(--paper-serif);
+    font-weight: 600;
+}
+body.theme-paper .mc-bubble.mc-school { box-shadow: inset 0 0 0 2.2px var(--school), 0 1px 2px rgba(42, 36, 29, .14); }
+body.theme-paper .mc-bubble.mc-hospital { box-shadow: inset 0 0 0 2.2px var(--hospital), 0 1px 2px rgba(42, 36, 29, .14); }
+body.theme-paper .mc-bubble.mc-scenic { box-shadow: inset 0 0 0 2.2px var(--scenic), 0 1px 2px rgba(42, 36, 29, .14); }
+/* 纸包：路名标签去玻璃，改薄纸片 */
+body.theme-paper .road-tag {
+    background: rgba(250, 247, 239, .96) !important;
+    border: 1px solid rgba(42, 36, 29, .18) !important;
+    border-radius: 1px !important;
+    color: #4b4133 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+    letter-spacing: .04em;
+}
+/* 纸包：悬停名称提示同款纸片 */
+body.theme-paper .poi-tip {
+    background-color: rgba(250, 247, 239, .98) !important;
+    border: 1px solid rgba(42, 36, 29, .2) !important;
+    border-radius: 2px !important;
+    color: #2a241d !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 1px 2px rgba(42, 36, 29, .1) !important;
+}
+/* 纸包下的图层删除按钮 */
+.layer-item .layer-del {
+    display: none;
+    width: 20px; height: 20px;
+    margin-left: 2px;
+    align-items: center; justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--text-2, #94897a);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+.layer-item:hover .layer-del { display: inline-flex; }
+.layer-item .layer-del:hover { color: #9a4436; border-color: rgba(154, 68, 54, .4); background: rgba(154, 68, 54, .08); }
+body.theme-paper .layer-item .layer-del { color: var(--ink-2); }
+body.theme-paper .layer-item .layer-del:hover { color: var(--hospital); border-color: rgba(154, 68, 54, .45); background: rgba(154, 68, 54, .07); }
+/* 动态图层行（由导入数据生成） */
+.layer-item .layer-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.layer-item.is-dyn .layer-name::after {
+    content: "导入";
+    margin-left: 5px;
+    font-size: 9.5px;
+    letter-spacing: .06em;
+    color: var(--text-2, #94897a);
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    padding: 0 3px;
+    opacity: .7;
+    vertical-align: 1px;
+}
+/* v116：整层删除后的一键恢复 */
+.layer-actions { flex-wrap: wrap; }
+.layer-actions button { flex: 1 1 auto; white-space: nowrap; }
+.layer-restore {
+    width: 100%;
+    margin-top: 6px;
+    padding: 6px 8px;
+    border: 1px dashed rgba(154, 68, 54, .45);
+    background: rgba(154, 68, 54, .06);
+    color: #8a3b2e;
+    border-radius: 4px;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: background .16s ease, border-color .16s ease;
+}
+.layer-restore:hover { background: rgba(154, 68, 54, .13); border-color: rgba(154, 68, 54, .62); }
+body.theme-paper .layer-restore {
+    border-radius: 2px;
+    font-family: inherit;
+    letter-spacing: .04em;
+    background: transparent;
+    border-color: rgba(154, 68, 54, .5);
+}
+body.theme-paper .layer-restore:hover { background: rgba(154, 68, 54, .07); }
+
+/* 纸包：材质包按钮改纸片（直角 + 细边），七枚压成两行 */
+body.theme-paper .pack-switch { gap: 6px; }
+body.theme-paper .pack-item {
+    flex: none;
+    border-radius: 2px;
+    background: #fffdf8;
+    border-color: var(--rule);
+    color: var(--ink-1);
+    box-shadow: none;
+    font-size: 11.5px;
+    letter-spacing: .06em;
+    padding: 4px 4px;
+}
+body.theme-paper .pack-item:hover {
+    transform: none;
+    box-shadow: none;
+    background: var(--paper-2);
+    color: var(--ink-0);
+}
+body.theme-paper .pack-item.sel {
+    background: var(--accent, #7d6a4f);
+    border-color: var(--accent, #7d6a4f);
+    color: #fff;
+    box-shadow: none;
+}
+/* 纸包：原生控件（滑杆 / 勾选）改墨棕强调色，标题与注文改宋体墨色 */
+body.theme-paper input[type='range'],
+body.theme-paper input[type='checkbox'] { accent-color: var(--accent, #7d6a4f); }
+body.theme-paper .settings-title,
+body.theme-paper .panel-title,
+body.theme-paper .legend-title { font-family: var(--paper-serif); color: var(--ink-0); letter-spacing: .08em; }
+body.theme-paper .set-name { color: var(--ink-0); }
+body.theme-paper .set-val { color: var(--ink-1); }
+body.theme-paper .set-note { color: var(--ink-2); }

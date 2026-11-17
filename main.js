@@ -328,15 +328,17 @@
         scenic: '<g><circle cx="12" cy="8.2" r="3.6"/><circle cx="15.8" cy="12" r="3.6"/><circle cx="12" cy="15.8" r="3.6"/><circle cx="8.2" cy="12" r="3.6"/><circle cx="12" cy="12" r="2.1"/></g>'
     };
     var POI_GLYPH = {
-        school: '<rect x="7.4" y="7.6" width="9.2" height="1.9" rx=".6"/><rect x="7.4" y="11" width="9.2" height="1.9" rx=".6"/><rect x="7.4" y="14.4" width="6" height="1.9" rx=".6"/>',
-        hospital: '<rect x="10.5" y="6.6" width="3" height="10.8" rx=".8"/><rect x="6.6" y="10.5" width="10.8" height="3" rx=".8"/>',
-        scenic: ''
+        school: '<rect x="8.2" y="8" width="7.6" height="1.7" rx=".5" opacity=".92"/><rect x="8.2" y="11.2" width="7.6" height="1.7" rx=".5" opacity=".92"/><rect x="8.2" y="14.4" width="4.8" height="1.7" rx=".5" opacity=".92"/>',
+        hospital: '<rect x="11" y="8" width="2" height="10" rx=".5"/><rect x="7" y="12" width="10" height="2" rx=".5"/>',
+        scenic: '<path d="M6.6 17.4 L10.8 9.6 L14 15 L16.4 11.8 L19.8 17.4 Z" opacity=".92"/><circle cx="17.6" cy="8.6" r="1.5" opacity=".7"/>'
     };
+    // v116 纸章图钉：白纸圆章 + 类别色细环 + 下压尖角，取代 v115 的实心方块
     function poiIconHtml(key) {
         var c = LAYER_CONFIG[key] ? LAYER_CONFIG[key].color : '#2563eb';
-        return '<svg class="poi-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
-            '<g stroke="#fff" stroke-width="1.6" fill="' + c + '">' + (POI_SHAPE[key] || '') + '</g>' +
-            '<g fill="#fff" stroke="none">' + (POI_GLYPH[key] || '') + '</g>' +
+        return '<svg class="poi-svg" viewBox="0 0 28 32" width="24" height="26" aria-hidden="true">' +
+            '<path d="M14 31 L9.9 21.5 h8.2 Z" fill="' + c + '" fill-opacity=".9"/>' +
+            '<circle cx="14" cy="13" r="9.4" fill="#fffdf8" stroke="' + c + '" stroke-width="1.5"/>' +
+            '<g fill="' + c + '" transform="translate(2,1)">' + (POI_GLYPH[key] || '') + '</g>' +
             '</svg>';
     }
     function makePointMarker(key, feat) {
@@ -345,10 +347,10 @@
         var icon = L.divIcon({
             className: 'poi-node-wrap',
             html: '<div class="poi-node poi-' + key + '">' + poiIconHtml(key) + '</div>',
-            iconSize: [20, 20], iconAnchor: [10, 10]
+            iconSize: [24, 26], iconAnchor: [12, 26]
         });
         return L.marker(toMapCoord(coords), { icon: icon })
-            .bindTooltip(p.name, { direction: 'top', offset: [0, -12], className: 'poi-tip' })
+            .bindTooltip(p.name, { direction: 'top', offset: [0, -24], className: 'poi-tip' })
             .bindPopup(pointPopupHtml(key, p), { autoPan: true, maxWidth: 280 });
     }
 
@@ -1435,7 +1437,7 @@
             }
             return null;
         }
-        function importCfText(text) {
+        function importCfText(text, fname) {
             var data;
             try { data = JSON.parse(text); } catch (e) { toast('导入失败：不是合法 JSON', true); return; }
             var arr = [];
@@ -1443,7 +1445,7 @@
             else if (data && data.type === 'Feature') arr = [data];
             else if (Array.isArray(data)) arr = data;
             if (!arr.length) { toast('文件里没有可导入的要素', true); return; }
-            var added = 0, dup = 0, bad = 0;
+            var added = 0, dup = 0, bad = 0, newKinds = {}, newPts = [];
             arr.forEach(function (ft) {
                 try {
                     var g = ft && ft.geometry;
@@ -1467,11 +1469,22 @@
                         crs: p.crs || 'GCJ-02',
                         ts: Date.now() + added
                     });
+                    newKinds[kind] = (newKinds[kind] || 0) + 1;
+                    cfCoordList({ geometry: { type: type, coordinates: coords } }).forEach(function (c) { newPts.push(c); });
                     added++;
                 } catch (eOne) { bad++; }
             });
             saveCustom(); renderCustom(); syncCfCats(); updateCounts(); renderMarkList(); refreshSearch();
-            var msg = '导入 ' + added + ' 个自建要素';
+            // v116：导入后自动把视野移到数据范围（padding 避开左侧栏），新增业务类型由 syncCfCats 自动生成图层行
+            if (added > 0 && newPts.length) {
+                try {
+                    var b = L.latLngBounds(newPts.map(toMapCoord));
+                    map.fitBounds(b, { paddingTopLeft: [86, 70], paddingBottomRight: [70, 60], maxZoom: 16 });
+                } catch (e) { }
+            }
+            var kindList = Object.keys(newKinds);
+            var msg = (fname ? '「' + fname + '」' : '') + '导入 ' + added + ' 个要素';
+            if (kindList.length) msg += '：' + kindList.map(function (k) { return k + ' ×' + newKinds[k]; }).join('、') + '，图层列表已同步';
             if (dup) msg += '，跳过 ' + dup + ' 个（id 重复）';
             if (bad) msg += '，跳过 ' + bad + ' 个（结构不合法）';
             toast(msg, !added);
@@ -1498,10 +1511,15 @@
                 var file = cfFileInput.files && cfFileInput.files[0];
                 if (!file) return;
                 var reader = new FileReader();
-                reader.onload = function () { importCfText(String(reader.result || '')); };
+                reader.onload = function () { importCfText(String(reader.result || ''), file.name); };
                 reader.readAsText(file, 'utf-8');
                 cfFileInput.value = '';
             });
+        }
+        // v116：图层管理区的「导入」按钮复用同一个文件输入，导入完自动定位
+        var layerImportBtn = document.getElementById('btn-layer-import');
+        if (layerImportBtn && cfFileInput) {
+            layerImportBtn.addEventListener('click', function () { cfFileInput.click(); });
         }
         document.getElementById('mark-clear-all').addEventListener('click', function () {
             if (!customFeatures.length) return;
@@ -1705,6 +1723,7 @@
         osmanthus: { name: '桂花', accent: '#b45309', accentDark: '#92400e', accentSoft: '#fef3c7', pclass: 'osmanthus' },
         leaf: { name: '绿叶', accent: '#15803d', accentDark: '#166534', accentSoft: '#dcfce7', pclass: 'leaf' },
         rose: { name: '玫瑰', accent: '#be185d', accentDark: '#9d174d', accentSoft: '#fce7f3', pclass: 'rose' },
+        paper: { name: '纸笺', accent: '#7d6a4f', accentDark: '#4b4133', accentSoft: '#f3eee2', pclass: 'paper' },
         night: { name: '夜间', accent: '#818cf8', accentDark: '#6366f1', accentSoft: 'rgba(129,140,248,.14)', pclass: 'night' }
     };
     var themeState = { pack: 'peach', rhythm: 5, on: false };
@@ -1717,6 +1736,10 @@
         } catch (e) { }
     }
     function saveTheme() { try { localStorage.setItem('cd_theme', JSON.stringify(themeState)); } catch (e) { } }
+    // v116 修：主题必须在「设置面板初始化」之前读档——设置面板初始化时会写回默认 rhythm，
+    // 如果等到启动段才 loadTheme，新写入的默认值（peach / 5）会先把用户存档覆盖掉，
+    // 表现为「选了纸笺，刷新又回到桃花」。这里读一次，启动段不再重复读。
+    loadTheme();
     function rebuildPetals() {
         var wrap = document.getElementById('petal-wrap');
         if (!wrap) return;
@@ -1761,7 +1784,7 @@
                         l.setIcon(L.divIcon({
                             className: 'poi-node-wrap',
                             html: '<div class="poi-node poi-' + key + '">' + poiIconHtml(key) + '</div>',
-                            iconSize: [20, 20], iconAnchor: [10, 10]
+                            iconSize: [24, 26], iconAnchor: [12, 26]
                         }));
                     }
                 });
@@ -1782,7 +1805,8 @@
         osmanthus: '<ellipse cx="12" cy="5.5" rx="2.3" ry="3.4"/><ellipse cx="12" cy="18.5" rx="2.3" ry="3.4"/><ellipse cx="5.5" cy="12" rx="3.4" ry="2.3"/><ellipse cx="18.5" cy="12" rx="3.4" ry="2.3"/><circle cx="12" cy="12" r="1.6" fill="#fff" opacity=".85"/>',
         leaf: '<path d="M12 2 C6.8 6.4 4.8 10.4 4.8 12 C4.8 16.8 8.6 22 12 22 C15.4 22 19.2 16.8 19.2 12 C19.2 10.4 17.2 6.4 12 2 Z"/><path d="M12 4.5 L12 20.5" stroke="#fff" stroke-width="1.1" opacity=".55" fill="none" stroke-linecap="round"/>',
         rose: '<path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(72 12 12)"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(144 12 12)"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(216 12 12)"/><path d="M12 2.6 C13.6 6.2 13.6 8.4 12 9.4 C10.4 8.4 10.4 6.2 12 2.6 Z" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.4" fill="#fff" opacity=".7"/>',
-        night: '<path d="M12 2 L14.6 8.4 L21.4 8.4 L15.9 12.6 L18.4 19 L12 15 L5.6 19 L8.1 12.6 L2.6 8.4 L9.4 8.4 Z"/>'
+        night: '<path d="M12 2 L14.6 8.4 L21.4 8.4 L15.9 12.6 L18.4 19 L12 15 L5.6 19 L8.1 12.6 L2.6 8.4 L9.4 8.4 Z"/>',
+        paper: '<rect x="3.9" y="3.1" width="16.2" height="17.8" rx="1.3"/><rect x="6.7" y="7" width="10.6" height="1.4" rx=".4" fill="#fff" opacity=".9"/><rect x="6.7" y="10.5" width="10.6" height="1.4" rx=".4" fill="#fff" opacity=".9"/><rect x="6.7" y="14" width="6.4" height="1.4" rx=".4" fill="#fff" opacity=".9"/>'
     };
     function applyLogoShape(packKey) {
         var logo = document.querySelector('.blossom-logo');
@@ -1793,7 +1817,7 @@
         var p = PACKS[packKey] || PACKS.peach;
         themeState.pack = packKey;
         // body 级主题类：整套 --plum/--rose/--rose-soft/--accent 联动，材质包切换彻底生效
-        var cls = ['theme-peach', 'theme-osmanthus', 'theme-leaf', 'theme-rose', 'theme-night'];
+        var cls = ['theme-peach', 'theme-osmanthus', 'theme-leaf', 'theme-rose', 'theme-paper', 'theme-night'];
         document.body.classList.remove.apply(document.body.classList, cls);
         document.body.classList.add('theme-' + packKey);
         // v100：夜间材质包 → 底图真正切换为 Carto Dark 深色瓦片（底色整体变深，地名/道路为暗色设计），
@@ -2174,6 +2198,18 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v116', t: '纸笺材质包 + 纸感版式 + 地物点纸章图钉 + 动态图层管理（导入自动成层 / 整层删除 / 自动定位）',
+            pts: [
+                '新材质包「纸笺」：米白纸底 + 1px 墨线 + 直角纸片 + 衬线标题，关掉玻璃模糊与镜面扫光；飘落粒子压成落纸的淡墨点',
+                '左侧图层管理在纸包下变成一整张纸（内部分区只用分隔线），不随玻璃滑杆漂移',
+                '地物点造型重做：白纸圆章 + 类别色细环 + 下压尖角（纸章图钉），替换 v115 的实心方块；聚合数字改双环纸章',
+                '动态图层管理：导入 GeoJSON 后按业务类型自动生成图层行（可显隐、显示数量、可整层删除），某类型清空后该行自动消失',
+                '内置图层支持整层删除：一次确认、清空该类型全部要素、cd_layer_gone 持久化、刷新后不再加载，并提供一键恢复',
+                '导入后自动 fitBounds 到数据范围（padding 避开左侧栏），提示改为「文件名 + 各类型数量 + 图层列表已同步」',
+                '修复：材质包切到「纸笺」后刷新总回到桃花——主题读档原来排在设置面板初始化之后，初始化写回默认值把存档覆盖了，现改为读档前置'
+            ]
+        },
         {
             v: 'v115', t: '显示系统改造：玻璃锚点重定 + 恢复默认单一入口 + 点位形状语义化 + Inter 自托管 + 夜间底图暗化',
             pts: [
@@ -3064,6 +3100,91 @@
         toast('已进入整体移动：按住图形拖动');
     }
 
+    // ---- v116：内置图层「整层删除」+ 持久化（笔记第13节第4条）----
+    var LAYER_GONE_KEY = 'cd_layer_gone';
+    var goneLayers = {};
+    function loadGoneLayers() {
+        try { goneLayers = JSON.parse(localStorage.getItem(LAYER_GONE_KEY) || '{}') || {}; } catch (e) { goneLayers = {}; }
+        if (!goneLayers || typeof goneLayers !== 'object') goneLayers = {};
+    }
+    function saveGoneLayers() {
+        try { localStorage.setItem(LAYER_GONE_KEY, JSON.stringify(goneLayers)); } catch (e) { }
+    }
+    // 刷新后把已删除的图层保持为空（不让"删掉的图层又回来"）
+    function applyGoneLayers() {
+        GEO_KEYS.forEach(function (k) {
+            if (!goneLayers[k]) return;
+            layerState[k].data = [];
+            layerState[k].visible = false;
+            var chk = document.getElementById('chk-' + k);
+            if (chk) chk.checked = false;
+        });
+    }
+    function renderBuiltinDelBtns() {
+        GEO_KEYS.forEach(function (k) {
+            var row = document.querySelector('.layer-item[data-layer="' + k + '"]');
+            if (!row || row.querySelector('.layer-del')) return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'layer-del';
+            btn.title = '整层删除「' + LAYER_CONFIG[k].name + '」：移除该类型全部要素，刷新后不再加载';
+            btn.setAttribute('aria-label', '删除该图层');
+            btn.textContent = '×';
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteBuiltinLayer(k);
+            });
+            row.appendChild(btn);
+        });
+    }
+    function deleteBuiltinLayer(k) {
+        var n = (layerState[k].data || []).length;
+        var nm = LAYER_CONFIG[k].name;
+        if (!n) { toast('「' + nm + '」当前没有要素可删除'); return; }
+        if (!window.confirm('整层删除「' + nm + '」？该类型 ' + n + ' 个要素会被一并移除（视野计数、搜索、图例同步更新），刷新页面也不再加载。\n\n可在「恢复已删除图层」一键还原。')) return;
+        layerState[k].data = [];
+        layerState[k].visible = false;
+        goneLayers[k] = true;
+        saveGoneLayers();
+        var chk = document.getElementById('chk-' + k);
+        if (chk) chk.checked = false;
+        refreshLayer(k);
+        try { buildSearchIndex(); } catch (e) { }
+        updateCounts();
+        refreshSearch();
+        renderRestoreBtn();
+        toast('已删除「' + nm + '」整层 ' + n + ' 个要素');
+    }
+    function renderRestoreBtn() {
+        var btn = document.getElementById('btn-layer-restore');
+        if (!btn) return;
+        var keys = Object.keys(goneLayers).filter(function (k) { return goneLayers[k] && LAYER_CONFIG[k]; });
+        if (!keys.length) { btn.hidden = true; return; }
+        btn.hidden = false;
+        btn.textContent = '恢复已删除图层（' + keys.length + '）';
+    }
+    function restoreGoneLayers() {
+        var keys = Object.keys(goneLayers).filter(function (k) { return goneLayers[k] && LAYER_CONFIG[k]; });
+        if (!keys.length) return;
+        keys.forEach(function (k) {
+            var src = (DATA[k] && DATA[k].features) || [];
+            if (!src.length) return;
+            layerState[k].data = src;
+            layerState[k].visible = true;
+            var chk = document.getElementById('chk-' + k);
+            if (chk) chk.checked = true;
+            delete goneLayers[k];
+            refreshLayer(k);
+        });
+        saveGoneLayers();
+        try { buildSearchIndex(); } catch (e) { }
+        updateCounts();
+        refreshSearch();
+        renderRestoreBtn();
+        toast('已恢复 ' + keys.length + ' 个图层');
+    }
+
     // ---- v114 P2 挑战 1：删除整类自建图层（一次确认，整组清掉；清空后该行由 syncCfCats 自动移除）----
     function deleteCfKind(k) {
         var hit = customFeatures.filter(function (f) { return (f.properties.kind || '设施点') === k; });
@@ -3134,7 +3255,7 @@
                     var n = 0;
                     customFeatures.forEach(function (f) { if ((f.properties.kind || '设施点') === k) n++; });
                     var on = cfKindOn[k] !== false;
-                    return '<label class="layer-item cf-layer-item">' +
+                    return '<label class="layer-item cf-layer-item is-dyn">' +
                         '<input type="checkbox" data-cf-kind="' + k + '"' + (on ? ' checked' : '') + '>' +
                         '<span class="dot" style="background:' + cfColor(k) + '"></span>' +
                         '<span class="layer-name">我的·' + esc(k) + '</span>' +
@@ -3251,7 +3372,7 @@
     try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
 
     // ---------------- 14. 启动 ----------------
-    loadTheme();
+    loadGoneLayers();
     applyPack(themeState.pack);
     if (themeState.on) document.getElementById('petal-wrap').classList.add('on');
     syncSetToggles();
@@ -3261,6 +3382,12 @@
         });
     });
     Promise.all(loaders).then(function () {
+        // v116：把历史上整层删除过的图层保持为空，再统一重建
+        applyGoneLayers();
+        renderBuiltinDelBtns();
+        renderRestoreBtn();
+        var rBtn = document.getElementById('btn-layer-restore');
+        if (rBtn) rBtn.addEventListener('click', restoreGoneLayers);
         buildSearchIndex();
         refreshAllLayers();
         fitDataView();
