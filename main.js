@@ -32,7 +32,7 @@
         var el = document.getElementById('map-toast');
         if (!el) return;
         el.textContent = msg;
-        el.className = 'map-toast' + (isErr ? ' err' : '');
+        el.className = 'map-toast' + (isErr ? ' error' : '');
         el.hidden = false;
         clearTimeout(toast._t);
         toast._t = setTimeout(function () { el.hidden = true; }, isErr ? 7000 : 4000);
@@ -62,7 +62,11 @@
         zoomControl: false,
         minZoom: 3,
         maxZoom: 18,
-        attributionControl: true
+        attributionControl: true,
+        // v125：矢量线/面/圆标记默认走 Canvas 后端（Leaflet 官方 FAQ：矢量大数据从 SVG 切 Canvas，
+        // 避免每条线/每个圆一个 SVG path 节点）。内置设施点仍是 divIcon DOM marker，不受此 renderer 影响；
+        // tooltip / 弹窗是独立 overlay，也不经过 renderer。
+        renderer: L.canvas()
     });
     // 底图多源链：高德矢量/栅格（GCJ-02，国内最快最稳）→ OSM（WGS-84）
     // 同坐标系内先切换（高德矢量→高德栅格，数据不重绘、无缝），跨坐标系才重绘数据
@@ -521,6 +525,7 @@
             var add = !!(oe.shiftKey || oe.ctrlKey || oe.metaKey);
             if (add || poiSel.ids.length) { poiToggle(fid, key); return; }
             openPwCard(pointPopupHtml(key, p, fid), mk.getLatLng());
+            highlightSearchRow(p.name);
         });
         return mk;
     }
@@ -768,7 +773,36 @@
                 locateFeature(it.key, it.feat);
                 closeDrawer();
             });
+            // v125 B1：列表行悬停 → 地图上对应点临时放大描边（仅内置点；自建点走 cf 层，不在此列）
+            el.addEventListener('mouseenter', function () {
+                var it = hits[+el.getAttribute('data-i')];
+                if (!it || it.key === 'custom') return;
+                var mk = POI_MK[poiFid(it.feat)];
+                var dom = mk && mk.getElement ? mk.getElement() : null;
+                if (dom) dom.classList.add('sr-hover');
+            });
+            el.addEventListener('mouseleave', function () {
+                var it = hits[+el.getAttribute('data-i')];
+                if (!it || it.key === 'custom') return;
+                var mk = POI_MK[poiFid(it.feat)];
+                var dom = mk && mk.getElement ? mk.getElement() : null;
+                if (dom) dom.classList.remove('sr-hover');
+            });
         });
+    }
+    // v125 B1：地图点被点开时，若搜索结果列表可见且含同名项，滚动定位并短暂高亮（地图→列表反向联动）
+    function highlightSearchRow(name) {
+        if (!searchResultEl || searchResultEl.hidden || !name) return;
+        var rows = Array.prototype.slice.call(searchResultEl.querySelectorAll('.sr-item'));
+        var hit = null;
+        rows.forEach(function (r) {
+            var nm = r.querySelector('.sr-name');
+            if (!hit && nm && nm.textContent === name) hit = r;
+        });
+        if (!hit) return;
+        rows.forEach(function (r) { r.classList.remove('sr-active'); });
+        hit.classList.add('sr-active');
+        hit.scrollIntoView({ block: 'nearest' });
     }
     searchInput.addEventListener('input', runSearch);
     searchType.addEventListener('change', runSearch);
@@ -784,8 +818,8 @@
                 if (!target && ly.getLatLng && ly.getLatLng().lat === ll[0] && ly.getLatLng().lng === ll[1]) target = ly;
             });
         }
-        if (target && target.openPopup) target.openPopup();
-        else if (key === 'road' && linesLayer) {
+        openTargetPopup(container, target);
+        if (key === 'road' && linesLayer) {
             linesLayer.eachLayer(function (ly) {
                 if (!target && ly.getLatLng && ly.getLatLng().lat === ll[0] && ly.getLatLng().lng === ll[1]) target = ly;
             });
@@ -794,6 +828,14 @@
             }
             if (target && target.openPopup) target.openPopup();
         }
+    }
+    // v125 B1：聚合态下子点被气泡包住、不在地图上，直接 openPopup 无效；
+    // 先用 zoomToShowLayer 散开/放大到该点，回调里再开详情卡。
+    function openTargetPopup(container, target) {
+        if (!target) return;
+        if (container && typeof container.zoomToShowLayer === 'function') {
+            container.zoomToShowLayer(target, function () { if (target.openPopup) target.openPopup(); });
+        } else if (target.openPopup) target.openPopup();
     }
 
     // ---------------- 8. 测距 / 测面 ----------------
@@ -2413,6 +2455,17 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v125', t: '流畅性加固（Canvas 渲染 + 去玻璃嵌套）+ 列表地图双向联动 + 提示一致性',
+            pts: [
+                '矢量线 / 面 / 圆标记默认切到 Canvas 后端渲染（Leaflet 官方 FAQ 建议）：不再每条线、每个圆占一个 SVG 节点，多点矢量场景减少 DOM 节点数；内置设施点仍是图标 DOM 标记，弹窗与标签不受影响',
+                '列表 ↔ 地图双向联动：搜索结果行悬停时地图上对应点临时放大描边；在地图上点开某点，若搜索列表可见同名项会滚动定位并高亮；聚合态下先散开 / 放大到该点再开详情卡（此前聚合包裹时直接开弹窗无效）',
+                '视觉令牌收敛：提取圆角 / 字阶令牌（大卡 12、行与中组件 9、小标签 8；标题 14 / 正文 13 / 辅助 11），面板标题 14.5px 对齐到 14px，两处 13px 圆角对齐到 12px；不改既有材质色板，纸笺仍为 2px 直角',
+                '提示一致性修复：错误提示的样式类名此前 JS 写 err、CSS 找 error，导致报错 toast 一直没变红；现已对齐，并补齐夜间（浅红字 + 暗红底）与纸笺（墨红字 + 细红边）的错误态；两处空态字号统一到辅助级',
+                '消除玻璃套玻璃：标题栏整块磨砂内部的菜单钮、版本标签不再二次 blur，复用父级已磨砂背景；全量补上「减少动态效果」系统偏好的动画降级（脉冲 / 花瓣 / 弹卡 / 淡入在该偏好下近乎瞬时）',
+                '大数据预留：自建要素超过 60 个时，常驻地名标签自动降级为悬停提示，避免每条常驻一个标签 DOM 撑爆覆盖层；批量重绘仍是先清旧标签与图层再一次性重建'
+            ]
+        },
+        {
             v: 'v124', t: '纸笺详情卡归位 + 内置点多选（不弹卡、可预览）',
             pts: [
                 '纸笺材质下的设施点详情卡补齐：纸底 + 直角 2px + 宋体 + 墨棕字，标题左侧竖线压成墨棕细线，关闭钮改直角描边方钮——此前 .pw-box 只有「白天玻璃 / 夜间深色」两条分支，纸笺从未被覆盖',
@@ -3078,10 +3131,13 @@
             } else {
                 layer = L.polygon(lls, st);
             }
+            // v125 C3：要素量较大（>60）时常驻标签降级为 hover 提示——每条 permanent tooltip 都是
+            // 一个常驻 DOM 节点，几百条同时挂着会撑爆 overlay 层；少量要素时仍保留常驻标签便于对照。
+            var manyCf = customFeatures.length > 60;
             layer.bindTooltip(
                 '<span class="cf-tip-name">' + esc(f.properties.name) + '</span>' +
                 '<span class="cf-tip-meta">' + esc(f.properties.kind) + ' · ' + cfGeoLabel(f.geometry.type) + '</span>',
-                { permanent: true, direction: f.geometry.type === 'Point' ? 'top' : 'center', offset: f.geometry.type === 'Point' ? [0, -10] : [0, 0], className: 'cf-tag', opacity: 1 }
+                { permanent: !manyCf, direction: f.geometry.type === 'Point' ? 'top' : 'center', offset: f.geometry.type === 'Point' ? [0, -10] : [0, 0], className: 'cf-tag', opacity: 1 }
             );
             layer.on('click', function (e) {
                 if (e.originalEvent) L.DomEvent.stop(e.originalEvent);

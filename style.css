@@ -15,6 +15,13 @@
     --text: #1e293b;
     --text-2: #64748b;
     --radius: 12px;
+    /* v125 B2：圆角/字阶令牌（大卡 12 / 行与中组件 9 / 小标签输入 8；标题 14 / 正文 13 / 辅助 11）。
+       纸笺包在主题覆盖里改为 2px 直角，夜间实底覆盖不受影响；此处只统一桃花玻璃基线。 */
+    --radius-md: 9px;
+    --radius-sm: 8px;
+    --fs-title: 14px;
+    --fs-body: 13px;
+    --fs-aux: 11px;
     --shadow: 0 4px 16px rgba(15, 23, 42, .08);
     /* 玻璃质感（设置面板可调，localStorage 持久化；在原配色基础上叠加：半透明+高光+内边框） */
     --glass-blur: 8px;
@@ -234,8 +241,7 @@ body {
     border: 1px solid rgba(255, 255, 255, .45);
     border-radius: 999px;
     padding: 2px 11px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* v125：位于标题栏玻璃内部，复用父级磨砂，不再二次 blur */
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 2px 8px rgba(15, 23, 42, .15);
     cursor: pointer;
     user-select: none;
@@ -294,7 +300,7 @@ html, body, button, a, input, select, label {
     box-shadow: 0 2px 8px rgba(142, 42, 82, .05), inset 0 1px 0 rgba(255, 255, 255, .6);
 }
 .panel-title {
-    font-size: 14.5px;
+    font-size: var(--fs-title);
     font-weight: 600;
     letter-spacing: .2px;
     color: var(--plum);
@@ -703,7 +709,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     margin: 0;
     padding: 0;
     border: none;
-    border-radius: 13px;
+    border-radius: var(--radius);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1005,7 +1011,7 @@ body.theme-night #fab:not(.fab-open)::after {
     color: #333;
     font-size: 13px;
     padding: 7px 12px;
-    border-radius: 13px;
+    border-radius: var(--radius);
     box-shadow:
         0 6px 22px rgba(15, 23, 42, .14),
         inset 0 1px 0 rgba(255, 255, 255, .9),
@@ -1285,8 +1291,7 @@ body.theme-night .measure-result {
     flex-shrink: 0;
     position: relative;
     z-index: 2001;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* v125：按钮位于标题栏整块玻璃内部，复用父级已磨砂的背景，不再二次 blur，避免玻璃套玻璃重复采样 */
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 1px 4px rgba(15, 23, 42, .12);
     transition: background .15s, transform .3s cubic-bezier(.34, 1.56, .64, 1);
     touch-action: manipulation;
@@ -1703,7 +1708,7 @@ body.theme-night #map .leaflet-control-scale-line { border-bottom-color: rgba(16
 }
 .cf-layer-item .cf-layer-del:hover { color: #dc2626; background: rgba(220, 38, 38, .1); }
 body.theme-night .cf-layer-item .cf-layer-del { color: rgba(255, 255, 255, .55); }
-.mark-empty { font-size: 11.5px; color: var(--text-2); padding: 8px 4px; }
+.mark-empty { font-size: var(--fs-aux, 11px); color: var(--text-2); padding: 8px 4px; }
 .mark-btn.danger { background: linear-gradient(135deg, #dc2626, #f87171); }
 
 /* 聚合气泡：图层分类色（蓝/红/绿，与图例一致），小尺寸半透明减少遮挡；颜色走 CSS 变量，随材质包/夜间联动 */
@@ -1740,9 +1745,11 @@ body.theme-night .cf-layer-item .cf-layer-del { color: rgba(255, 255, 255, .55);
     font-size: 13px; color: var(--text); border-bottom: 1px solid #f6edf1;
 }
 .sr-item:hover { background: var(--rose-soft, #fbeef3); }
+/* v125 B1：地图点反向定位到列表项时的高亮态（左侧强调色条 + 浅底） */
+.sr-item.sr-active { background: var(--rose-soft, #fbeef3); box-shadow: inset 2.5px 0 0 var(--accent, #d6336c); }
 .sr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sr-type { flex-shrink: 0; font-size: 11px; }
-.sr-none { padding: 12px; font-size: 13px; color: var(--text-2, #9a8a92); text-align: center; }
+.sr-none { padding: 12px; font-size: 12px; color: var(--text-2, #9a8a92); text-align: center; }
 
 /* 非聚合模式：圆形点位可点 */
 .leaflet-interactive { outline: none; }
@@ -2256,6 +2263,9 @@ body.theme-night #map .mark-panel .mark-tools .mark-btn.danger { color: #ff9c9c 
     transition: transform .18s cubic-bezier(.32, .72, 0, 1), filter .18s ease;
 }
 .poi-node:hover { transform: scale(1.16); filter: drop-shadow(0 2px 6px rgba(15, 23, 42, .38)); }
+/* v125 B1：列表行悬停预览态——比普通 hover 再放大一档并抬升层级，避免被相邻点压住 */
+.poi-node-wrap.sr-hover .poi-node { transform: scale(1.22); filter: drop-shadow(0 2px 7px rgba(15, 23, 42, .45)); }
+.poi-node-wrap.sr-hover { z-index: 1200; }
 .poi-node svg { display: block; }
 /* 夜间：外圈加深色描边保证与暗底分离，核色由 material 主题变量替换 */
 body.theme-night .poi-node { filter: drop-shadow(0 0 1px rgba(4, 8, 20, .95)) drop-shadow(0 2px 5px rgba(0, 0, 0, .55)); }
@@ -2678,6 +2688,8 @@ body.theme-night .pack-item { background: rgba(15, 23, 42, .92); color: #dbe7ff;
 body.theme-night .pack-item.sel { background: #6366f1; color: #fff; border-color: #a5b4fc; }
 body.theme-night .rp-item.echo { background: rgba(5, 150, 105, .26); box-shadow: inset 0 0 0 1px rgba(110, 231, 183, .6); }
 body.theme-night .map-toast { color: #eef2ff; }
+/* v125 B3：夜间错误提示——深底上用浅红字 + 暗红底，避免沿用白天 #b91c1c 在深底上发闷 */
+body.theme-night .map-toast.error { background-color: rgba(120, 28, 36, .92) !important; border-color: rgba(248, 113, 113, .5); color: #fecaca; }
 
 /* —— 三、折射组件光晕兼容：sidebar 已有液态折射 SVG filter（L1588），filter 无法叠加，
    追加同 specificity 链式规则 —— 折射滤镜 + drop-shadow 光晕并存，覆盖 v92 基础光晕组 */
@@ -3426,6 +3438,8 @@ body.theme-paper .cl-card {
     box-shadow: 0 1px 1px rgba(42, 36, 29, .05), 0 14px 30px -22px rgba(42, 36, 29, .5) !important;
     color: var(--ink-0);
 }
+/* v125 B3：纸笺错误提示保留纸底，仅用墨红字 + 细红边表达错误语义 */
+body.theme-paper .map-toast.error { color: #9f2d2d; border-color: rgba(159, 45, 45, .35) !important; }
 body.theme-paper .zoom-ctrl button,
 body.theme-paper .menu-btn,
 body.theme-paper .toolbar button {
@@ -3980,4 +3994,18 @@ body.theme-paper .leaflet-popup-close-button:hover { background: #f3eee1 !import
 body.theme-night .poi-node-wrap.poi-sel .poi-node::before {
     background: #f4f6ff;
     box-shadow: 0 0 0 1.5px rgba(226, 232, 240, .55), 0 0 0 3px rgba(255, 255, 255, .55), 0 4px 12px rgba(0, 0, 0, .45);
+}
+
+/* ================= v125 C2：reduced-motion 统一降级 =================
+   此前只给悬浮球 fab 做了降级，定位脉冲 / 花瓣 / 弹卡 jelly / 弹层淡入等动画在系统
+   「减少动态效果」偏好下仍在跑。按 WCAG 推荐做全局兜底：动画时长压到 0.01ms、只播一次，
+   过渡近乎瞬时；不关闭 backdrop-filter 本身（那是静态质感，不是动效）。 */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+    #petal-wrap, .fab-cell-glow, .fab-cell-core, .fab::after { animation: none !important; }
 }
