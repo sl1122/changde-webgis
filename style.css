@@ -6,6 +6,11 @@
     --hospital: #dc2626;
     --scenic: #059669;
     --road: #d97706;
+    /* v126：自建/导入兜底类型语义色（随材质包走，不再写死 hex；与四类语义色错开） */
+    --cf-facility: #0891b2;   /* 设施点：青蓝（避开学校蓝） */
+    --cf-bus: #0d9488;        /* 公交站：青绿 */
+    --cf-park: #65a30d;       /* 公园：黄绿（避开景点 emerald 绿） */
+    --cf-area: #a855f7;       /* 自定区域：紫 */
     --plum: #8e2a52;          /* 桃花源主题主色（梅红） */
     --rose: #d16b8f;
     --rose-soft: #fceef3;
@@ -2651,6 +2656,7 @@ body.theme-night {
     --text-2: #b6c2e0;
     --border: #3d4c74;
     --school: #aecbff; --hospital: #ffb6b6; --scenic: #9ce6c4; --road: #f4cf92;
+    --cf-facility: #7dd3fc; --cf-bus: #5eead4; --cf-park: #bef264; --cf-area: #d8b4fe;
 }
 /* 2) 文字轮廓强化：v96 已移除——用户反馈「其他可看见的文字别过度渲染」（双层微投影造成重影）；v95 实色面板后文字无需微投影 */
 /* 3) 控件与分隔线适配：搜索框/下拉/输入描边提亮，滑杆/复选框主题色，面板分隔线统一提亮 */
@@ -3245,6 +3251,7 @@ body.theme-paper {
     --hospital: #9a4436;
     --scenic: #4a6b4a;
     --road: #94703c;
+    --cf-facility: #3b6b7a; --cf-bus: #3f7a72; --cf-park: #5c7a3a; --cf-area: #7a5a8c;
     --paper-serif: "Songti SC", "Source Han Serif SC", "Noto Serif SC", "SimSun", Georgia, serif;
 }
 /* 纸纹：极淡的双向细纹 + 边缘微暗角，肉眼几乎只感到"纸"而看不到纹理 */
@@ -3361,6 +3368,9 @@ body.theme-paper .layer-item input[type="checkbox"]:checked {
     background: var(--accent, #7d6a4f);
     border-color: var(--accent, #7d6a4f);
 }
+body.theme-paper .group-head input[type="checkbox"] { border-radius: 1px; border-color: rgba(42, 36, 29, .34); background: transparent; }
+body.theme-paper .group-head input[type="checkbox"]:checked,
+body.theme-paper .group-head input[type="checkbox"]:indeterminate { background: var(--accent, #7d6a4f); border-color: var(--accent, #7d6a4f); }
 body.theme-paper .layer-item .dot { border-radius: 1px; }
 body.theme-paper .layer-item .count {
     font-family: var(--paper-serif);
@@ -3862,6 +3872,25 @@ body.theme-paper .cf-sel-btn.danger { color: #9a4436; border-color: rgba(154, 68
     color: var(--text-2, #8b7d84); opacity: .8;
     padding: 0 0 2px 2px;
 }
+/* v126：分组头三态 checkbox（全勾 / 横线半选 / 全不选），点击批量切换整组 */
+.group-head { display: flex; align-items: center; gap: 7px; }
+.group-head input[type="checkbox"] {
+    width: 15px; height: 15px;
+    appearance: none; -webkit-appearance: none;
+    background: #fff; border: 1.5px solid #cbd5e1; border-radius: 4px;
+    cursor: pointer; flex-shrink: 0; position: relative;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s ease, background .15s ease;
+}
+.group-head input[type="checkbox"]:checked,
+.group-head input[type="checkbox"]:indeterminate {
+    border-color: var(--accent, var(--plum)); background: var(--accent, var(--plum));
+}
+.group-head input[type="checkbox"]:checked::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 600; line-height: 1; }
+.group-head input[type="checkbox"]:indeterminate::after { content: ''; width: 7px; height: 2px; background: #fff; }
+.group-head input[type="checkbox"]:disabled { opacity: .35; cursor: default; }
+.cf-layer-head.group-head { justify-content: flex-start; }
+.cf-layer-head.group-head .cf-layer-sub { margin-left: auto; }
 .cf-file-item input[type="checkbox"] {
     width: 16px; height: 16px;
     appearance: none; -webkit-appearance: none;
@@ -3902,7 +3931,8 @@ body.theme-paper .cf-file-item input[type="checkbox"]:indeterminate {
 body.theme-paper .cf-file-item .cf-layer-del { color: var(--ink-2); border-radius: 1px; }
 body.theme-paper .cf-file-item .cf-layer-del:hover { color: #9a4436; background: rgba(154, 68, 54, .08); }
 body.theme-night .layer-sub-head { color: rgba(203, 213, 225, .7); }
-body.theme-night .cf-file-item input[type="checkbox"] {
+body.theme-night .cf-file-item input[type="checkbox"],
+body.theme-night .group-head input[type="checkbox"] {
     background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .22);
 }
 body.theme-night .cf-file-item .cf-layer-del { color: rgba(255, 255, 255, .55); }

@@ -258,14 +258,18 @@
     var CF_KEY = 'cd_custom_features';
     var customFeatures = [];
     var CF_KINDS = ['设施点', '公交站', '公园', '自定区域', '道路'];
-    var CF_KIND_COLORS = { '设施点': '#2563eb', '公交站': '#0d9488', '公园': '#16a34a', '自定区域': '#a855f7', '道路': '#6d28d9' };
+    // v126：兜底类型也走主题变量（--cf-*），随材质包/夜间/纸笺联动；不再写死 hex。
+    // 变量名与 CSS :root / night / paper 三段一一对应，未知新类型落区域紫兜底。
+    var CF_KIND_VAR = { '设施点': '--cf-facility', '公交站': '--cf-bus', '公园': '--cf-park', '自定区域': '--cf-area' };
     // v120：导入归并出的「学校/医院/景点/道路」直接取内置图层色（跟主题变量走），
-    // 否则四类全落进兜底色 #6d28d9，侧栏三行点色一样、地图上同是学校却两个颜色
+    // 否则四类全落进兜底色，侧栏三行点色一样、地图上同是学校却两个颜色
     var CF_KIND_TO_LAYER = { '学校': 'school', '医院': 'hospital', '景点': 'scenic', '道路': 'road' };
     function cfColor(kind) {
         var lk = CF_KIND_TO_LAYER[kind];
         if (lk && LAYER_CONFIG[lk]) return LAYER_CONFIG[lk].color;
-        return CF_KIND_COLORS[kind] || '#6d28d9';
+        var v = CF_KIND_VAR[kind];
+        if (v) return themeCSSVar(v);
+        return themeCSSVar('--cf-area');
     }
     // ===== v122：导入文件即图层 =====
     // 每个要素记住自己的来源文件（properties.source），图层管理按「文件 → 地类」两级呈现。
@@ -696,19 +700,65 @@
             refreshLayer(k);
             updateCounts();
             syncLegend();
+            syncLayerActions();
         });
     }
     GEO_KEYS.forEach(bindLayerCheck);
+
+    // ---- v126：分组可见性统计与批量切换（内置组 / 我的图层组，组头三态 + 全局全选全隐）----
+    function builtinAliveKeys() { return GEO_KEYS.filter(function (k) { return !goneLayers[k] && (layerState[k].data || []).length; }); }
+    function builtinAllOn() { var ks = builtinAliveKeys(); return ks.length > 0 && ks.every(function (k) { return layerState[k].visible; }); }
+    function builtinSomeOn() { return builtinAliveKeys().some(function (k) { return layerState[k].visible; }); }
+    function cfAllPairKeys() { var m = {}; customFeatures.forEach(function (f) { m[cfPairKey(f)] = true; }); return Object.keys(m); }
+    function cfAllOn() { var ks = cfAllPairKeys(); return ks.length > 0 && ks.every(function (k) { return cfPairOn[k] !== false; }); }
+    function cfSomeOn() { return cfAllPairKeys().some(function (k) { return cfPairOn[k] !== false; }); }
+    function setBuiltinVisible(on) {
+        builtinAliveKeys().forEach(function (k) {
+            layerState[k].visible = on;
+            var chk = document.getElementById('chk-' + k); if (chk) chk.checked = on;
+        });
+        refreshAllLayers(); syncLegend();
+    }
+    function setCfVisible(on) {
+        cfAllPairKeys().forEach(function (k) { cfPairOn[k] = on; });
+        renderCustom(); syncCfCats();
+    }
+    // 刷新组头三态（全勾 / 横线半选 / 全不选）与全局按钮禁用态；无存在层时禁用
+    function syncLayerActions() {
+        var bAll = builtinAllOn(), bSome = builtinSomeOn();
+        var cAll = cfAllOn(), cSome = cfSomeOn();
+        var builtinHead = document.getElementById('chk-builtin-all');
+        if (builtinHead) {
+            var alive = builtinAliveKeys().length;
+            builtinHead.disabled = !alive;
+            builtinHead.checked = bAll;
+            builtinHead.indeterminate = !bAll && bSome;
+        }
+        var cfHead = document.getElementById('chk-cf-all');
+        if (cfHead) {
+            cfHead.disabled = !customFeatures.length;
+            cfHead.checked = cAll;
+            cfHead.indeterminate = !cAll && cSome;
+        }
+        var allBtn = document.getElementById('btn-all'), noneBtn = document.getElementById('btn-none');
+        var totalAlive = builtinAliveKeys().length + cfAllPairKeys().length;
+        if (allBtn) allBtn.disabled = !totalAlive || (bAll && cAll);
+        if (noneBtn) noneBtn.disabled = !totalAlive || (!bSome && !cSome);
+    }
+    var builtinHeadCb = document.getElementById('chk-builtin-all');
+    if (builtinHeadCb) builtinHeadCb.addEventListener('change', function () {
+        setBuiltinVisible(this.checked); syncLayerActions();
+    });
     document.getElementById('btn-all').addEventListener('click', function () {
-        GEO_KEYS.forEach(function (k) { document.getElementById('chk-' + k).checked = true; layerState[k].visible = true; });
+        setBuiltinVisible(true);
+        setCfVisible(true);
         document.getElementById('chk-cluster').checked = true; clusterEnabled = true;
-        refreshAllLayers();
-        syncLegend(); syncSetToggles();
+        syncSetToggles(); syncLayerActions();
     });
     document.getElementById('btn-none').addEventListener('click', function () {
-        GEO_KEYS.forEach(function (k) { document.getElementById('chk-' + k).checked = false; layerState[k].visible = false; });
-        refreshAllLayers();
-        syncLegend();
+        setBuiltinVisible(false);
+        setCfVisible(false);
+        syncLayerActions();
     });
 
     // ---------------- 7. 搜索与类型筛选 ----------------
@@ -1583,22 +1633,60 @@
         // ---- v114 P1-H：自建要素 GeoJSON 导出 / 导入（按 id 去重合并）----
         // 坐标口径如实标注：本项目存的是底图坐标系（GCJ-02），不是 WGS-84；
         // 导出文件不谎报坐标系，需要 WGS-84 时先做偏移纠偏，避免在 QGIS 里错位上百米。
-        function cfGeoJSON() {
+        // v126：内置采集层要素纳入导出（此前导出只含自建/导入）。隐藏层仍导出，已整层删除（goneLayers）的不含。
+        function collectBuiltinFeatures() {
+            var out = [];
+            GEO_KEYS.forEach(function (k) {
+                if (goneLayers[k]) return;
+                (layerState[k].data || []).forEach(function (f, i) {
+                    var p = (f && f.properties) || {};
+                    out.push({
+                        type: 'Feature',
+                        id: String(poiFid(f) || ('bi-' + k + '-' + i)),
+                        geometry: f.geometry,
+                        properties: { name: p.name || '', kind: LAYER_CONFIG[k].name, source: '内置', remark: p.remark || '', crs: f.crs || '', ts: 0 }
+                    });
+                });
+            });
+            return out;
+        }
+        function collectCustomFeatures() {
+            return customFeatures.map(function (f) {
+                return {
+                    type: 'Feature',
+                    id: f.id,
+                    geometry: f.geometry,
+                    properties: { name: f.properties.name, kind: f.properties.kind, remark: f.properties.remark || '', source: cfSource(f), crs: f.crs || '', ts: f.ts || 0 }
+                };
+            });
+        }
+        // scope: 'all' 全部存在图层 / 'builtin' 仅内置 / 'custom' 仅我的图层
+        function buildExportGeoJSON(scope) {
             var isGcj = (typeof gcjMode === 'undefined') ? true : !!gcjMode;
+            var feats = [], counts = { builtin: 0, custom: 0 };
+            if (scope !== 'custom') { var b = collectBuiltinFeatures(); counts.builtin = b.length; feats = feats.concat(b); }
+            if (scope !== 'builtin') { var c = collectCustomFeatures(); counts.custom = c.length; feats = feats.concat(c); }
             return {
                 type: 'FeatureCollection',
-                name: 'changde_custom_features',
+                name: 'changde-webgis-exported',
+                scope: scope,
                 crs_note: '坐标为 ' + (isGcj ? 'GCJ-02（高德/腾讯系，非 WGS-84）' : 'WGS-84') + '；如需 WGS-84 请先做 GCJ-02→WGS-84 偏移纠偏',
                 generated: new Date().toISOString(),
-                features: customFeatures.map(function (f) {
-                    return {
-                        type: 'Feature',
-                        id: f.id,
-                        geometry: f.geometry,
-                        properties: { name: f.properties.name, kind: f.properties.kind, remark: f.properties.remark || '', crs: f.crs || (isGcj ? 'GCJ-02' : 'WGS-84'), ts: f.ts || 0 }
-                    };
-                })
+                counts: counts,
+                features: feats
             };
+        }
+        // 兼容旧探针 / 打点面板：cfGeoJSON 仍只取我的图层
+        function cfGeoJSON() { return buildExportGeoJSON('custom'); }
+        function downloadGeoJSON(payload, filename) {
+            var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
         }
         // 规范化坐标：容错「面少一层外环」「环首尾没闭合」「点写成嵌套数组」这三种真实坏数据
         function normPt(p) {
@@ -1742,19 +1830,21 @@
             if (bad) msg += '，跳过 ' + bad + ' 个（结构不合法）';
             toast(msg, !added);
         }
-        window.__cfExport = cfGeoJSON;                 // 验收探针：直接拿到当前导出结构
+        window.__cfExport = cfGeoJSON;                 // 验收探针：当前我的图层导出结构
+        window.__cfExportAll = function () { return buildExportGeoJSON('all'); };  // 探针：内置 + 我的全部
         window.__cfImport = importCfText;              // 验收探针：直接喂文本走导入
         document.getElementById('mark-export-all').addEventListener('click', function () {
             if (!customFeatures.length) { toast('暂无自建要素可导出', true); return; }
-            var blob = new Blob([JSON.stringify(cfGeoJSON(), null, 2)], { type: 'application/json' });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = '我的自建要素.geojson';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+            downloadGeoJSON(cfGeoJSON(), '我的自建要素.geojson');
             toast('已下载「我的自建要素.geojson」（' + customFeatures.length + ' 个），可直接在 QGIS / GeoJSON.io 打开');
+        });
+        // v126：图层管理面板「导出」= 内置 + 我的图层全部存在要素（隐藏层仍导出，已删层不含）
+        var layerExportBtn = document.getElementById('btn-layer-export');
+        if (layerExportBtn) layerExportBtn.addEventListener('click', function () {
+            var payload = buildExportGeoJSON('all');
+            if (!payload.features.length) { toast('当前没有可导出的图层要素', true); return; }
+            downloadGeoJSON(payload, '常德WebGIS全部图层.geojson');
+            toast('已导出 ' + payload.features.length + ' 个要素（内置 ' + payload.counts.builtin + ' · 我的 ' + payload.counts.custom + '），可在 QGIS / GeoJSON.io 打开');
         });
         var cfImportBtn = document.getElementById('mark-import-all');
         var cfFileInput = document.getElementById('mark-file');
@@ -2095,6 +2185,10 @@
         });
         applyLogoShape(packKey);
         repaintThemeColors();
+        // v126：自建/导入要素随材质包重绘——四类取刷新后的主题变量色，兜底类型读 --cf-* 变量；
+        // 否则切包后地图上的点线面与侧栏圆点仍是旧主题快照（根因：此前 applyPack 只刷内置层）。
+        if (typeof renderCustom === 'function') renderCustom();
+        if (typeof syncCfCats === 'function') syncCfCats();
         rebuildPetals();
         saveTheme();
     }
@@ -2454,6 +2548,15 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v126', t: '导出覆盖内置+我的图层 + 分组三态全选/全隐 + 自建点材质随主题完整联动',
+            pts: [
+                '导出范围自洽化：图层管理面板新增「导出」，汇总内置未删采集层 + 自建/导入要素为一个 GeoJSON，properties.source 标注「内置 / 文件名」，counts 分别计数；隐藏层仍导出，已整层删除的层不含；打点面板原「导出」保留，仅导我的图层',
+                '全选 / 全部隐藏扩到全部存在图层：跳过已删除的空内置层；内置组、我的图层组各加三态组头勾选框（全勾 / 横线半选 / 全不选），点组头批量切换整组；全局按钮按当前勾选态动态禁用（全勾时禁全选、全隐时禁全隐、无存在层时禁用），导入 / 删除 / 清空后自动刷新',
+                '自建/导入点材质完整跟随主题：切材质包后重绘自建层与侧栏列表，学校/医院/景点/道路四类取刷新后的主题变量色；兜底类型（设施点/公交站/公园/自定区域）纳入 --cf-* 主题变量，白天/夜间/纸笺三套配色，设施点改青蓝避开学校蓝，不再写死原色',
+                '根因修复：此前切材质包只重绘内置层，自建/导入的点线面与侧栏圆点停留在旧主题快照；兜底类型颜色写死 hex，夜间/纸笺下也不随包变化'
+            ]
+        },
         {
             v: 'v125', t: '流畅性加固（Canvas 渲染 + 去玻璃嵌套）+ 列表地图双向联动 + 提示一致性',
             pts: [
@@ -3688,6 +3791,7 @@
         renderRestoreBtn();
         try { syncLegend(); } catch (e) { }
         syncGoneOptions();
+        if (typeof syncLayerActions === 'function') syncLayerActions();
         toast('已删除「' + nm + '」整层 ' + n + ' 个要素');
     }
     function renderRestoreBtn() {
@@ -3718,6 +3822,7 @@
         renderRestoreBtn();
         try { syncLegend(); } catch (e) { }
         syncGoneOptions();
+        if (typeof syncLayerActions === 'function') syncLayerActions();
         toast('已恢复 ' + keys.length + ' 个图层');
     }
 
@@ -3909,7 +4014,10 @@
         try { cfOrder = JSON.parse(localStorage.getItem('cd_cf_order') || '[]') || []; } catch (e) { cfOrder = []; }
         // 文件按首次导入时间排（老数据 ts 缺失时退化为名称排序），地类沿用 cd_cf_order 的顺序
         order.sort(function (a, b) { return (tree[a].ts - tree[b].ts) || String(a).localeCompare(String(b)); });
-        var html = '<div class="cf-layer-head"><span>我的图层</span><span class="cf-layer-sub">' +
+        var cfHeadOn = cfAllOn(), cfHeadSome = cfSomeOn();
+        var html = '<div class="cf-layer-head group-head">' +
+            '<input type="checkbox" id="chk-cf-all" data-cf-all="1"' + (cfHeadOn ? ' checked' : '') + (!cfHeadOn && cfHeadSome ? ' data-indet="1"' : '') + ' title="全选 / 隐藏我的图层全部要素">' +
+            '<span>我的图层</span><span class="cf-layer-sub">' +
             order.length + ' 个文件 · ' + customFeatures.length + ' 个要素</span></div>';
         order.forEach(function (s) {
             var t = tree[s];
@@ -4024,14 +4132,19 @@
                     if (!cb || cb.type !== 'checkbox') return;
                     var src = cb.getAttribute('data-cf-src');
                     var pair = cb.getAttribute('data-cf-pair');
-                    if (src !== null) {
+                    var all = cb.getAttribute('data-cf-all');
+                    if (all !== null) {
+                        setCfVisible(cb.checked);
+                    } else if (src !== null) {
                         customFeatures.forEach(function (f) {
                             if (cfSource(f) === src) cfPairOn[cfPairKey(f)] = cb.checked;
                         });
+                        renderCustom(); syncCfCats();
                     } else if (pair !== null) {
                         cfPairOn[pair] = cb.checked;
+                        renderCustom(); syncCfCats();
                     } else return;
-                    renderCustom(); syncCfCats();
+                    syncLayerActions();
                 });
                 // 删除钮：文件行删整层，地类行删该类；label 内点击会顺带勾选，必须拦掉
                 box.addEventListener('click', function (e) {
@@ -4084,6 +4197,7 @@
                 if (note) lp.insertBefore(row, note); else lp.appendChild(row);
             });
         }
+        if (typeof syncLayerActions === 'function') syncLayerActions();
     }
     function syncCfCounts() {
         var box = document.getElementById('cf-layer-box');
@@ -4195,6 +4309,7 @@
         if (pBtn) pBtn.addEventListener('click', restoreGonePois);
         buildSearchIndex();
         refreshAllLayers();
+        if (typeof syncLayerActions === 'function') syncLayerActions();
         fitDataView();
         map.invalidateSize();
         console.log('常德市城市公共服务WebGIS系统（Leaflet + OpenStreetMap）初始化完成');
