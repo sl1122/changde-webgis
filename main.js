@@ -913,7 +913,7 @@
     function uiHit(ev) {
         var t = ev && ev.originalEvent && ev.originalEvent.target;
         if (!t || !t.closest) return false;
-        return !!t.closest('.settings-panel, .basemap-panel, .mark-panel, .legend-panel, .measure-result, .records-panel, .cl-card, .map-toast, .toolbar, .zoom-ctrl, .leaflet-popup');
+        return !!t.closest('.settings-panel, .basemap-panel, .mark-panel, .legend-panel, .measure-result, .records-panel, .export-panel, .cl-card, .map-toast, .toolbar, .zoom-ctrl, .leaflet-popup');
     }
     map.on('click', function (e) {
         if (uiHit(e)) return; // v75：卡片/面板内点击不触发测量
@@ -1634,10 +1634,13 @@
         // 坐标口径如实标注：本项目存的是底图坐标系（GCJ-02），不是 WGS-84；
         // 导出文件不谎报坐标系，需要 WGS-84 时先做偏移纠偏，避免在 QGIS 里错位上百米。
         // v126：内置采集层要素纳入导出（此前导出只含自建/导入）。隐藏层仍导出，已整层删除（goneLayers）的不含。
-        function collectBuiltinFeatures() {
+        // v127：内置要素收集。keys=null 取全部存在层；includeHidden=false 时跳过当前隐藏层
+        function collectBuiltinFeatures(keys, includeHidden) {
             var out = [];
             GEO_KEYS.forEach(function (k) {
                 if (goneLayers[k]) return;
+                if (keys && keys.indexOf(k) === -1) return;
+                if (includeHidden === false && layerState[k].visible === false) return;
                 (layerState[k].data || []).forEach(function (f, i) {
                     var p = (f && f.properties) || {};
                     out.push({
@@ -1650,7 +1653,10 @@
             });
             return out;
         }
-        function collectCustomFeatures() {
+        // v127：自建要素收集。pairKeys=null 取全部；includeHidden=false 时跳过当前隐藏地类
+        function collectCustomFeatures(pairKeys, includeHidden) {
+            var allow = null;
+            if (pairKeys) { allow = {}; pairKeys.forEach(function (p) { allow[p] = true; }); }
             return customFeatures.map(function (f) {
                 return {
                     type: 'Feature',
@@ -1658,14 +1664,27 @@
                     geometry: f.geometry,
                     properties: { name: f.properties.name, kind: f.properties.kind, remark: f.properties.remark || '', source: cfSource(f), crs: f.crs || '', ts: f.ts || 0 }
                 };
+            }).filter(function (f) {
+                var pk = cfPairKey(f);
+                if (allow && !allow[pk]) return false;
+                if (includeHidden === false && cfPairOn[pk] === false) return false;
+                return true;
             });
         }
-        // scope: 'all' 全部存在图层 / 'builtin' 仅内置 / 'custom' 仅我的图层
-        function buildExportGeoJSON(scope) {
+        // opts 兼容旧 scope 字符串：'all' / 'builtin' / 'custom'；对象形式 {builtinKeys:[], cfPairs:[], includeHidden, filename}
+        function buildExportGeoJSON(opts) {
+            var scope = 'all', builtinKeys = null, cfPairs = null, includeHidden = true;
+            if (typeof opts === 'string') { scope = opts; }
+            else if (opts) {
+                scope = opts.scope || 'all';
+                builtinKeys = opts.builtinKeys || null;
+                cfPairs = opts.cfPairs || null;
+                includeHidden = opts.includeHidden !== false;
+            }
             var isGcj = (typeof gcjMode === 'undefined') ? true : !!gcjMode;
             var feats = [], counts = { builtin: 0, custom: 0 };
-            if (scope !== 'custom') { var b = collectBuiltinFeatures(); counts.builtin = b.length; feats = feats.concat(b); }
-            if (scope !== 'builtin') { var c = collectCustomFeatures(); counts.custom = c.length; feats = feats.concat(c); }
+            if (scope !== 'custom') { var b = collectBuiltinFeatures(builtinKeys, includeHidden); counts.builtin = b.length; feats = feats.concat(b); }
+            if (scope !== 'builtin') { var c = collectCustomFeatures(cfPairs, includeHidden); counts.custom = c.length; feats = feats.concat(c); }
             return {
                 type: 'FeatureCollection',
                 name: 'changde-webgis-exported',
@@ -1838,14 +1857,195 @@
             downloadGeoJSON(cfGeoJSON(), '我的自建要素.geojson');
             toast('已下载「我的自建要素.geojson」（' + customFeatures.length + ' 个），可直接在 QGIS / GeoJSON.io 打开');
         });
-        // v126：图层管理面板「导出」= 内置 + 我的图层全部存在要素（隐藏层仍导出，已删层不含）
+        // ---- v127：导出配置面板（按图层 / 地类勾选 + 自定义文件名；借鉴 QGIS Save Features As 与 Leaflet 图层树三态惯例）----
+        var expPanel = document.getElementById('export-panel');
+        var expState = { builtin: {}, cfPairs: {}, includeHidden: true };
+
+        function expBuiltinItems() {
+            return builtinAliveKeys().map(function (k) {
+                return { key: k, name: LAYER_CONFIG[k].name, color: LAYER_CONFIG[k].color, count: (layerState[k].data || []).length, visible: layerState[k].visible !== false };
+            });
+        }
+        function expCfGroups() {
+            var bySrc = {};
+            customFeatures.forEach(function (f) {
+                var s = cfSource(f), k = cfKindOf(f), pk = cfPairKey(f);
+                if (!bySrc[s]) bySrc[s] = { src: s, kinds: {} };
+                if (!bySrc[s].kinds[k]) bySrc[s].kinds[k] = { kind: k, pairKey: pk, count: 0, visible: cfPairOn[pk] !== false };
+                bySrc[s].kinds[k].count++;
+            });
+            return Object.keys(bySrc).map(function (s) {
+                var g = bySrc[s];
+                return { src: s, kinds: Object.keys(g.kinds).map(function (k) { return g.kinds[k]; }) };
+            });
+        }
+        function expDefaultName() {
+            var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+            return '常德WebGIS导出_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+        }
+        function expSafeName(raw) {
+            var s = String(raw == null ? '' : raw).trim();
+            s = s.replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/\.+$/g, '').trim();
+            if (!s) s = expDefaultName();
+            return s.slice(0, 60);
+        }
+        function expRenderBuiltin() {
+            var box = document.getElementById('exp-builtin-list');
+            if (!box) return;
+            var items = expBuiltinItems();
+            if (!items.length) { box.innerHTML = '<div class="exp-empty">内置图层已全部删除</div>'; return; }
+            box.innerHTML = items.map(function (it) {
+                var on = expState.builtin[it.key] !== false;
+                var visTag = it.visible ? '' : ' <span class="exp-hide-tag">隐藏</span>';
+                return '<label class="layer-item"><input type="checkbox" data-exp-builtin="' + esc(it.key) + '"' + (on ? ' checked' : '') + '>' +
+                    '<span class="dot" style="background:' + it.color + '"></span>' +
+                    '<span class="layer-name">' + esc(it.name) + visTag + '</span>' +
+                    '<span class="count">' + it.count + '</span></label>';
+            }).join('');
+        }
+        function expRenderCf() {
+            var box = document.getElementById('exp-cf-tree');
+            if (!box) return;
+            var groups = expCfGroups();
+            if (!groups.length) { box.innerHTML = '<div class="exp-empty">暂无我的图层要素——可先在打点面板绘制或导入 GeoJSON</div>'; return; }
+            box.innerHTML = groups.map(function (g) {
+                var pairKeys = g.kinds.map(function (k) { return k.pairKey; });
+                var onCount = g.kinds.filter(function (k) { return expState.cfPairs[k.pairKey] !== false; }).length;
+                var fileOn = onCount === g.kinds.length, fileSome = onCount > 0;
+                var rows = g.kinds.map(function (k) {
+                    var on = expState.cfPairs[k.pairKey] !== false;
+                    var visTag = k.visible ? '' : ' <span class="exp-hide-tag">隐藏</span>';
+                    return '<label class="layer-item exp-kind-sub"><input type="checkbox" data-exp-pair="' + esc(k.pairKey) + '"' + (on ? ' checked' : '') + '>' +
+                        '<span class="dot" style="background:' + cfColor(k.kind) + '"></span>' +
+                        '<span class="layer-name">' + esc(k.kind) + visTag + '</span>' +
+                        '<span class="count">' + k.count + '</span></label>';
+                }).join('');
+                return '<div class="exp-file">' +
+                    '<label class="layer-item"><input type="checkbox" data-exp-src="' + esc(g.src) + '"' + (fileOn ? ' checked' : '') + (!fileOn && fileSome ? ' data-indet="1"' : '') + '>' +
+                    '<span class="layer-name">' + esc(g.src) + '</span>' +
+                    '<span class="count">' + g.kinds.reduce(function (a, k) { return a + k.count; }, 0) + '</span></label>' +
+                    '<div class="exp-file-subs">' + rows + '</div></div>';
+            }).join('');
+        }
+        // 按当前勾选 + 含隐藏层开关，统计实际会导出的要素数，并刷新组头三态 / 按钮禁用
+        function expRefresh() {
+            var bItems = expBuiltinItems();
+            var bKeys = bItems.filter(function (it) { return expState.builtin[it.key] !== false; }).map(function (it) { return it.key; });
+            var cGroups = expCfGroups();
+            var cPairs = [];
+            cGroups.forEach(function (g) { g.kinds.forEach(function (k) { if (expState.cfPairs[k.pairKey] !== false) cPairs.push(k.pairKey); }); });
+            var b = collectBuiltinFeatures(bKeys, expState.includeHidden);
+            var c = collectCustomFeatures(cPairs, expState.includeHidden);
+            var total = b.length + c.length;
+            var cnt = document.getElementById('export-count');
+            if (cnt) cnt.innerHTML = '已选 <b>' + total + '</b> 个要素（内置 ' + b.length + ' · 我的 ' + c.length + '）';
+            var doBtn = document.getElementById('export-do');
+            if (doBtn) doBtn.disabled = total === 0;
+            // 内置组头三态
+            var bHead = document.getElementById('exp-builtin-all');
+            if (bHead) {
+                bHead.disabled = !bItems.length;
+                bHead.checked = bItems.length > 0 && bKeys.length === bItems.length;
+                bHead.indeterminate = !bHead.checked && bKeys.length > 0;
+            }
+            // 我的组头三态
+            var allPairs = [];
+            cGroups.forEach(function (g) { g.kinds.forEach(function (k) { allPairs.push(k.pairKey); }); });
+            var cHead = document.getElementById('exp-cf-all');
+            if (cHead) {
+                cHead.disabled = !allPairs.length;
+                cHead.checked = allPairs.length > 0 && cPairs.length === allPairs.length;
+                cHead.indeterminate = !cHead.checked && cPairs.length > 0;
+            }
+            // 文件行半选态
+            var tree = document.getElementById('exp-cf-tree');
+            if (tree) tree.querySelectorAll('[data-exp-src]').forEach(function (cb) {
+                var src = cb.getAttribute('data-exp-src');
+                var subs = tree.querySelectorAll('[data-exp-pair]');
+                var keys = [], on = 0;
+                subs.forEach(function (s) {
+                    var pk = s.getAttribute('data-exp-pair');
+                    if (pk.indexOf(src + '\u0001') === 0) { keys.push(pk); if (expState.cfPairs[pk] !== false) on++; }
+                });
+                cb.checked = keys.length > 0 && on === keys.length;
+                cb.indeterminate = !cb.checked && on > 0;
+            });
+        }
+        function expCollectOpts() {
+            var bKeys = expBuiltinItems().filter(function (it) { return expState.builtin[it.key] !== false; }).map(function (it) { return it.key; });
+            var cPairs = [];
+            expCfGroups().forEach(function (g) { g.kinds.forEach(function (k) { if (expState.cfPairs[k.pairKey] !== false) cPairs.push(k.pairKey); }); });
+            return { builtinKeys: bKeys, cfPairs: cPairs, includeHidden: expState.includeHidden };
+        }
+        function openExportPanel() {
+            // 重置勾选：全部存在层默认选中
+            expState.builtin = {}; expBuiltinItems().forEach(function (it) { expState.builtin[it.key] = true; });
+            expState.cfPairs = {}; expCfGroups().forEach(function (g) { g.kinds.forEach(function (k) { expState.cfPairs[k.pairKey] = true; }); });
+            var nameInput = document.getElementById('export-filename');
+            if (nameInput) nameInput.value = expDefaultName();
+            expRenderBuiltin(); expRenderCf(); expRefresh();
+            // 互斥：关掉其它右侧抽屉
+            ['settings-panel', 'mark-panel', 'basemap-panel', 'legend-panel', 'records-panel'].forEach(function (id) {
+                var p = document.getElementById(id); if (p) p.classList.remove('open');
+            });
+            expPanel.classList.add('open');
+            forceBackdropResample(expPanel);
+            toggleSettingsBackdrop(true);
+        }
+        function closeExportPanel() {
+            expPanel.classList.remove('open');
+            toggleSettingsBackdrop(false);
+        }
         var layerExportBtn = document.getElementById('btn-layer-export');
-        if (layerExportBtn) layerExportBtn.addEventListener('click', function () {
-            var payload = buildExportGeoJSON('all');
-            if (!payload.features.length) { toast('当前没有可导出的图层要素', true); return; }
-            downloadGeoJSON(payload, '常德WebGIS全部图层.geojson');
-            toast('已导出 ' + payload.features.length + ' 个要素（内置 ' + payload.counts.builtin + ' · 我的 ' + payload.counts.custom + '），可在 QGIS / GeoJSON.io 打开');
-        });
+        if (layerExportBtn) layerExportBtn.addEventListener('click', openExportPanel);
+        if (expPanel) {
+            document.getElementById('export-close').addEventListener('click', closeExportPanel);
+            document.getElementById('export-cancel').addEventListener('click', closeExportPanel);
+            var hiddenToggle = document.getElementById('exp-include-hidden');
+            function syncHiddenToggle() { if (hiddenToggle) { hiddenToggle.classList.toggle('on', expState.includeHidden); hiddenToggle.textContent = expState.includeHidden ? '开启' : '关闭'; } }
+            if (hiddenToggle) hiddenToggle.addEventListener('click', function () { expState.includeHidden = !expState.includeHidden; syncHiddenToggle(); expRefresh(); });
+            syncHiddenToggle();
+            // 勾选委托：组头 / 文件行 / 地类行 / 内置行
+            expPanel.addEventListener('change', function (e) {
+                var cb = e.target;
+                if (!cb || cb.type !== 'checkbox') return;
+                if (cb.id === 'exp-builtin-all') {
+                    expBuiltinItems().forEach(function (it) { expState.builtin[it.key] = cb.checked; });
+                    expRenderBuiltin();
+                } else if (cb.id === 'exp-cf-all') {
+                    expCfGroups().forEach(function (g) { g.kinds.forEach(function (k) { expState.cfPairs[k.pairKey] = cb.checked; }); });
+                    expRenderCf();
+                } else if (cb.hasAttribute('data-exp-builtin')) {
+                    expState.builtin[cb.getAttribute('data-exp-builtin')] = cb.checked;
+                } else if (cb.hasAttribute('data-exp-src')) {
+                    var src = cb.getAttribute('data-exp-src');
+                    expCfGroups().forEach(function (g) {
+                        if (g.src === src) g.kinds.forEach(function (k) { expState.cfPairs[k.pairKey] = cb.checked; });
+                    });
+                    expRenderCf();
+                } else if (cb.hasAttribute('data-exp-pair')) {
+                    expState.cfPairs[cb.getAttribute('data-exp-pair')] = cb.checked;
+                }
+                expRefresh();
+            });
+            var doBtn = document.getElementById('export-do');
+            if (doBtn) doBtn.addEventListener('click', function () {
+                var opts = expCollectOpts();
+                var payload = buildExportGeoJSON(opts);
+                if (!payload.features.length) { toast('请至少勾选一个图层或地类', true); return; }
+                var fname = expSafeName(document.getElementById('export-filename').value) + '.geojson';
+                downloadGeoJSON(payload, fname);
+                toast('已导出 ' + payload.features.length + ' 个要素（内置 ' + payload.counts.builtin + ' · 我的 ' + payload.counts.custom + '）→ ' + fname);
+                closeExportPanel();
+            });
+        }
+        // 验收探针钩子
+        window.__expPanel = {
+            open: openExportPanel, close: closeExportPanel, refresh: expRefresh,
+            collectOpts: expCollectOpts, safeName: expSafeName, build: buildExportGeoJSON,
+            state: function () { return expState; },
+            builtinItems: expBuiltinItems, cfGroups: expCfGroups
+        };
         var cfImportBtn = document.getElementById('mark-import-all');
         var cfFileInput = document.getElementById('mark-file');
         if (cfImportBtn && cfFileInput) {
@@ -2426,6 +2626,8 @@
     if (settingsBackdrop) settingsBackdrop.addEventListener('click', function () {
         if (settingsPanel) settingsPanel.classList.remove('open');
         if (btnSettings) btnSettings.classList.remove('active');
+        var expP = document.getElementById('export-panel');
+        if (expP) expP.classList.remove('open');
         toggleSettingsBackdrop(false);
     });
     function jellyPulse() {
@@ -2548,6 +2750,15 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v128', t: '导出配置面板（选图层/地类/命名）+ 借鉴 ippure 透明通栏导航与字体层级',
+            pts: [
+                '导出配置面板：图层管理「导出」打开可交互配置——内置图层 + 我的图层（文件→地类两级）勾选树，组头三态全选/半选/全不选；按地类筛选导出，自定义文件名（非法字符清洗、空名回默认、自动补 .geojson），含隐藏层开关，底部实时计数（内置/我的分列）；借鉴 QGIS「Save Features As」与 Leaflet 图层树三态惯例',
+                '导航栏透明化（参考 ippure.com）：白天四包标题栏去掉主题色渐变重磨砂与顶部高光/纹理，改为浅白半透通栏 + 深色文字 + 细分割线；菜单钮、版本号标签、日志关闭钮统一为浅灰底 + 细边框 + 11px 圆角；logo 与强调点取各包主题 accent 色',
+                '字体与字阶对齐 ippure：字体栈调整为 Inter / PingFang SC / Noto Sans SC 顺序；标题 16px/600、作者与副标题次级灰；更新日志抽屉头同步浅底深字',
+                '夜间模式标题栏保持近实色深底亮字，版本号标签补深底亮边亮字；纸笺（宣纸）包按约定保持原有直角宋体墨棕风格，未改动；浮起面板玻璃体系与左侧常驻图层栏质感不变'
+            ]
+        },
         {
             v: 'v126', t: '导出覆盖内置+我的图层 + 分组三态全选/全隐 + 自建点材质随主题完整联动',
             pts: [
@@ -3132,7 +3343,7 @@
     (function initPanelGuard() {
         // v75：cl-card 恢复拦截（叉号三通道直绑不依赖冒泡，stopPropagation 无副作用；防止卡内点击冒泡到地图）
         // v77：dblclick 一并拦截——双击任何玻璃面板/卡片不再触发 Leaflet 地图双击缩放（"双击卡片放大"根治），地图本体双击缩放保留
-        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'records-panel', 'cl-card', 'map-toast'].forEach(function (id) {
+        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'records-panel', 'export-panel', 'cl-card', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
             ['mousedown', 'pointerdown', 'click', 'dblclick'].forEach(function (t) {
@@ -3391,6 +3602,7 @@
         var t = e.target;
         if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
         if (e.key === 'Escape') {
+            if (expPanel && expPanel.classList.contains('open')) { closeExportPanel(); return; }
             if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
             if (poiSel.ids.length) { clearPoiSel(); return; }
             if (cfSelIds.length) clearCfSel();
@@ -4348,7 +4560,7 @@
 // 动画退化为纯 transform/opacity 合成，杜绝逐帧重算 backdrop 导致的点击卡顿；
 // 动画结束后自动恢复玻璃质感。点击面板任意位置触发（捕获阶段，含打开/关闭/内部交互）。
 (function () {
-    var ANIM_SEL = '.iw-card, .settings-panel, .basemap-panel, .mark-panel, .legend-panel, .records-panel, .cl-card, .measure-result, .map-toast, .toolbar';
+    var ANIM_SEL = '.iw-card, .settings-panel, .basemap-panel, .mark-panel, .legend-panel, .records-panel, .export-panel, .cl-card, .measure-result, .map-toast, .toolbar';
     function nobf(el) {
         if (!el || !el.classList) return;
         el.classList.add('anim-nobf');
