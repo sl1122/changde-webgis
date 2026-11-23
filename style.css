@@ -29,7 +29,7 @@
     --fs-aux: 11px;
     --shadow: 0 4px 16px rgba(15, 23, 42, .08);
     /* 玻璃质感（设置面板可调，localStorage 持久化；在原配色基础上叠加：半透明+高光+内边框） */
-    --glass-blur: 8px;
+    --glass-blur: 10px;
     --glass-alpha: .35;
     --glass-sat: 1.5;
     --glass-shadow: .42;       /* glassliquid 阴影柔和度 0-1 */
@@ -1856,17 +1856,18 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
 #map .basemap-panel, #map .mark-panel {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    /* v115 四层边缘：受光边（左上）→ 背光边（右下）→ 外圈冷折射暗边 → 柔投影 */
+    /* v129 对齐 ippure 主卡：受光边（左上）→ 背光边（右下）→ 细冷边 → 近距柔影 + 远距浮起柔影 */
     box-shadow:
         inset 1px 1px 0 rgba(255, 255, 255, calc(.80 * var(--glass-sheen) * var(--glass-edge))),
-        inset -1px -1px 0 rgba(10, 32, 64, calc(.12 * var(--glass-shadow))),
-        0 0 0 .5px rgba(10, 32, 64, calc(.10 * var(--glass-edge))),
-        0 6px 28px rgba(15, 23, 42, calc(.14 * var(--glass-shadow)));
+        inset -1px -1px 0 rgba(10, 32, 64, calc(.10 * var(--glass-shadow))),
+        0 0 0 .5px rgba(10, 32, 64, calc(.08 * var(--glass-edge))),
+        0 1px 3px rgba(15, 23, 42, .10),
+        0 10px 30px rgba(15, 23, 42, calc(.16 * var(--glass-shadow)));
     transition: backdrop-filter .35s ease, background-color .35s ease;
 }
-#map .legend-panel { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .97)); }
-#map .measure-result { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94)); }
-#map .map-toast { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .95)); }
+#map .legend-panel { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0)); }
+#map .measure-result { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0)); }
+#map .map-toast { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0)); }
 /* v115：面板裁边（扫光带落在面板内） + 镜面扫光——22° 斜向亮带，强度随 --glass-sheen / --glass-edge 联动 */
 #map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel, #map .measure-result, #map .map-toast {
     overflow: hidden;
@@ -1908,10 +1909,10 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     width: 286px;
     /* v107：改用 background-color 子属性——与 transition: background-color 精确匹配，
        规避「background 简写 + 过渡」在 Chrome 的级联冻结（背景被卡在半透明白 = 点击时透明度异常） */
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
-    border: 1px solid rgba(255, 255, 255, .6);
+    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0));
+    border: 1px solid rgba(255, 255, 255, .5);
     border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .10), 0 12px 40px rgba(15, 23, 42, .22);
     padding: 13px 15px;
     font-size: 13px;
     color: var(--text);
@@ -1951,6 +1952,16 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     padding-bottom: 9px; margin-bottom: 9px;
     border-bottom: 1px solid #f0dce4;
 }
+/* v129：浮起卡片标题栏为拖拽把手——按住标题栏即可拖动面板到地图任意位置（makeDraggable 统一驱动）。
+   touch-action:none 阻止触摸拖动被浏览器转成页面/地图滚动；user-select 防拖拽选中文字。
+   关闭钮 / 动作按钮单独恢复 pointer 光标，不参与拖拽。 */
+.settings-title, .legend-title, .rp-head {
+    cursor: move;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.settings-close, .rp-close, .rp-actions button { cursor: pointer; }
 .settings-close {
     cursor: pointer; font-size: 20px; line-height: 1; color: #b78a9c;
     padding: 0 3px; transition: color .15s, transform .15s;
@@ -3420,6 +3431,8 @@ body.theme-paper #map .settings-panel,
 body.theme-paper #map .basemap-panel,
 body.theme-paper #map .mark-panel,
 body.theme-paper #map .legend-panel,
+body.theme-paper #map .records-panel,
+body.theme-paper #map .export-panel,
 body.theme-paper #map .measure-result,
 body.theme-paper #map .map-toast,
 body.theme-paper .scale,
@@ -3923,13 +3936,22 @@ body.theme-night .cf-file-item .cf-layer-del { color: rgba(255, 255, 255, .55); 
 body.theme-night .cf-file-item .cf-layer-del:hover { color: #fca5a5; background: rgba(248, 113, 113, .12); }
 /* ================= v123 性能：地图交互期背景模糊降载 =================
    拖动/缩放地图时，31 个 backdrop-filter 元素会逐帧重采样整屏 60% 的像素，这是「玻璃族拖地图发飘」
-   的头号开销。交互期间（movestart/zoomstart -> 结束 +240ms）全局关闭背景模糊：运动中人眼辨不出磨砂，
-   静止后自动恢复，玻璃质感在停手那一刻回归。 */
+   的头号开销。交互期间（movestart/zoomstart -> 结束 +240ms）常驻导航/装饰层关闭背景模糊：运动中人眼
+   辨不出磨砂，静止后自动恢复。
+   v129 修订：浮起卡片面板被排除出全局降载——此前 `*` 兜底把面板磨砂一并剥离，拖地图/点地图瞬间面板
+   透明度、模糊感跳变。面板互斥最多开 1 个、面积小，保留自身 blur 帧率可接受；纸笺包无玻璃，不参与豁免。 */
 body.nav-busy, body.nav-busy *,
 body.leaflet-dragging, body.leaflet-dragging *,
 body:has(.leaflet-container.leaflet-zoom-anim), body:has(.leaflet-container.leaflet-zoom-anim) * {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+}
+body:not(.theme-paper) .settings-panel, body:not(.theme-paper) .basemap-panel,
+body:not(.theme-paper) .mark-panel, body:not(.theme-paper) .legend-panel,
+body:not(.theme-paper) .records-panel, body:not(.theme-paper) .export-panel,
+body:not(.theme-paper) .measure-result, body:not(.theme-paper) .map-toast {
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
 }
 
 /* ================= v124 纸笺材质下的设施点详情卡（.pw-box） =================

@@ -2510,13 +2510,13 @@
     // v113：面板可拖动——Pointer Events + 拖动阈值 + rAF 节流 + transform 加速
     function makeDraggable(panel, storageKey) {
         if (!panel) return;
-        var header = panel.querySelector('h4, .panel-title, .bm-title, .settings-title') || panel;
+        var header = panel.querySelector('h4, .panel-title, .bm-title, .settings-title, .legend-title, .rp-head') || panel;
         var startX, startY, startLeft, startTop, dragging = false, moved = false;
         var rafId = null;
         header.style.cursor = 'move';
 
         header.addEventListener('pointerdown', function (e) {
-            if (e.target.closest('button, input, select, a, .settings-close, .panel-close, .bm-close, .close')) return;
+            if (e.target.closest('button, input, select, a, .settings-close, .panel-close, .bm-close, .close, .rp-close, .rp-actions')) return;
             dragging = true;
             moved = false;
             startX = e.clientX; startY = e.clientY;
@@ -2586,6 +2586,10 @@
     makeDraggable(settingsPanel, 'cd_panel_settings');
     makeDraggable(basemapPanel, 'cd_panel_basemap');
     makeDraggable(markPanel, 'cd_panel_mark');
+    // v129：补齐导出 / 图例 / 测量记录三个浮起卡片的标题栏拖拽（此前仅前三面板可拖），位置同样持久化
+    makeDraggable(document.getElementById('export-panel'), 'cd_panel_export');
+    makeDraggable(document.getElementById('legend-panel'), 'cd_panel_legend');
+    makeDraggable(document.getElementById('records-panel'), 'cd_panel_records');
     function applyGlass() {
         var blur = setBlur.value, alpha = setAlpha.value, sat = setSat ? setSat.value : 150;
         // 可读性边界保护：低模糊度时自动提升背景不透明度，避免文字无法识别
@@ -2750,6 +2754,15 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v129', t: '浮起卡片玻璃对齐 ippure + 面板标题栏可拖拽 + 修复点击/拖地图时磨砂跳变',
+            pts: [
+                '浮起卡片玻璃对齐 ippure 主卡：面板乳白底色系数提至 1.0、边框细化为 1px 半透白，外柔影改为近距 0 1px 3px + 远距 0 10px 30px 双层浮起投影；磨砂模糊基线 8→10px；玻璃四维滑杆（强度/饱和/高光/阴影）联动保持不变',
+                '面板拖拽补齐：导出图层、图例、测量记录三个浮起卡片接入既有拖拽机制——按住标题栏即可把卡片拖到地图任意位置，位置持久化到本地；把手 move 光标、触摸 touch-action:none 防地图/页面滚动抢占；关闭钮与动作按钮不触发拖拽',
+                '修复「点设置卡片 / 拖动地图时面板透明度、模糊感跳变」：① 移除点击面板即临时剥离磨砂的 anim-nobf 触发，点击全程玻璃恒定；② 地图交互期（拖动/缩放）全局降载豁免浮起卡片——拖地图期间面板保留自身磨砂，不再瞬间变透或变实；常驻标题栏/侧栏/悬浮球/花瓣装饰仍按 v123 减负保帧率',
+                '纸笺（宣纸）包补齐导出/记录面板的纸底直角墨棕分支；夜间实底深字与纸笺风格未受影响；左侧常驻图层栏质感保持恒定'
+            ]
+        },
         {
             v: 'v128', t: '导出配置面板（选图层/地类/命名）+ 借鉴 ippure 透明通栏导航与字体层级',
             pts: [
@@ -4555,10 +4568,11 @@
     mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 })();
 
-// ================= v93：卡片/面板过渡动画减负 =================
-// 面板/弹窗 open-close 及交互动画期间（340ms）临时移除 backdrop-filter 与光晕 filter，
-// 动画退化为纯 transform/opacity 合成，杜绝逐帧重算 backdrop 导致的点击卡顿；
-// 动画结束后自动恢复玻璃质感。点击面板任意位置触发（捕获阶段，含打开/关闭/内部交互）。
+// ================= v93：卡片/面板过渡动画减负（v129 修订：点击触发已移除） =================
+// 历史机制：点击面板任意位置时给面板加 .anim-nobf，340ms 内移除 backdrop-filter/光晕，动画退化为纯
+// transform/opacity 合成。v108 已移除 jelly 弹跳，开/关动画只剩 opacity/transform，逐帧重算 backdrop
+// 压力很小；而点击瞬间剥离磨砂正是用户反馈的「点设置卡片透明度/模糊感跳变」来源。v129 起移除点击捕获
+// 触发，面板玻璃在点击/拖动全程保持恒定；nobf 函数与 .anim-nobf 规则保留，供后续动画期按需手动调用。
 (function () {
     var ANIM_SEL = '.iw-card, .settings-panel, .basemap-panel, .mark-panel, .legend-panel, .records-panel, .export-panel, .cl-card, .measure-result, .map-toast, .toolbar';
     function nobf(el) {
@@ -4567,13 +4581,8 @@
         clearTimeout(el.__nobfT);
         el.__nobfT = setTimeout(function () { el.classList.remove('anim-nobf'); }, 340);
     }
-    document.addEventListener('click', function (e) {
-        var el = e.target && e.target.closest ? e.target.closest(ANIM_SEL) : null;
-        if (el) nobf(el);
-    }, true);
-
-    
-    })();
+    void ANIM_SEL; void nobf;
+})();
 
 
 
