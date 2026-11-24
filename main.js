@@ -167,6 +167,7 @@
         gcjMode = !!t.gcj;
         if (wasGcj !== gcjMode) {
             try { refreshAllLayers(); } catch (e) { }
+            try { if (typeof renderCustom === 'function') renderCustom(); } catch (e) { }
             if (geoLastBest && typeof geoLastBest.lat === 'number' && typeof geoLastBest.lng === 'number')
                 renderLoc(L.latLng(geoLastBest.lat, geoLastBest.lng), geoLastBest.acc, geoLastBest.src || '', 'gps', false);
             if (typeof pointsLayer !== 'undefined' && pointsLayer &&
@@ -521,6 +522,7 @@
         mk.bindTooltip(p.name, { direction: 'top', offset: [0, -24], className: 'poi-tip' });
         mk.__pKey = key;
         mk.__pFid = fid;
+        mk.__pFeat = feat;
         POI_MK[fid] = mk;
         mk.on('click', function (e) {
             if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
@@ -659,9 +661,9 @@
                 var any = f.geometry.coordinates.some(function (c) { return b.contains(toMapCoord(c)); });
                 if (any) n++;
             });
-            // v114：自建要素中的「线」计入道路视野计数
+            // v114：自建要素中的「线」计入道路视野计数（v130：仅计当前可见要素）
             n += customFeatures.filter(function (f) {
-                return f.geometry.type === 'LineString' && cfCoordList(f).some(function (c) { return b.contains(toMapCoord(c)); });
+                return cfRowVisible(f) && f.geometry.type === 'LineString' && cfCoordList(f).some(function (c) { return b.contains(toMapCoord(c)); });
             }).length;
             return n;
         }
@@ -752,7 +754,6 @@
     document.getElementById('btn-all').addEventListener('click', function () {
         setBuiltinVisible(true);
         setCfVisible(true);
-        document.getElementById('chk-cluster').checked = true; clusterEnabled = true;
         syncSetToggles(); syncLayerActions();
     });
     document.getElementById('btn-none').addEventListener('click', function () {
@@ -859,33 +860,44 @@
 
     function locateFeature(key, feat) {
         var coords = feat.geometry.coordinates;
+        if (key === 'road') {
+            var rPts = (Array.isArray(coords) ? coords : []).map(toMapCoord);
+            if (rPts.length) {
+                map.fitBounds(L.latLngBounds(rPts).pad(0.15), { maxZoom: 16 });
+                var mid = rPts[Math.floor(rPts.length / 2)];
+                openPwCard(roadPopupHtml(feat.properties), L.latLng(mid[0], mid[1]));
+                highlightSearchRow(feat.properties && feat.properties.name);
+            }
+            return;
+        }
         var ll = toMapCoord(coords);
         map.setView(ll, Math.max(map.getZoom(), 15));
-        var target = null;
+        var target = POI_MK[String(poiFid(feat))] || null;
         var container = (clusterEnabled ? pointsLayer.clusters[key] : pointsLayer.plains[key]);
-        if (container) {
+        if (!target && container) {
             container.eachLayer(function (ly) {
                 if (!target && ly.getLatLng && ly.getLatLng().lat === ll[0] && ly.getLatLng().lng === ll[1]) target = ly;
             });
         }
         openTargetPopup(container, target);
-        if (key === 'road' && linesLayer) {
-            linesLayer.eachLayer(function (ly) {
-                if (!target && ly.getLatLng && ly.getLatLng().lat === ll[0] && ly.getLatLng().lng === ll[1]) target = ly;
-            });
-            if (!target) {
-                linesLayer.eachLayer(function (ly) { if (!target && ly.getLatLng) target = ly; });
-            }
-            if (target && target.openPopup) target.openPopup();
-        }
     }
     // v125 B1：聚合态下子点被气泡包住、不在地图上，直接 openPopup 无效；
-    // 先用 zoomToShowLayer 散开/放大到该点，回调里再开详情卡。
+    // 先用 zoomToShowLayer 散开/放大到该点，回调里再通过 openPwCard 打开详情卡（v130 修复 v124 撤掉 bindPopup 后搜索不弹卡）
     function openTargetPopup(container, target) {
         if (!target) return;
+        function showCard() {
+            if (target.__pKey && target.__pFeat) {
+                openPwCard(pointPopupHtml(target.__pKey, target.__pFeat.properties, target.__pFid), target.getLatLng());
+                highlightSearchRow(target.__pFeat.properties && target.__pFeat.properties.name);
+            } else if (target.openPopup) {
+                target.openPopup();
+            }
+        }
         if (container && typeof container.zoomToShowLayer === 'function') {
-            container.zoomToShowLayer(target, function () { if (target.openPopup) target.openPopup(); });
-        } else if (target.openPopup) target.openPopup();
+            container.zoomToShowLayer(target, showCard);
+        } else {
+            showCard();
+        }
     }
 
     // ---------------- 8. 测距 / 测面 ----------------
@@ -964,6 +976,7 @@
         measure.mode = null;
         document.getElementById('btn-distance').classList.remove('active');
         document.getElementById('btn-area').classList.remove('active');
+        APP_MODE = (typeof cfSelId !== 'undefined' && cfSelId != null) ? 'select' : 'idle';
     });
     function polygonAreaM2(pts) {
         var R = 6371000, n = pts.length, area = 0;
@@ -1018,6 +1031,7 @@
         document.getElementById('btn-distance').classList.remove('active');
         document.getElementById('btn-area').classList.remove('active');
         measureDoneBtn.hidden = true;
+        APP_MODE = (typeof cfSelId !== 'undefined' && cfSelId != null) ? 'select' : 'idle';
     });
     // v83：「×」关闭按钮已彻底移除——测量结果卡靠点地图任意处 / 清除测量 / 退出测量模式自动隐藏
 
@@ -1128,11 +1142,14 @@
         var btnRec = document.getElementById('btn-records');
         if (btnRec && panel) {
             btnRec.addEventListener('click', function () {
-                panel.hidden = !panel.hidden;
-                if (!panel.hidden) renderRec(); else clearRecordEcho();
+                var willOpen = panel.hidden;
+                if (willOpen && typeof closeFloatingPanels === 'function') closeFloatingPanels('records-panel');
+                panel.hidden = !willOpen;
+                if (!panel.hidden) { renderRec(); if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(true); }
+                else { clearRecordEcho(); if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(false); }
             });
             var closeBtn = document.getElementById('records-close');
-            if (closeBtn) closeBtn.addEventListener('click', function () { panel.hidden = true; clearRecordEcho(); });
+            if (closeBtn) closeBtn.addEventListener('click', function () { panel.hidden = true; clearRecordEcho(); if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(false); });
             var expBtn = document.getElementById('records-export');
             if (expBtn) expBtn.addEventListener('click', exportRec);
             var impBtn = document.getElementById('records-import');
@@ -1163,13 +1180,21 @@
     }
     if (btnBasemap && basemapPanel) {
         btnBasemap.addEventListener('click', function () {
-            basemapPanel.classList.toggle('open');
-            if (basemapPanel.classList.contains('open')) {
-                forceBackdropResample(basemapPanel);
+            var willOpen = !basemapPanel.classList.contains('open');
+            if (willOpen && typeof closeFloatingPanels === 'function') closeFloatingPanels('basemap-panel');
+            basemapPanel.classList.toggle('open', willOpen);
+            if (willOpen) {
                 paintBasemapSel();
+                if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(true);
+            } else if (typeof toggleSettingsBackdrop === 'function') {
+                toggleSettingsBackdrop(false);
             }
         });
-        document.getElementById('basemap-close').addEventListener('click', function () { basemapPanel.classList.remove('open'); try { hideMeasureCard(); } catch (e) { } });
+        document.getElementById('basemap-close').addEventListener('click', function () {
+            basemapPanel.classList.remove('open');
+            if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(false);
+            try { hideMeasureCard(); } catch (e) { }
+        });
         basemapPanel.querySelectorAll('.bm-item').forEach(function (it) {
             it.addEventListener('click', function () {
                 var idx = parseInt(it.getAttribute('data-idx'));
@@ -1370,7 +1395,7 @@
         markDrawType = f.geometry.type;
         markStreet = f.properties.name || '';
         markKind = f.properties.kind || '道路';
-        markPts = cfCoordList(f).map(function (c) { return [c[1], c[0]]; });
+        markPts = cfCoordList(f).map(function (c) { return toMapCoord(c); });
         markMode = true;
         btnMark.classList.add('active');
         var seg = document.getElementById('mark-seg');
@@ -1431,38 +1456,24 @@
         paintMarkDots();
     });
     if (btnMark && markPanel) {
-        // 阻断地图内所有浮层 UI 的点击冒泡到地图容器
-        // （否则打点/测距模式下点击「开始打点」「清空」、工具栏按钮等，click 会冒泡到地图加点监听，在按钮位置误创建一个点）
-        // v56 扩展：同时隔离 touch/pointer/mouse 拖动事件，防止手机端拖动滑块/面板时事件穿透到地图导致地图跟着动
-        ['.toolbar', '.zoom-ctrl', '.mark-panel', '.settings-panel', '.basemap-panel', '.legend-panel', '.measure-result', '.map-toast'].forEach(function (sel) {
-            var el = document.querySelector(sel);
-            if (el) {
-                el.addEventListener('click', function (e) { e.stopPropagation(); });
-                el.addEventListener('touchstart', function (e) { e.stopPropagation(); });
-                el.addEventListener('touchmove', function (e) { e.stopPropagation(); });
-                el.addEventListener('touchend', function (e) { e.stopPropagation(); });
-                el.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-                el.addEventListener('pointermove', function (e) { e.stopPropagation(); });
-                el.addEventListener('pointerup', function (e) { e.stopPropagation(); });
-                el.addEventListener('mousedown', function (e) { e.stopPropagation(); });
-                el.addEventListener('mousemove', function (e) { e.stopPropagation(); });
-                el.addEventListener('mouseup', function (e) { e.stopPropagation(); });
-            }
-        });
         btnMark.addEventListener('click', function () {
-            markPanel.classList.toggle('open');
-            if (markPanel.classList.contains('open')) {
+            var willOpen = !markPanel.classList.contains('open');
+            if (willOpen && typeof closeFloatingPanels === 'function') closeFloatingPanels('mark-panel');
+            markPanel.classList.toggle('open', willOpen);
+            if (willOpen) {
                 setAppMode('mark');   // v114 P1-I：开自建要素面板即退出测量 / 结束编辑 / 清选中，避免卡片互相叠压
-                forceBackdropResample(markPanel);
+                if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(true);
             } else {
                 if (markMode) { exitMark(); toast('打点已退出'); }
                 APP_MODE = (cfSelId != null ? 'select' : 'idle');
+                if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(false);
             }
         });
         document.getElementById('mark-close').addEventListener('click', function () {
             markPanel.classList.remove('open');
             if (markMode) { exitMark(); toast('打点已退出'); }
             APP_MODE = (cfSelId != null ? 'select' : 'idle');
+            if (typeof toggleSettingsBackdrop === 'function') toggleSettingsBackdrop(false);
         });
         document.getElementById('mark-start').addEventListener('click', function () {
             var name = (document.getElementById('mark-name').value || '').trim();
@@ -1502,8 +1513,10 @@
                 toast(markDrawType === 'Point' ? '请先在地图上点一个位置' : markDrawType === 'LineString' ? '线至少要 2 个节点' : '面至少要 3 个顶点', true);
                 return;
             }
+            // v130：无论当前是高德(GCJ-02)还是 OSM/卫星(WGS-84)底图，入库统一经 fromMapLatLng 转为规范 GCJ-02 坐标，
+            // 确保切底图或导出再导入时与内置要素坐标系完全一致
             var ring = markPts.map(function (p) {
-                return [Math.round(p[1] * 1e6) / 1e6, Math.round(p[0] * 1e6) / 1e6];
+                return fromMapLatLng({ lat: p[0], lng: p[1] });
             });
             if (markDrawType === 'Polygon') {
                 if (ring.length === 3 || ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]) {
@@ -1523,7 +1536,7 @@
                 id: isEdit ? markEditingId : ('cf' + Date.now()),
                 geometry: geom,
                 properties: { name: name, kind: kindVal, remark: remarkVal },
-                crs: gcjMode ? 'GCJ-02' : 'WGS-84',
+                crs: 'GCJ-02',
                 basemap: TILE_CHAIN[tileIdx].name,
                 ts: Date.now()
             };
@@ -1689,7 +1702,7 @@
                 type: 'FeatureCollection',
                 name: 'changde-webgis-exported',
                 scope: scope,
-                crs_note: '坐标为 ' + (isGcj ? 'GCJ-02（高德/腾讯系，非 WGS-84）' : 'WGS-84') + '；如需 WGS-84 请先做 GCJ-02→WGS-84 偏移纠偏',
+                crs_note: '坐标为 GCJ-02（高德/腾讯系，非 WGS-84）；如需 WGS-84 请先做 GCJ-02→WGS-84 偏移纠偏',
                 generated: new Date().toISOString(),
                 counts: counts,
                 features: feats
@@ -1775,6 +1788,27 @@
             else if (data && data.type === 'Feature') arr = [data];
             else if (Array.isArray(data)) arr = data;
             if (!arr.length) { toast('文件里没有可导入的要素', true); return; }
+            // v130：构建已有要素防重集合（覆盖自定义要素 + 未删内置图层，避免导出再导入重复翻倍）
+            function featSig(type, nm, cList) {
+                var c0 = cList && cList[0];
+                if (!c0) return '';
+                return type + '|' + String(nm || '').trim() + '|' + (Math.round(c0[0] * 1e5) / 1e5) + ',' + (Math.round(c0[1] * 1e5) / 1e5);
+            }
+            var seenSig = {};
+            customFeatures.forEach(function (ef) {
+                var sg = featSig(ef.geometry.type, ef.properties && ef.properties.name, cfCoordList(ef));
+                if (sg) seenSig[sg] = true;
+            });
+            var builtinIds = {};
+            GEO_KEYS.forEach(function (bk) {
+                if (goneLayers[bk]) return;
+                (layerState[bk].data || []).forEach(function (bf, bi) {
+                    var bfid = String(poiFid(bf) || ('bi-' + bk + '-' + bi));
+                    builtinIds[bfid] = true;
+                    var sg = featSig(bf.geometry.type, bf.properties && bf.properties.name, cfCoordList(bf));
+                    if (sg) seenSig[sg] = true;
+                });
+            });
             var added = 0, dup = 0, bad = 0, newKinds = {}, newPts = [];
             arr.forEach(function (ft) {
                 try {
@@ -1786,7 +1820,10 @@
                     if (!coords) { bad++; return; }
                     var p = ft.properties || {};
                     var id = String(ft.id || p.id || ('cfimp' + Date.now() + '_' + added));
-                    if (cfById(id)) { dup++; return; }               // 按 id 去重：同一个要素重复导入不会翻倍
+                    var nm = String(p.name || p.NAME || ('导入要素 ' + (added + 1))).slice(0, 40);
+                    var sg = featSig(type, nm, cfCoordList({ geometry: { type: type, coordinates: coords } }));
+                    if (cfById(id) || builtinIds[id] || (sg && seenSig[sg])) { dup++; return; }
+                    if (sg) seenSig[sg] = true;
                     // v116：类型不再限于内置 5 类——按数据自带的业务类型成层（笔记「图层由数据决定」）
                     // v119：先归一同义类型（高校→学校、卫生院→医院），再成层，图层列表不被同义类型撑散
                     var rawKind = String(p.kind || p.KIND || p.type || p.类型 || '').trim().slice(0, 12);
@@ -1795,7 +1832,7 @@
                         id: id,
                         geometry: { type: type, coordinates: coords },
                         properties: {
-                            name: String(p.name || p.NAME || ('导入要素 ' + (added + 1))).slice(0, 40),
+                            name: nm,
                             kind: kind,
                             remark: String(p.remark || p.note || '').slice(0, 120),
                             source: srcName
@@ -1845,7 +1882,7 @@
             var kindList = Object.keys(newKinds);
             var msg = (fname ? '「' + fname + '」' : '') + '导入 ' + added + ' 个要素';
             if (kindList.length) msg += '：' + kindList.map(function (k) { return k + ' ×' + newKinds[k]; }).join('、') + '，图层列表已同步';
-            if (dup) msg += '，跳过 ' + dup + ' 个（id 重复）';
+            if (dup) msg += '，跳过 ' + dup + ' 个（重复数据）';
             if (bad) msg += '，跳过 ' + bad + ' 个（结构不合法）';
             toast(msg, !added);
         }
@@ -1984,12 +2021,9 @@
             var nameInput = document.getElementById('export-filename');
             if (nameInput) nameInput.value = expDefaultName();
             expRenderBuiltin(); expRenderCf(); expRefresh();
-            // 互斥：关掉其它右侧抽屉
-            ['settings-panel', 'mark-panel', 'basemap-panel', 'legend-panel', 'records-panel'].forEach(function (id) {
-                var p = document.getElementById(id); if (p) p.classList.remove('open');
-            });
+            // 互斥：关掉其它浮起面板
+            if (typeof closeFloatingPanels === 'function') closeFloatingPanels('export-panel');
             expPanel.classList.add('open');
-            forceBackdropResample(expPanel);
             toggleSettingsBackdrop(true);
         }
         function closeExportPanel() {
@@ -2226,7 +2260,7 @@
                     for (var i = 0; i < frames.length; i++) if (!best || frames[i].acc < best.acc) best = frames[i];
                     if (!best) return;
                     if (!geoLastBest || best.acc <= geoLastBest.acc * 3) {
-                        geoLastBest = { acc: best.acc };
+                        geoLastBest = { lat: best.lat, lng: best.lng, acc: best.acc, src: locLevelText(best.acc).src };
                         renderBest(false);
                     }
                     if (Date.now() - t0 > 12000 && !settled) { settled = true; btn.disabled = false; }
@@ -2244,7 +2278,7 @@
                 .then(function (d) {
                     if (d && typeof d.latitude === 'number' && typeof d.longitude === 'number') {
                         frames.push({ lng: d.longitude, lat: d.latitude, acc: 3000, t: Date.now() });
-                        if (!geoLastBest || geoLastBest.acc > 3000) { geoLastBest = { acc: 3000 }; renderBest(true); }
+                        if (!geoLastBest || geoLastBest.acc > 3000) { geoLastBest = { lat: d.latitude, lng: d.longitude, acc: 3000, src: 'IP 网络' }; renderBest(true); }
                         if (!settled) { settled = true; btn.disabled = false; }
                     } else { throw new Error('bad payload'); }
                 })
@@ -2389,6 +2423,7 @@
         // 否则切包后地图上的点线面与侧栏圆点仍是旧主题快照（根因：此前 applyPack 只刷内置层）。
         if (typeof renderCustom === 'function') renderCustom();
         if (typeof syncCfCats === 'function') syncCfCats();
+        if (typeof window.__refreshGlassVars === 'function') window.__refreshGlassVars();
         rebuildPetals();
         saveTheme();
     }
@@ -2496,26 +2531,19 @@
     var setBlur = document.getElementById('set-blur');
     var setAlpha = document.getElementById('set-alpha');
     var setSat = document.getElementById('set-sat');
-    // v112：通用玻璃面板工具——backdrop 重采样（加防抖，连续点击只执行一次）
-    var _resampleTimer = null;
-    function forceBackdropResample(panel) {
-        if (!panel) return;
-        if (_resampleTimer) cancelAnimationFrame(_resampleTimer);
-        _resampleTimer = requestAnimationFrame(function () {
-            panel.style.backdropFilter = 'none';
-            void panel.offsetWidth;
-            requestAnimationFrame(function () { panel.style.backdropFilter = ''; });
-        });
-    }
-    // v113：面板可拖动——Pointer Events + 拖动阈值 + rAF 节流 + transform 加速
+    // v130：不再强行清空 backdropFilter 造成开启闪烁，保留安全空函数兼容既有调用
+    function forceBackdropResample() {}
+    // v113：面板可拖动——Pointer Events + 拖动阈值 + rAF 节流直接更新 left/top（v130 不再切换 translate3d→'' 避免松手清晰度跳变，手机端居中态禁止拖拽）
     function makeDraggable(panel, storageKey) {
         if (!panel) return;
         var header = panel.querySelector('h4, .panel-title, .bm-title, .settings-title, .legend-title, .rp-head') || panel;
         var startX, startY, startLeft, startTop, dragging = false, moved = false;
         var rafId = null;
-        header.style.cursor = 'move';
+        var isPhoneQuery = function () { return window.matchMedia && window.matchMedia('(max-width:768px)').matches; };
+        header.style.cursor = isPhoneQuery() ? '' : 'move';
 
         header.addEventListener('pointerdown', function (e) {
+            if (isPhoneQuery()) return;
             if (e.target.closest('button, input, select, a, .settings-close, .panel-close, .bm-close, .close, .rp-close, .rp-actions')) return;
             dragging = true;
             moved = false;
@@ -2524,64 +2552,69 @@
             var mapR = document.getElementById('map').getBoundingClientRect();
             startLeft = r.left - mapR.left;
             startTop = r.top - mapR.top;
-            header.setPointerCapture(e.pointerId);
+            try { header.setPointerCapture(e.pointerId); } catch (err) {}
             e.preventDefault();
         });
 
-        header.addEventListener('pointermove', function (e) {
+        function onMove(e) {
             if (!dragging) return;
             var dx = e.clientX - startX, dy = e.clientY - startY;
             // 拖动阈值：5px 内不触发
             if (!moved && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
             moved = true;
             header.style.cursor = 'grabbing';
-            // rAF 节流——transform 用偏移量 dx/dy，不是绝对位置
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(function () {
-                panel.style.transform = 'translate3d(' + dx + 'px, ' + dy + 'px, 0)';
+                var mapR = document.getElementById('map').getBoundingClientRect();
+                var newLeft = Math.max(0, Math.min(mapR.width - panel.offsetWidth, startLeft + dx));
+                var newTop = Math.max(0, Math.min(mapR.height - panel.offsetHeight, startTop + dy));
+                panel.style.left = newLeft + 'px';
+                panel.style.top = newTop + 'px';
+                panel.style.right = 'auto';
             });
-        });
+        }
 
         function endDrag(e) {
             if (!dragging) return;
             dragging = false;
-            header.style.cursor = 'move';
+            header.style.cursor = isPhoneQuery() ? '' : 'move';
             if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
             if (moved) {
-                // 结束后把 transform 偏移转成 left/top 绝对位置
                 var dx = e.clientX - startX, dy = e.clientY - startY;
                 var mapR = document.getElementById('map').getBoundingClientRect();
                 var newLeft = Math.max(0, Math.min(mapR.width - panel.offsetWidth, startLeft + dx));
                 var newTop = Math.max(0, Math.min(mapR.height - panel.offsetHeight, startTop + dy));
-                panel.style.transform = '';
                 panel.style.left = newLeft + 'px';
                 panel.style.top = newTop + 'px';
                 panel.style.right = 'auto';
-                try { localStorage.setItem(storageKey, JSON.stringify({ left: newLeft + 'px', top: newTop + 'px' })); } catch (e) {}
+                try { localStorage.setItem(storageKey, JSON.stringify({ left: newLeft + 'px', top: newTop + 'px' })); } catch (e2) {}
             }
         }
-        header.addEventListener('pointerup', endDrag);
-        header.addEventListener('pointercancel', endDrag);
+        document.addEventListener('pointermove', onMove, true);
+        document.addEventListener('pointerup', endDrag, true);
+        document.addEventListener('pointercancel', endDrag, true);
 
-        // 恢复位置——v112：检查是否在可视区域内，越界则不恢复
-        try {
-            var saved = localStorage.getItem(storageKey);
-            if (saved) {
-                var pos = JSON.parse(saved);
-                if (pos.left && pos.top) {
-                    var mapR = document.getElementById('map').getBoundingClientRect();
-                    var panelW = panel.offsetWidth || 280;
-                    var panelH = panel.offsetHeight || 200;
-                    var left = parseInt(pos.left) || 0;
-                    var top = parseInt(pos.top) || 0;
-                    if (left >= 0 && left + panelW <= mapR.width && top >= 0 && top + panelH <= mapR.height) {
-                        panel.style.left = pos.left;
-                        panel.style.top = pos.top;
-                        panel.style.right = 'auto';
+        // 恢复位置——v112：检查是否在可视区域内，越界则不恢复；手机端保留居中不恢复桌面坐标
+        if (!isPhoneQuery()) {
+            try {
+                var saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    var pos = JSON.parse(saved);
+                    if (pos.left && pos.top) {
+                        var mapR = document.getElementById('map').getBoundingClientRect();
+                        var panelW = panel.offsetWidth || 280;
+                        var panelH = panel.offsetHeight || 200;
+                        var left = parseInt(pos.left) || 0;
+                        var top = parseInt(pos.top) || 0;
+                        if (left >= 0 && left + panelW <= mapR.width && top >= 0 && top + panelH <= mapR.height) {
+                            panel.style.left = pos.left;
+                            panel.style.top = pos.top;
+                            panel.style.right = 'auto';
+                        }
                     }
                 }
-            }
-        } catch (e) {}
+            } catch (e) {}
+        }
     }
     makeDraggable(settingsPanel, 'cd_panel_settings');
     makeDraggable(basemapPanel, 'cd_panel_basemap');
@@ -2627,40 +2660,37 @@
         settingsBackdrop.hidden = !show;
         settingsBackdrop.classList.toggle('show', show);
     }
-    if (settingsBackdrop) settingsBackdrop.addEventListener('click', function () {
-        if (settingsPanel) settingsPanel.classList.remove('open');
-        if (btnSettings) btnSettings.classList.remove('active');
+    function closeFloatingPanels(exceptId) {
+        if (exceptId !== 'settings-panel' && settingsPanel) {
+            settingsPanel.classList.remove('open');
+            if (btnSettings) btnSettings.classList.remove('active');
+        }
+        if (exceptId !== 'basemap-panel' && basemapPanel) basemapPanel.classList.remove('open');
+        if (exceptId !== 'mark-panel' && markPanel && markPanel.classList.contains('open')) {
+            markPanel.classList.remove('open');
+            if (markMode) exitMark();
+            if (APP_MODE === 'mark') APP_MODE = (cfSelId != null ? 'select' : 'idle');
+        }
         var expP = document.getElementById('export-panel');
-        if (expP) expP.classList.remove('open');
-        toggleSettingsBackdrop(false);
-    });
-    function jellyPulse() {
-        if (!settingsPanel) return;
-        settingsPanel.classList.remove('jelly');
-        void settingsPanel.offsetWidth;
-        settingsPanel.classList.add('jelly');
-        // v107：兜底定时移除——动画 .45s 播完即清除 .jelly（不依赖 animationend，动画被降级/未播放时同样生效）
-        clearTimeout(window.__jellyTimer);
-        window.__jellyTimer = setTimeout(function () { settingsPanel.classList.remove('jelly'); }, 500);
+        if (exceptId !== 'export-panel' && expP) expP.classList.remove('open');
+        var recP = document.getElementById('records-panel');
+        if (exceptId !== 'records-panel' && recP && !recP.hidden) {
+            recP.hidden = true;
+            if (window._recordsClearEcho) window._recordsClearEcho();
+        }
+        if (!exceptId) toggleSettingsBackdrop(false);
     }
-    // v107：jelly-pop 动画播完立即移除 .jelly 类——动画持续存在会冻结面板 background-color 的级联更新
-    // （切夜间时深色规则无法应用、背景被卡在半透明白 = 「点击按钮透明度短暂变化」与「夜间白底白字修不好」的隐藏根因）
-    if (settingsPanel) settingsPanel.addEventListener('animationend', function () {
-        settingsPanel.classList.remove('jelly');
+    if (settingsBackdrop) settingsBackdrop.addEventListener('click', function () {
+        closeFloatingPanels();
     });
+    function jellyPulse() {}
     if (btnSettings && settingsPanel) {
         btnSettings.addEventListener('click', function () {
-            settingsPanel.classList.toggle('open');
-            btnSettings.classList.toggle('active', settingsPanel.classList.contains('open'));
-            if (settingsPanel.classList.contains('open')) {
-                forceBackdropResample(settingsPanel);
-                settingsPanel.classList.remove('pop');
-                void settingsPanel.offsetWidth;
-                settingsPanel.classList.add('pop');
-                toggleSettingsBackdrop(true);
-            } else {
-                toggleSettingsBackdrop(false);
-            }
+            var willOpen = !settingsPanel.classList.contains('open');
+            if (willOpen) closeFloatingPanels('settings-panel');
+            settingsPanel.classList.toggle('open', willOpen);
+            btnSettings.classList.toggle('active', willOpen);
+            toggleSettingsBackdrop(willOpen);
         });
         document.getElementById('settings-close').addEventListener('click', function () {
             settingsPanel.classList.remove('open');
@@ -2673,14 +2703,12 @@
         setBlur.addEventListener('input', function () { var el = document.getElementById('set-blur-val'); if (el) el.textContent = setBlur.value + 'px'; });
         setAlpha.addEventListener('input', function () { var el = document.getElementById('set-alpha-val'); if (el) el.textContent = setAlpha.value + '%'; });
         if (setSat) setSat.addEventListener('input', function () { var el = document.getElementById('set-sat-val'); if (el) el.textContent = setSat.value + '%'; });
-        settingsPanel.addEventListener('animationend', function () { settingsPanel.classList.remove('jelly'); });
         // 材质包切换
         var autoCycleTimer = null;
         var AUTO_CYCLE_MS = 6000;   // 综合包：每 6 秒丝滑轮播一次（只轮播白天四套，不含夜间）
         var AUTO_ORDER = ['peach', 'osmanthus', 'leaf', 'rose'];
         function stopAutoCycle() {
             if (autoCycleTimer) { clearInterval(autoCycleTimer); autoCycleTimer = null; }
-            document.body.classList.remove('theme-anim');
             // 熄灭「综合」按钮，恢复当前实际材质包高亮（防止综合关闭后按钮残留点亮）
             document.querySelectorAll('.pack-item').forEach(function (b) {
                 b.classList.toggle('sel', b.getAttribute('data-pack') === themeState.pack);
@@ -2692,15 +2720,11 @@
                 if (pk === 'auto') {
                     if (autoCycleTimer) { stopAutoCycle(); toast('综合轮播已关闭'); return; }
                     autoCycleTimer = setInterval(function () {
-                        document.body.classList.add('theme-anim');
                         var next = AUTO_ORDER[Math.floor(Math.random() * AUTO_ORDER.length)];
                         applyPack(next, true);
-                        setTimeout(function () { document.body.classList.remove('theme-anim'); }, 850);
                     }, AUTO_CYCLE_MS);
                     var first = AUTO_ORDER[0];
-                    document.body.classList.add('theme-anim');
                     applyPack(first, true);
-                    setTimeout(function () { document.body.classList.remove('theme-anim'); }, 850);
                     toast('综合材质包已开启：每 ' + (AUTO_CYCLE_MS / 1000) + ' 秒自动丝滑轮播（桃花/桂花/绿叶/玫瑰，不含夜间）');
                     return;
                 }
@@ -2746,14 +2770,18 @@
             if (setRhythm) { setRhythm.value = 5; setRhythm.dispatchEvent(new Event('input', { bubbles: true })); }
             toast('已恢复默认（35% 偏透 + 桃花材质包）');
         });
-        try {
-            var g = JSON.parse(localStorage.getItem('cd_glass') || 'null');
-            if (g && g.blur !== undefined) { setBlur.value = g.blur; setAlpha.value = g.alpha; if (g.sat !== undefined && setSat) setSat.value = g.sat; applyGlass(); }
-        } catch (e) { }
     }
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v130', t: '根治玻璃点击/拖动透明度清晰度跳变 + 全局材质动效收敛 + 12 处功能逻辑自洽修复',
+            pts: [
+                '非纸笺材质设置面板点击/拖动透明度清晰度跳变根治：① 移除 v92 挂在玻璃面板上的 3 层 filter:drop-shadow 与遗留侧栏 SVG 位移滤镜，消除 filter + backdrop-filter 离屏纹理冲突；② 全站移除 transition: backdrop-filter 与 forceBackdropResample 强清重采样；③ 交互期降载不再用 * 清零全屏磨砂（改只暂停装饰粒子/呼吸动画）；④ 拖拽改为直接更新 left/top，告别松手 GPU 层切换跳变',
+                '全局材质与动效收敛：统一白天四包浮起卡片玻璃底座与顶部轻盈高光；全站去除 3D 歪斜与果冻回弹动画，收紧为 160–200ms 短过渡；修复悬浮球涟漪环双偏移偏心 26px 与九层 box-shadow 重绘，保留桌面悬浮球 + 手机底部导航双轨布局',
+                '功能逻辑自洽修复（含第 14 节一致性）：① 修复搜索结果点击内置 POI 只定位不弹详情卡（补走 openPwCard）；② 统一自建要素跨底图坐标系（绘制经 fromMapLatLng 规范存 GCJ-02，切 OSM/卫星时同步重绘对齐）；③ 重导入自动比对内置与自建要素指纹，重复数据跳过并明确提示；④ 清理无效界面字号滑杆、修复高级玻璃滑杆刷新被重置与日夜地板同步、补齐浮起面板互斥与 Esc 关闭'
+            ]
+        },
         {
             v: 'v129', t: '浮起卡片玻璃对齐 ippure + 面板标题栏可拖拽 + 修复点击/拖地图时磨砂跳变',
             pts: [
@@ -3038,12 +3066,8 @@
             fab.classList.toggle('fab-open', doOpen);
             if (!doOpen) {
                 fab.classList.add('fab-closing');
-                setTimeout(function () { fab.classList.remove('fab-closing'); }, 320);
+                setTimeout(function () { fab.classList.remove('fab-closing'); }, 220);
             }
-            var n = btns.length;
-            btns.forEach(function (b, i) {
-                b.style.transitionDelay = (doOpen ? i * 30 : (n - 1 - i) * 14) + 'ms';
-            });
         }
         // —— 长按拖拽 + 智能吸附（quickLiquid 弹簧物理概念：拖拽结束果冻回弹吸附最近边缘） ——
         // v77：anchor 键名升级为 cd_fab_anchor77（旧位置作废）→ 初始位置强制回到右上角
@@ -3219,7 +3243,9 @@
         }
         function labelOf(v) { var x = Math.round(v); return x <= 2 ? '弱' : x <= 4 ? '偏弱' : x === 5 ? '中' : x <= 7 ? '偏强' : '强'; }
         function glassLabel(g) { return g <= 15 ? '轻薄' : g <= 40 ? '偏透' : g <= 70 ? '中' : g <= 88 ? '偏厚' : '厚重'; }
+        var currentGlass = { blur: 7, alpha: 35, sheen: 0.93, shadow: 0.42 };
         function writeVars(v) {
+            currentGlass = { blur: v.blur, alpha: v.alpha, sheen: v.sheen, shadow: v.shadow };
             docEl.style.setProperty('--glass-blur', v.blur + 'px');
             // v115：删掉「blur<3 就把 alpha 硬抬到 60%」——它是「切到轻薄反而不透」的根因之一
             // 白天 8% 只作可读性护栏，夜间 62% 保证深底浅字；其余全部交给滑杆本身
@@ -3232,12 +3258,10 @@
             // v115 边缘透光强度：薄段 0.90 → 厚段 1.00，配合 style.css 的 Rim / Specular / Refraction 三层
             docEl.style.setProperty('--glass-edge', (0.9 + Math.min(aVal / 100, 1) * 0.1).toFixed(2));
         }
+        window.__refreshGlassVars = function () { writeVars(currentGlass); };
         function saveState(s) { try { localStorage.setItem('cd_glass72', JSON.stringify(s)); } catch (e) { } }
-        // 主滑杆 → 预设联动（同步高级滑杆 UI + 变量）
-        function applyMain() {
-            var g = clamp(parseFloat(glass.value), 0, 100);
-            var v = presetAt(g);
-            writeVars(v);
+        function syncGlassUI(g, v) {
+            glass.value = g;
             adv.blur.value = v.blur; adv.alpha.value = v.alpha;
             adv.sheen.value = Math.round(clamp(v.sheen / 1.5 * 10, 0, 10));
             adv.shadow.value = Math.round(clamp(v.shadow / 1.6 * 10, 0, 10));
@@ -3246,6 +3270,13 @@
             advVal.sheen.textContent = labelOf(v.sheen / 1.5 * 10);
             advVal.shadow.textContent = labelOf(v.shadow / 1.6 * 10);
             glassVal.textContent = glassLabel(g);
+        }
+        // 主滑杆 → 预设联动（同步高级滑杆 UI + 变量）
+        function applyMain() {
+            var g = clamp(parseFloat(glass.value), 0, 100);
+            var v = presetAt(g);
+            writeVars(v);
+            syncGlassUI(g, v);
             applySat();
             saveState({ glass: g, blur: v.blur, alpha: v.alpha, sheen: v.sheen, shadow: v.shadow });
         }
@@ -3254,17 +3285,19 @@
             glass.value = clamp(g, 0, 100);
             applyMain();
         };
-        // 高级微调 → 写变量 + 反推主滑杆相对强度（双向联动）
+        // 高级微调 → 写变量 + 反推主滑杆相对强度（v130 对齐 P0..P100 区间）
         function applyAdv() {
             var v = {
                 blur: clamp(parseFloat(adv.blur.value), 0, 40),
                 alpha: clamp(parseFloat(adv.alpha.value), 0, 100),
-                sheen: +(clamp(parseFloat(adv.sheen.value), 0, 10) / 10).toFixed(2),
-                shadow: +(clamp(parseFloat(adv.shadow.value), 0, 10) / 10).toFixed(2)
+                sheen: +(clamp(parseFloat(adv.sheen.value), 0, 10) / 10 * 1.5).toFixed(2),
+                shadow: +(clamp(parseFloat(adv.shadow.value), 0, 10) / 10 * 1.6).toFixed(2)
             };
             writeVars(v);
-            var b = clamp((v.blur - 6) / 24, 0, 1), a = clamp((v.alpha - 70) / 27, 0, 1);
-            var sn = clamp((v.sheen - 0.3) / 1.2, 0, 1), sh = clamp((v.shadow - 0.3) / 1.3, 0, 1);
+            var b = clamp((v.blur - P0.blur) / (P100.blur - P0.blur), 0, 1);
+            var a = clamp((v.alpha - P0.alpha) / (P100.alpha - P0.alpha), 0, 1);
+            var sn = clamp(v.sheen / P100.sheen, 0, 1);
+            var sh = clamp((v.shadow - P0.shadow) / (P100.shadow - P0.shadow), 0, 1);
             var g = Math.round((b + a + sn + sh) / 4 * 100);
             glass.value = g;
             glassVal.textContent = glassLabel(g);
@@ -3274,7 +3307,6 @@
             advVal.shadow.textContent = labelOf(parseFloat(adv.shadow.value));
             applySat();
             saveState({ glass: g, blur: v.blur, alpha: v.alpha, sheen: v.sheen, shadow: v.shadow });
-            // v108：移除 jellyPulse 果冻弹跳（视觉上造成「面板透明度先透后恢复」+ 动画卡顿），滑杆拖动仅变量实时联动
         }
         function applySat() {
             var sat = satEl ? parseFloat(satEl.value) : 150;
@@ -3298,15 +3330,25 @@
                 }
             } catch (e) { }
         }
-        // 加载：新键优先，旧键（cd_glass / cd_gl_set-*）迁移
+        // 加载：新键优先，保留用户高级微调值不再被 applyMain() 冲掉
         function load() {
+            try {
+                var gSat = JSON.parse(localStorage.getItem('cd_glass') || 'null');
+                if (satEl && gSat && gSat.sat !== undefined) satEl.value = gSat.sat;
+            } catch (e) {}
             try {
                 var s = JSON.parse(localStorage.getItem('cd_glass72') || 'null');
                 if (s && s.glass !== undefined && s.blur !== undefined) {
-                    glass.value = s.glass;
-                    adv.blur.value = s.blur; adv.alpha.value = s.alpha;
-                    adv.sheen.value = Math.round(s.sheen * 10); adv.shadow.value = Math.round(s.shadow * 10);
-                    applyMain(); return;
+                    var v = {
+                        blur: clamp(parseFloat(s.blur), 0, 40),
+                        alpha: clamp(parseFloat(s.alpha), 0, 100),
+                        sheen: clamp(parseFloat(s.sheen != null ? s.sheen : 0.93), 0, 1.5),
+                        shadow: clamp(parseFloat(s.shadow != null ? s.shadow : 0.42), 0, 1.6)
+                    };
+                    writeVars(v);
+                    syncGlassUI(clamp(parseFloat(s.glass), 0, 100), v);
+                    applySat();
+                    return;
                 }
             } catch (e) { }
             try {
@@ -3352,21 +3394,22 @@
         }
     })();
 
-    // ---------------- 13.9 面板点击穿透拦截（玻璃弹层点击不触发地图 / 不误关悬浮球） ----------------
+    // ---------------- 13.9 面板点击穿透拦截（玻璃弹层点击/触摸不触发地图 / 不误关悬浮球） ----------------
     (function initPanelGuard() {
-        // v75：cl-card 恢复拦截（叉号三通道直绑不依赖冒泡，stopPropagation 无副作用；防止卡内点击冒泡到地图）
-        // v77：dblclick 一并拦截——双击任何玻璃面板/卡片不再触发 Leaflet 地图双击缩放（"双击卡片放大"根治），地图本体双击缩放保留
         ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'records-panel', 'export-panel', 'cl-card', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
-            ['mousedown', 'pointerdown', 'click', 'dblclick'].forEach(function (t) {
+            ['mousedown', 'pointerdown', 'pointermove', 'pointerup', 'click', 'dblclick', 'touchstart', 'touchmove', 'touchend'].forEach(function (t) {
                 el.addEventListener(t, function (e) { e.stopPropagation(); }, false);
             });
         });
-        // v80：measure-result 仅拦 click/dblclick（防地图穿透/双击放大），放行 pointerdown/mousedown——叉号三通道立即响应
         ['click', 'dblclick'].forEach(function (t) {
             var el = document.getElementById('measure-result');
             if (el) el.addEventListener(t, function (e) { e.stopPropagation(); }, false);
+        });
+        var zc = document.getElementById('zoom-ctrl');
+        if (zc) ['click', 'dblclick', 'mousedown', 'pointerdown', 'touchstart'].forEach(function (t) {
+            zc.addEventListener(t, function (e) { e.stopPropagation(); }, false);
         });
         var fab = document.getElementById('fab');
         if (fab) fab.addEventListener('mousedown', function (e) {
@@ -3389,7 +3432,7 @@
     var cfHitTs = 0;
 
     function round6(v) { return Math.round(v * 1e6) / 1e6; }
-    function cfLatLngs(f) { return cfCoordList(f).map(function (c) { return L.latLng(c[1], c[0]); }); }
+    function cfLatLngs(f) { return cfCoordList(f).map(function (c) { var pt = toMapCoord(c); return L.latLng(pt[0], pt[1]); }); }
     // 屏幕经纬度 → 入库坐标（与既有 geojson 一致：统一存 GCJ-02 底图坐标）
     function fromMapLatLng(ll) {
         var c = gcjMode ? [ll.lat, ll.lng] : wgs2gcj([ll.lat, ll.lng]);
@@ -3615,7 +3658,17 @@
         var t = e.target;
         if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
         if (e.key === 'Escape') {
-            if (expPanel && expPanel.classList.contains('open')) { closeExportPanel(); return; }
+            var legP = document.getElementById('legend-panel');
+            if (legP && !legP.hidden) { legP.hidden = true; return; }
+            var recP = document.getElementById('records-panel');
+            if ((expPanel && expPanel.classList.contains('open')) ||
+                (settingsPanel && settingsPanel.classList.contains('open')) ||
+                (basemapPanel && basemapPanel.classList.contains('open')) ||
+                (markPanel && markPanel.classList.contains('open')) ||
+                (recP && !recP.hidden)) {
+                closeFloatingPanels();
+                return;
+            }
             if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
             if (poiSel.ids.length) { clearPoiSel(); return; }
             if (cfSelIds.length) clearCfSel();
@@ -3714,7 +3767,18 @@
         var card = document.getElementById('cf-card');
         if (!card) return;
         document.getElementById('cf-name').value = f.properties.name || '';
-        document.getElementById('cf-kind').value = f.properties.kind || '设施点';
+        var cfKindEl = document.getElementById('cf-kind');
+        var kindVal = f.properties.kind || '设施点';
+        if (cfKindEl) {
+            var hasOpt = Array.prototype.some.call(cfKindEl.options, function (o) { return o.value === kindVal; });
+            if (!hasOpt) {
+                var extraOpt = document.createElement('option');
+                extraOpt.value = kindVal;
+                extraOpt.textContent = kindVal;
+                cfKindEl.appendChild(extraOpt);
+            }
+            cfKindEl.value = kindVal;
+        }
         document.getElementById('cf-remark').value = f.properties.remark || '';
         var badge = document.getElementById('cf-badge');
         if (badge) badge.innerHTML = '<span class="cf-badge-dot" style="background:' + cfColor(f.properties.kind) + '"></span>' + esc(f.properties.kind) + ' · ' + cfGeoLabel(f.geometry.type) + ' · ' + cfCoordList(f).length + ' 节点';
@@ -3761,14 +3825,18 @@
         if (!editAllowed(f)) { toast('删除已锁定：' + editOffTip(f.geometry.type).replace(/[（）]/g, ''), true); return; }
         if (!window.confirm('确定删除「' + f.properties.name + '」？删除后该要素也会从图层、搜索与图例中移除')) return;
         customFeatures = customFeatures.filter(function (x) { return String(x.id) !== String(id); });
-        if (cfSelId !== null && String(cfSelId) === String(id)) cfSelId = null;
+        cfSelIds = cfSelIds.filter(function (sid) { return String(sid) !== String(id); });
+        if (cfSelId !== null && String(cfSelId) === String(id)) cfSelId = cfSelIds.length ? cfSelIds[cfSelIds.length - 1] : null;
         if (cfEditing && String(cfEditing.id) === String(id)) stopCfEdit();
         saveCustom();
         var card = document.getElementById('cf-card');
-        if (card) card.classList.remove('open');
+        if (card && !cfSelIds.length) card.classList.remove('open');
+        if (!cfSelIds.length && (APP_MODE === 'select' || APP_MODE === 'edit' || APP_MODE === 'move')) APP_MODE = 'idle';
         renderCustom();
         syncCfCats();
+        updateCounts();
         refreshSearch();
+        updateCfSelBar();
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
         toast('已删除「' + f.properties.name + '」，搜索与图例同步移除');
     }
@@ -4007,6 +4075,11 @@
         layerState[k].visible = false;
         goneLayers[k] = true;
         saveGoneLayers();
+        if (k !== 'road') {
+            poiSel.ids = poiSel.ids.filter(function (pid) { return !POI_MK[pid] || POI_MK[pid].__pKey !== k; });
+            Object.keys(POI_MK).forEach(function (pid) { if (POI_MK[pid] && POI_MK[pid].__pKey === k) delete POI_MK[pid]; });
+            updatePoiSelBar();
+        }
         var chk = document.getElementById('chk-' + k);
         if (chk) chk.checked = false;
         refreshLayer(k);
@@ -4088,6 +4161,11 @@
             saveGonePois();
         }
         map.closePopup();
+        delete POI_MK[fid];
+        if (!poiBatchDel && poiSel.ids.length) {
+            poiSel.ids = poiSel.ids.filter(function (pid) { return pid !== fid; });
+            updatePoiSelBar();
+        }
         refreshLayer(key);
         updateCounts();
         refreshSearch();

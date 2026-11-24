@@ -44,7 +44,6 @@
     --cell-drift: 12s;       /* 细胞核漂移周期（缓慢布朗运动） */
     --cell-disperse: .5;     /* 折射色散强度 0-1（随玻璃质感联动） */
     --header-h: 48px;
-    --glass-sat: 165%;
     --accent: #8e2a52;        /* 材质包强调色（默认桃花梅红，随桂花/绿叶/玫瑰切换） */
     --accent-soft: #fceef3;
     --header-grad: linear-gradient(135deg, rgba(124, 36, 80, .80), rgba(164, 55, 107, .76), rgba(201, 91, 135, .82));
@@ -110,7 +109,7 @@ body.theme-night .iw-card .iw-label { color: #94a3b8; }
     transition: background-color .5s ease, color .5s ease, border-color .5s ease;
 }
 .toolbar button:hover, .zoom-ctrl button:hover { transform-style: preserve-3d; }
-.layer-item:hover { transition: all .15s ease; }
+.layer-item:hover { transition: background-color .15s ease, transform .15s ease; }
 /* 飘落粒子：切换材质包时只换外观样式，用过渡平滑变形状（不重建 DOM） */
 .petal { transition: background .7s ease, border-radius .7s ease, box-shadow .7s ease; }
 
@@ -183,7 +182,7 @@ body {
     position: relative;
     z-index: 20;
     overflow: hidden;
-    transition: background-color .35s ease, border-color .35s ease, backdrop-filter .35s ease;
+    transition: background-color .35s ease, border-color .35s ease;
 }
 /* v128：透明通栏不再铺顶部高光与主题纹理（ippure 导航为干净浅底）；伪元素保留占位以兼容夜间/纸笺覆盖 */
 .page-header::before, .page-header::after { content: none; }
@@ -317,10 +316,10 @@ html, body, button, a, input, select, label {
         inset 0 1px 0 rgba(255, 255, 255, .8),
         0 1px 4px rgba(15, 23, 42, .12),
         0 0 0 .5px rgba(255, 255, 255, .5);
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    transition: transform .18s cubic-bezier(.22, .9, .3, 1), background-color .18s ease, color .18s ease, box-shadow .18s ease;
 }
 .panel-close:hover, .measure-close:hover {
-    transform: scale(1.18) rotate(90deg);
+    transform: scale(1.08);
     background: rgba(255, 255, 255, .95);
     color: var(--plum);
     box-shadow:
@@ -328,7 +327,7 @@ html, body, button, a, input, select, label {
         0 3px 10px rgba(15, 23, 42, .16),
         0 0 0 .5px rgba(255, 255, 255, .6);
 }
-.panel-close:active, .measure-close:active { transform: scale(.92); transition-duration: .1s; }
+.panel-close:active, .measure-close:active { transform: scale(.94); transition-duration: .1s; }
 body.theme-night .panel-close, body.theme-night .measure-close {
     background: rgba(129, 140, 248, .18);
     color: #a5b4fc;
@@ -358,9 +357,9 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     padding: 8px 14px;
     cursor: pointer;
     box-shadow: 0 3px 10px rgba(15, 23, 42, .1), inset 0 1px 0 rgba(255, 255, 255, .8);
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, box-shadow .2s ease;
+    transition: transform .18s cubic-bezier(.22, .9, .3, 1), background-color .18s ease, box-shadow .18s ease;
 }
-.panel-restore:hover { transform: translateY(-2px) scale(1.04); background: rgba(255, 255, 255, .95); }
+.panel-restore:hover { transform: translateY(-1px); background: rgba(255, 255, 255, .95); }
 .panel-restore:active { transform: scale(.96); transition-duration: .1s; }
 
 /* 图层列表 */
@@ -441,7 +440,7 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     color: var(--plum);
     border-radius: 9px;
     cursor: pointer;
-    transition: all .15s;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
     box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
 }
 .layer-actions button:hover { background: var(--rose-soft); border-color: var(--rose); transform: translateY(-1px); }
@@ -555,9 +554,9 @@ body.theme-night .panel-close, body.theme-night .measure-close {
         inset 0 -1px 0 rgba(255, 255, 255, calc(.35 * var(--glass-sheen))),
         0 0 0 .5px rgba(255, 255, 255, .55);
     cursor: pointer;
-    transition: width .35s cubic-bezier(.34, 1.56, .64, 1), height .35s cubic-bezier(.34, 1.56, .64, 1),
-        border-radius .35s cubic-bezier(.34, 1.56, .64, 1), background .18s ease, box-shadow .18s ease,
-        top .38s cubic-bezier(.34, 1.56, .64, 1), left .38s cubic-bezier(.34, 1.56, .64, 1);
+    transition: width .2s cubic-bezier(.22, .9, .3, 1), height .2s cubic-bezier(.22, .9, .3, 1),
+        border-radius .2s cubic-bezier(.22, .9, .3, 1), background-color .18s ease, box-shadow .18s ease,
+        top .22s cubic-bezier(.22, .9, .3, 1), left .22s cubic-bezier(.22, .9, .3, 1);
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
@@ -581,10 +580,10 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     background: var(--plum);
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.6' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23000'/%3E%3Ccircle cx='19' cy='12' r='2.6' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
-    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .25s ease;
+    transition: transform .18s cubic-bezier(.22, .9, .3, 1), opacity .18s ease;
 }
 /* v110：hover/fab-open 不再改 background-color——消除点击 FAB 时底部透明度跳变；只动 transform/shadow */
-.toolbar:hover { transform: translateY(-4px) scale(1.04); }
+.toolbar:hover { transform: translateY(-2px) scale(1.03); }
 .toolbar.fab-open:hover { transform: none; }
 .toolbar:active { transform: scale(.97); transition-duration: .12s; }
 /* 展开：120px 竖列果冻列表 */
@@ -712,8 +711,8 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     transform: translateY(10px) scale(.9);
     pointer-events: none;
     overflow: hidden;
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), opacity .28s ease, visibility 0s linear .3s,
-        background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    transition: transform .18s cubic-bezier(.22, .9, .3, 1), opacity .16s ease, visibility 0s linear .18s,
+        background-color .16s ease, color .16s ease, box-shadow .16s ease;
     will-change: transform;
 }
 .toolbar.fab-open button {
@@ -722,10 +721,10 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     visibility: visible;
     transform: none;
     pointer-events: auto;
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), opacity .28s ease, visibility 0s,
-        background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    transition: transform .16s cubic-bezier(.22, .9, .3, 1), opacity .16s ease, visibility 0s,
+        background-color .16s ease, color .16s ease, box-shadow .16s ease;
 }
-.toolbar button svg { width: 20px; height: 20px; flex-shrink: 0; pointer-events: none; transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
+.toolbar button svg { width: 20px; height: 20px; flex-shrink: 0; pointer-events: none; transition: transform .16s cubic-bezier(.22, .9, .3, 1); }
 .toolbar button span { display: none; }
 /* 高光扫过（液态玻璃流动感，强度受 glassliquid 边框高光强度调节） */
 .toolbar button::after {
@@ -759,22 +758,23 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     box-shadow: 0 3px 10px rgba(15, 23, 42, .14), inset 0 1px 0 rgba(255, 255, 255, .8);
     opacity: 0;
     pointer-events: none;
-    transition: opacity .18s ease, transform .22s cubic-bezier(.34, 1.56, .64, 1);
+    transition: opacity .16s ease, transform .16s cubic-bezier(.22, .9, .3, 1);
 }
 .toolbar.fab-open button:hover::before { opacity: 1; transform: translateY(-50%) translateX(0); }
-/* hover / 触摸：果冻跳跃（上浮 8px 回弹）+ 方向倾斜（react-tilt-button 方向逻辑） */
+/* hover / 触摸：轻盈上浮与反馈（去歪斜抖动） */
 .toolbar button:hover,
 .toolbar button.fab-pop {
     background: rgba(255, 255, 255, .95);
     color: var(--plum);
-    transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(15, 23, 42, calc(.18 * var(--glass-shadow))), inset 0 1px 0 rgba(255, 255, 255, .9);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, calc(.14 * var(--glass-shadow))), inset 0 1px 0 rgba(255, 255, 255, .9);
 }
-.toolbar button.tilt-l { transform: translateY(-8px) rotate(-4deg); }
-.toolbar button.tilt-r { transform: translateY(-8px) rotate(4deg); }
+.toolbar button.tilt-l,
+.toolbar button.tilt-r { transform: translateY(-1px); }
 .toolbar button:hover svg,
-.toolbar button.fab-pop svg { transform: scale(1.12); }
-.toolbar button.tilt-l svg, .toolbar button.tilt-r svg { transform: scale(1.12); }
+.toolbar button.fab-pop svg,
+.toolbar button.tilt-l svg,
+.toolbar button.tilt-r svg { transform: scale(1.06); }
 /* 按压：果冻压缩 + 下沉 */
 .toolbar button:active {
     transform: translateY(1px) scale(.96);
@@ -809,31 +809,10 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     animation: fabMembrane var(--cell-breathe, 2.2s) ease-in-out infinite;
     will-change: transform;
 }
+/* v130：纯合成层 transform 呼吸（不再每帧重绘 9 层 box-shadow） */
 @keyframes fabMembrane {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow:
-            inset 0 1px 1px rgba(255, 255, 255, calc(.70 * var(--glass-sheen))),
-            inset 0 -6px 14px rgba(0, 0, 0, calc(.20 * var(--glass-shadow))),
-            inset 0 0 0 1px rgba(255, 255, 255, calc(.35 * var(--glass-sheen))),
-            0 8px 26px rgba(15, 23, 42, calc(.30 * var(--glass-shadow))),
-            0 0 0 1px rgba(255, 255, 255, calc(.25 * var(--glass-sheen))),
-            0 0 0 1px rgba(129, 140, 248, calc(.06 * var(--cell-disperse))),
-            0 0 0 1.5px rgba(244, 114, 182, calc(.05 * var(--cell-disperse)));
-    }
-    50% {
-        transform: scale(1.03);
-        box-shadow:
-            inset 0 1px 1px rgba(255, 255, 255, calc(.80 * var(--glass-sheen))),
-            inset 0 -6px 14px rgba(0, 0, 0, calc(.24 * var(--glass-shadow))),
-            inset 0 0 0 1px rgba(255, 255, 255, calc(.42 * var(--glass-sheen))),
-            0 14px 32px rgba(15, 23, 42, calc(.36 * var(--glass-shadow))),
-            0 0 0 1px rgba(255, 255, 255, calc(.32 * var(--glass-sheen))),
-            0 0 0 1px rgba(129, 140, 248, calc(.14 * var(--cell-disperse))),
-            0 0 0 1.5px rgba(244, 114, 182, calc(.11 * var(--cell-disperse))),
-            0 0 14px 3px rgba(129, 140, 248, calc(.14 * var(--cell-disperse))),
-            0 0 24px 6px rgba(255, 255, 255, calc(.18 * var(--glass-sheen)));
-    }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
 }
 /* —— 细胞核：液态折射气泡（v103 重做：透明气泡而非实心色块）—— */
 #fab:not(.fab-open) .fab-cell-core,
@@ -876,13 +855,12 @@ body.theme-night .panel-close, body.theme-night .measure-close {
     0%   { opacity: .5; transform: translate(-50%, -50%) scale(.88); }
     100% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
 }
-/* —— v104 波纹感：细胞膜涟漪环（细环自球缘向外周期性扩散，模拟水面涟漪；与呼吸错相 2.6s/2.2s 双层节奏） —— */
+/* —— v104 波纹感：细胞膜涟漪环（v130 修复 margin+translate 双重偏心，居中对齐球心） —— */
 #fab:not(.fab-open)::after {
     content: '';
     position: absolute;
     left: 50%; top: 50%;
     width: 52px; height: 52px;
-    margin-left: -26px; margin-top: -26px;
     border-radius: 50%;
     border: 1.2px solid rgba(255, 255, 255, calc(.50 * var(--glass-sheen)));
     box-shadow:
@@ -970,15 +948,15 @@ body.theme-night #fab:not(.fab-open)::after {
     cursor: pointer;
     font-size: 18px;
     transform-style: preserve-3d;
-    transition: transform .4s cubic-bezier(.34, 1.56, .64, 1), background-color .25s ease, color .25s ease;
+    transition: transform .2s cubic-bezier(.22, .9, .3, 1), background-color .2s ease, color .2s ease;
 }
 .zoom-ctrl button + button { border-top: 1px solid var(--border); }
 .zoom-ctrl button:hover {
     background: var(--rose-soft);
     color: var(--plum);
-    transform: perspective(620px) rotateY(9deg) rotateX(-3deg) scale(1.08);
+    transform: scale(1.03);
 }
-.zoom-ctrl button:active { transform: perspective(620px) rotateY(4deg) scale(.95); transition-duration: .12s; }
+.zoom-ctrl button:active { transform: scale(.95); transition-duration: .1s; }
 
 .measure-result {
     position: absolute;
@@ -1016,9 +994,9 @@ body.theme-night #fab:not(.fab-open)::after {
     cursor: pointer;
     flex-shrink: 0;
     box-shadow: 0 3px 10px rgba(52, 199, 89, .35), inset 0 1px 0 rgba(255, 255, 255, .4);
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease, background-color .2s ease;
+    transition: transform .2s cubic-bezier(.22, .9, .3, 1), box-shadow .2s ease, background-color .2s ease;
 }
-#measure-done:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 5px 14px rgba(52, 199, 89, .4), inset 0 1px 0 rgba(255, 255, 255, .4); }
+#measure-done:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(52, 199, 89, .4), inset 0 1px 0 rgba(255, 255, 255, .4); }
 #measure-done:active { transform: scale(.96); transition-duration: .1s; }
 body.theme-night .measure-result {
     background: rgba(15, 23, 42, .82);
@@ -1275,10 +1253,10 @@ body.theme-night .measure-result {
     flex-shrink: 0;
     position: relative;
     z-index: 2001;
-    transition: background .15s, color .15s, border-color .15s, transform .3s cubic-bezier(.34, 1.56, .64, 1);
+    transition: background .15s, color .15s, border-color .15s, transform .18s cubic-bezier(.22, .9, .3, 1);
     touch-action: manipulation;
 }
-.menu-btn:hover { background: rgba(142, 150, 170, .24); transform: rotate(6deg) scale(1.06); }
+.menu-btn:hover { background: rgba(142, 150, 170, .24); transform: scale(1.04); }
 .menu-btn:active { transform: scale(.94); transition-duration: .12s; }
 
 /* 桌面端折叠：平滑收起侧边栏，地图占满 */
@@ -1330,7 +1308,8 @@ body.theme-night .measure-result {
     html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
     #map { min-height: 0; touch-action: none; }
 
-    .sidebar {
+    .sidebar,
+    body.refraction .sidebar {
         position: fixed;
         top: var(--header-h);
         left: 0;
@@ -1362,8 +1341,8 @@ body.theme-night .measure-result {
         gap: 6px;
         border-radius: 18px;
         cursor: default;
-        transition: width .3s cubic-bezier(.34, 1.56, .64, 1), height .3s cubic-bezier(.34, 1.56, .64, 1),
-            top .3s cubic-bezier(.34, 1.56, .64, 1), left .3s cubic-bezier(.34, 1.56, .64, 1);
+        transition: width .2s cubic-bezier(.22, .9, .3, 1), height .2s cubic-bezier(.22, .9, .3, 1),
+            top .2s cubic-bezier(.22, .9, .3, 1), left .2s cubic-bezier(.22, .9, .3, 1);
     }
     .toolbar::before { display: none; }
     .toolbar button {
@@ -1402,12 +1381,12 @@ body.theme-night .measure-result {
         line-height: 1;
     }
     .toolbar.fab-open .fab-collapse { justify-content: center; padding: 0; }
-    /* 移动端动效降幅：弹性上浮 4px、按压压缩 0.97（渐进增强：移动端适度降低弹性幅度） */
+    /* 移动端动效降幅：轻盈反馈、无倾斜回弹 */
     .toolbar button:hover,
-    .toolbar button.fab-pop { transform: translateY(-4px); }
-    .toolbar button.tilt-l { transform: translateY(-4px) rotate(-3deg); }
-    .toolbar button.tilt-r { transform: translateY(-4px) rotate(3deg); }
-    .toolbar button:active { transform: translateY(0) scale(.97); }
+    .toolbar button.fab-pop,
+    .toolbar button.tilt-l,
+    .toolbar button.tilt-r { transform: translateY(-1px); }
+    .toolbar button:active { transform: scale(.97); }
     .zoom-ctrl { right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .zoom-ctrl button { width: 34px; height: 34px; font-size: 16px; }
 
@@ -1447,7 +1426,7 @@ body.theme-night .measure-result {
         font-size: 10.5px;
         border-radius: 12px;
         cursor: pointer;
-        transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), background-color .15s ease;
+        transition: transform .16s cubic-bezier(.22, .9, .3, 1), background-color .15s ease;
     }
     .mobile-nav button:active { transform: scale(.93); background: rgba(124, 58, 237, .08); }
     /* 缩放组上移避让底部导航（导航上方 8px） */
@@ -1493,7 +1472,7 @@ body.theme-night .measure-result {
         font-size: 12px;
         border-radius: 11px;
         cursor: pointer;
-        transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), background-color .15s ease;
+        transition: transform .16s cubic-bezier(.22, .9, .3, 1), background-color .15s ease;
     }
     .sidebar-quick button:active { transform: scale(.95); background: rgba(124, 58, 237, .1); }
     /* 比例尺放左下角（不遮挡缩放键），默认 Leaflet 位置微调 */
@@ -1789,7 +1768,7 @@ body.theme-night .cf-layer-item .cf-layer-del { color: rgba(255, 255, 255, .55);
     max-height: 0;
     opacity: 0;
     transform: translateY(-4px);
-    transition: opacity .22s ease, transform .22s ease, max-height .3s cubic-bezier(.34, 1.56, .64, 1), padding-top .3s ease;
+    transition: opacity .2s ease, transform .2s cubic-bezier(.22, .9, .3, 1), max-height .24s cubic-bezier(.22, .9, .3, 1), padding-top .22s ease;
 }
 .adv-area.open {
     opacity: 1;
@@ -1814,7 +1793,7 @@ body.refraction .settings-inner {
     position: relative;
     isolation: isolate;
 }
-/* 错位折射层：伪元素复制背景并以 SVG 滤镜位移 3px，与主层叠加产生液态通透感 */
+/* v130：纯 CSS 边缘折射高光层——移除 SVG feDisplacementMap 离屏重算，避免点击/拖动时面板模糊跳变 */
 body.refraction .sidebar::after,
 body.refraction .settings-inner::after {
     content: '';
@@ -1822,9 +1801,11 @@ body.refraction .settings-inner::after {
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: rgba(255, 255, 255, calc(.08 * var(--glass-sheen)));
-    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq3' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03' numOctaves='2' seed='3' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='18' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
-    transform: translate(3px, 3px);
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, calc(.16 * var(--glass-sheen))) 0%,
+        rgba(255, 255, 255, 0) 42%,
+        rgba(255, 255, 255, calc(.06 * var(--glass-sheen))) 100%);
+    border-radius: inherit;
 }
 body.refraction.theme-night .sidebar::after,
 body.theme-night.refraction .settings-inner::after { background: rgba(129, 140, 248, .05); }
@@ -1853,38 +1834,38 @@ body.theme-night #fab.fab-open #fab-trigger {
 }
 body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); color: #dbeafe; box-shadow: 0 3px 10px rgba(2, 6, 23, .4), inset 0 1px 0 rgba(148, 163, 212, .3); }
 #map .legend-panel, #map .settings-panel, #map .measure-result, #map .map-toast,
-#map .basemap-panel, #map .mark-panel {
+#map .basemap-panel, #map .mark-panel, #map .records-panel, #map .export-panel {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    /* v129 对齐 ippure 主卡：受光边（左上）→ 背光边（右下）→ 细冷边 → 近距柔影 + 远距浮起柔影 */
+    border: 1px solid rgba(255, 255, 255, calc(.58 * var(--glass-edge)));
+    /* v130：统一现代清透玻璃投影（不再叠加 filter:drop-shadow，也不对 backdrop-filter 做 transition） */
     box-shadow:
-        inset 1px 1px 0 rgba(255, 255, 255, calc(.80 * var(--glass-sheen) * var(--glass-edge))),
-        inset -1px -1px 0 rgba(10, 32, 64, calc(.10 * var(--glass-shadow))),
-        0 0 0 .5px rgba(10, 32, 64, calc(.08 * var(--glass-edge))),
-        0 1px 3px rgba(15, 23, 42, .10),
-        0 10px 30px rgba(15, 23, 42, calc(.16 * var(--glass-shadow)));
-    transition: backdrop-filter .35s ease, background-color .35s ease;
+        inset 0 1px 0 rgba(255, 255, 255, calc(.78 * var(--glass-sheen) * var(--glass-edge))),
+        inset 0 -1px 0 rgba(10, 32, 64, calc(.08 * var(--glass-shadow))),
+        0 2px 6px rgba(15, 23, 42, .08),
+        0 12px 32px rgba(15, 23, 42, calc(.14 * var(--glass-shadow)));
+    transition: background-color .18s ease, border-color .18s ease;
 }
-#map .legend-panel { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0)); }
-#map .measure-result { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0)); }
-#map .map-toast { background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0)); }
-/* v115：面板裁边（扫光带落在面板内） + 镜面扫光——22° 斜向亮带，强度随 --glass-sheen / --glass-edge 联动 */
-#map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel, #map .measure-result, #map .map-toast {
+#map .legend-panel { background-color: rgba(255, 255, 255, var(--glass-alpha)); }
+#map .measure-result { background-color: rgba(255, 255, 255, var(--glass-alpha)); }
+#map .map-toast { background-color: rgba(255, 255, 255, var(--glass-alpha)); }
+/* v130：顶部轻盈镜面高光（替代 22° 斜向灰雾），强度随 --glass-sheen / --glass-edge 联动 */
+#map .settings-panel, #map .basemap-panel, #map .mark-panel, #map .legend-panel,
+#map .records-panel, #map .export-panel, #map .measure-result, #map .map-toast {
     overflow: hidden;
 }
 #map .settings-panel::before, #map .basemap-panel::before, #map .mark-panel::before,
-#map .legend-panel::before, #map .measure-result::before, #map .map-toast::before {
+#map .legend-panel::before, #map .records-panel::before, #map .export-panel::before,
+#map .measure-result::before, #map .map-toast::before {
     content: '';
     position: absolute;
-    top: -25%;
-    left: -12%;
-    right: -12%;
-    height: 150%;
-    background: linear-gradient(158deg,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, calc(.05 * var(--glass-sheen) * var(--glass-edge))) 34%,
-        rgba(255, 255, 255, calc(.14 * var(--glass-sheen) * var(--glass-edge))) 47%,
-        rgba(255, 255, 255, 0) 63%);
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 44%;
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, calc(.22 * var(--glass-sheen) * var(--glass-edge))) 0%,
+        rgba(255, 255, 255, 0) 100%);
     pointer-events: none;
     border-radius: inherit;
 }
@@ -1909,10 +1890,10 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     width: 286px;
     /* v107：改用 background-color 子属性——与 transition: background-color 精确匹配，
        规避「background 简写 + 过渡」在 Chrome 的级联冻结（背景被卡在半透明白 = 点击时透明度异常） */
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 1.0));
-    border: 1px solid rgba(255, 255, 255, .5);
+    background-color: rgba(255, 255, 255, var(--glass-alpha));
+    border: 1px solid rgba(255, 255, 255, calc(.58 * var(--glass-edge)));
     border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, .10), 0 12px 40px rgba(15, 23, 42, .22);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, .08), 0 12px 32px rgba(15, 23, 42, .16);
     padding: 13px 15px;
     font-size: 13px;
     color: var(--text);
@@ -1920,7 +1901,7 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease, border-color .35s ease;
+    transition: opacity .16s ease, background-color .18s ease, border-color .18s ease;
     transform-origin: top right;
 }
 /* v111c：HTML hidden 属性会强制 display:none，覆盖 visibility 方案——必须显式覆盖 */
@@ -1931,21 +1912,6 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     pointer-events: auto;
     transition-delay: 0s;
 }
-/* 果冻感：滑块调节时面板弹性回弹 */
-@keyframes jelly-pop {
-    0% { transform: scale(1); }
-    35% { transform: scale(1.03, 0.97); }
-    65% { transform: scale(0.985, 1.015); }
-    100% { transform: scale(1); }
-}
-.settings-panel.jelly { animation: jelly-pop .45s cubic-bezier(.34, 1.56, .64, 1); }
-/* v109-P0-5：受控 spring 弹出——只动 transform，不碰 background-color / backdrop-filter */
-@keyframes spring-pop {
-    0% { transform: scale(.96); }
-    55% { transform: scale(1.03); }
-    100% { transform: scale(1); }
-}
-.settings-panel.pop { animation: spring-pop .4s cubic-bezier(.34, 1.4, .64, 1); }
 .settings-title {
     display: flex; align-items: center; justify-content: space-between;
     font-weight: 600; font-size: 15px; color: var(--accent, var(--plum));
@@ -1989,14 +1955,13 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     flex: none; padding: 4px 6px; border-radius: 999px; font-size: 12px;
     border: 1px solid var(--border); background: #fff; color: var(--text);
     cursor: pointer; text-align: center;
-    transform-style: preserve-3d;
-    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), background-color .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
+    transition: transform .16s cubic-bezier(.22, .9, .3, 1), background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
 }
 .pack-item:hover {
-    transform: perspective(500px) rotateY(-7deg) scale(1.07);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, .14);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .10);
 }
-.pack-item:active { transform: perspective(500px) rotateY(-3deg) scale(.96); transition-duration: .12s; }
+.pack-item:active { transform: scale(.97); transition-duration: .1s; }
 .pack-item.sel {
     background: var(--accent, var(--plum)); color: #fff; border-color: var(--accent, var(--plum));
     box-shadow: 0 3px 10px rgba(15, 23, 42, .18);
@@ -2049,14 +2014,12 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
         0 6px 22px rgba(142, 42, 82, .14);
     color: var(--text);
     overflow: hidden;
-    animation: cl-jelly .55s cubic-bezier(.34, 1.56, .64, 1);
+    animation: cl-in .18s cubic-bezier(.22, .9, .3, 1);
     transform-origin: 50% 42%;
 }
-@keyframes cl-jelly {
-    0% { transform: scale(.82) translateY(10px); opacity: 0; }
-    45% { transform: scale(1.05) translateY(-2px); opacity: 1; }
-    68% { transform: scale(.97); }
-    100% { transform: scale(1); }
+@keyframes cl-in {
+    0% { transform: scale(.97); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 @keyframes cl-fade { from { opacity: 0; } to { opacity: 1; } }
 .cl-head {
@@ -2074,9 +2037,9 @@ body.theme-night .toolbar button::before { background: rgba(30, 41, 82, .95); co
     background: rgba(142, 150, 170, .14);
     color: var(--text-2); font-size: 18px; line-height: 1;
     cursor: pointer;
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background .2s, color .2s;
+    transition: transform .18s cubic-bezier(.22, .9, .3, 1), background .18s, color .18s;
 }
-.cl-close:hover { transform: rotate(90deg) scale(1.15); background: rgba(142, 150, 170, .24); color: var(--text); }
+.cl-close:hover { transform: scale(1.06); background: rgba(142, 150, 170, .24); color: var(--text); }
 .cl-list {
     flex: 1; overflow-y: auto;
     padding: 12px 14px 8px 16px;
@@ -2161,13 +2124,13 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     position: absolute; top: 14px; left: 70px; z-index: 1260;
     width: 236px; padding: 13px 15px;
     /* v107 子属性化 */
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
-    border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
+    background-color: rgba(255, 255, 255, var(--glass-alpha));
+    border: 1px solid rgba(255, 255, 255, calc(.58 * var(--glass-edge))); border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, .16);
     font-size: 13px; color: var(--text);
     /* v111：visibility+opacity 替代 display:none */
     visibility: hidden; opacity: 0; pointer-events: none;
-    transition: visibility 0s linear .35s, opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease;
+    transition: visibility 0s linear .16s, opacity .16s ease, background-color .18s ease;
 }
 .basemap-panel.open {
     visibility: visible; opacity: 1; pointer-events: auto;
@@ -2189,13 +2152,13 @@ body.theme-night .cl-row-points { color: #94a3b8; }
     position: absolute; top: 200px; left: 70px; z-index: 1265;
     width: 292px; padding: 13px 15px;
     /* v107 子属性化 */
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .94));
-    border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px;
-    box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
+    background-color: rgba(255, 255, 255, var(--glass-alpha));
+    border: 1px solid rgba(255, 255, 255, calc(.58 * var(--glass-edge))); border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, .16);
     font-size: 13px; color: var(--text);
     /* v111：visibility+opacity 替代 display:none */
     visibility: hidden; opacity: 0; pointer-events: none;
-    transition: visibility 0s linear .35s, opacity .35s ease, backdrop-filter .35s ease, background-color .35s ease;
+    transition: visibility 0s linear .16s, opacity .16s ease, background-color .18s ease;
 }
 .mark-panel.open {
     visibility: visible; opacity: 1; pointer-events: auto;
@@ -2297,12 +2260,13 @@ body.theme-night .poi-node svg g[stroke="#fff"] { stroke: rgba(233, 238, 255, .9
     /* 手机端打开设置时背景遮罩（仅 .show 时显示，hidden 时严格隐藏——防止默认显示盖住整个页面） */
     .settings-backdrop { display: none; }
     .settings-backdrop.show { display: block; }
-    /* 低端机降玻璃：减少模糊/饱和开销，保证地图滑动流畅；滑块调节保留平滑过渡 */
+    /* 低端机降玻璃：减少模糊/饱和开销，保证地图滑动流畅；不做 backdrop-filter 过渡以免闪烁 */
     .sidebar, #map .toolbar, #map .legend-panel, #map .settings-panel,
+    #map .basemap-panel, #map .mark-panel, #map .records-panel, #map .export-panel,
     #map .measure-result, #map .map-toast, .page-header {
-        backdrop-filter: blur(6px) saturate(120%);
-        -webkit-backdrop-filter: blur(6px) saturate(120%);
-        transition: backdrop-filter .25s ease, background-color .25s ease;
+        backdrop-filter: blur(min(var(--glass-blur), 8px)) saturate(125%);
+        -webkit-backdrop-filter: blur(min(var(--glass-blur), 8px)) saturate(125%);
+        transition: background-color .18s ease;
     }
     .poi-icon { width: 15px; height: 15px; }
     .poi-icon svg { width: 8px; height: 8px; }
@@ -2515,16 +2479,16 @@ body.theme-night #fab.fab-open .fab-group::after { opacity: .38; }
     display: flex; flex-direction: column;
     padding: 13px 15px;
     /* v107 子属性化 */
-    background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * .95));
+    background-color: rgba(255, 255, 255, var(--glass-alpha));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    border-radius: 18px;
+    border-radius: 16px;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, .8),
         inset 0 0 0 .5px rgba(255, 255, 255, .6),
         0 10px 32px rgba(15, 23, 42, .18);
     color: var(--text);
-    transition: backdrop-filter .35s ease, background-color .35s ease, opacity .25s ease, transform .25s ease;
+    transition: background-color .18s ease, opacity .16s ease, transform .16s ease;
 }
 #map .records-panel[hidden] { display: none !important; }   /* v86：兜底（防穿透 + 隐藏彻底） */
 .rp-head {
@@ -2540,11 +2504,11 @@ body.theme-night #fab.fab-open .fab-group::after { opacity: .38; }
     font-size: 11px; font-weight: 600;
     padding: 4px 9px; cursor: pointer;
     box-shadow: 0 2px 6px rgba(31, 45, 78, .12), inset 0 1px 0 rgba(255, 255, 255, .7);
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, box-shadow .2s ease;
+    transition: transform .16s cubic-bezier(.22, .9, .3, 1), background-color .16s ease, box-shadow .16s ease;
     -webkit-tap-highlight-color: transparent;
 }
-.rp-actions button:hover, .rp-close:hover { transform: translateY(-1px) scale(1.05); box-shadow: 0 4px 12px rgba(31, 45, 78, .18), inset 0 1px 0 rgba(255, 255, 255, .7); }
-.rp-actions button:active, .rp-close:active { transform: scale(.94); transition-duration: .1s; }
+.rp-actions button:hover, .rp-close:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(31, 45, 78, .16), inset 0 1px 0 rgba(255, 255, 255, .7); }
+.rp-actions button:active, .rp-close:active { transform: scale(.95); transition-duration: .1s; }
 .rp-close { width: 24px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1; }
 .rp-list {
     display: flex; flex-direction: column; gap: 6px;
@@ -2561,8 +2525,8 @@ body.theme-night #fab.fab-open .fab-group::after { opacity: .38; }
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 2px 8px rgba(31, 45, 78, .08);
     cursor: pointer;
     font-size: 12px;
-    transition: transform .28s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, box-shadow .2s ease;
-    animation: rp-in .3s cubic-bezier(.34, 1.56, .64, 1) both;
+    transition: transform .16s cubic-bezier(.22, .9, .3, 1), background-color .16s ease, box-shadow .16s ease;
+    animation: rp-in .18s cubic-bezier(.22, .9, .3, 1) both;
     -webkit-tap-highlight-color: transparent;
 }
 @keyframes rp-in {
@@ -2591,9 +2555,9 @@ body.theme-night #fab.fab-open .fab-group::after { opacity: .38; }
     color: var(--text-2, #475569);
     font-size: 12px; line-height: 1; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), background-color .15s ease, color .15s ease;
+    transition: transform .16s cubic-bezier(.22, .9, .3, 1), background-color .15s ease, color .15s ease;
 }
-.rp-del:hover { background: rgba(239, 68, 68, .2); color: #dc2626; transform: scale(1.1); }
+.rp-del:hover { background: rgba(239, 68, 68, .2); color: #dc2626; transform: scale(1.06); }
 .rp-del:active { transform: scale(.9); }
 .rp-empty { margin: 10px 2px 2px; font-size: 11.5px; color: var(--text-2, #64748b); line-height: 1.6; }
 body.theme-night #map .records-panel {
@@ -2614,27 +2578,10 @@ body.theme-night .rp-actions button, body.theme-night .rp-close { background: rg
    二、敷贴式玻璃光晕：drop-shadow 外发光（跟随圆角形状，不冲突 box-shadow / 伪元素），
        光晕强度由全局变量 --glass-halo 暴露、并随主滑杆 --glass-sheen/-shadow 联动；
        桌面端完整光晕，移动端自动降级仅保留轻微光晕。全部纯 CSS 增量，零 JS、零 DOM 改动 */
+/* v130：移除玻璃面板上的 v92 三层 filter:drop-shadow（与 backdrop-filter 同元素共存会在点击/拖动时引发 Blink 离屏纹理重栅格闪烁）；
+   保留 --glass-halo 变量以防外部读取，投影统一由上方 box-shadow 承担 */
 :root, body {
-    --glass-halo: .55;   /* 玻璃外发光光晕强度 0-1（敷贴式光晕全局强度，可独立微调） */
-    --glass-edge: .5;    /* 玻璃边缘高光/厚度强度 0-1（顶部弧形高光边，备用可独立调） */
-}
-
-/* —— 一、敷贴式玻璃光晕（桌面完整版：三层弥散外发光 + 柔外投影，随 sheen/shadow 联动） —— */
-.sidebar, #map .toolbar, #map .settings-panel, #map .basemap-panel, #map .mark-panel,
-#map .legend-panel, #map .records-panel, #map .measure-result, #map .map-toast,
-#map .cl-card, .page-header, .leaflet-popup-content-wrapper {
-    filter:
-        drop-shadow(0 0 10px rgba(255, 255, 255, calc(.22 * var(--glass-halo) * var(--glass-sheen))))
-        drop-shadow(0 0 26px rgba(255, 255, 255, calc(.10 * var(--glass-halo) * var(--glass-sheen))))
-        drop-shadow(0 6px 20px rgba(15, 23, 42, calc(.16 * var(--glass-shadow))));
-}
-/* 移动端降级：仅保留轻微光晕，保障地图渲染帧率 */
-@media (max-width: 768px) {
-    .sidebar, #map .toolbar, #map .settings-panel, #map .basemap-panel, #map .mark-panel,
-    #map .legend-panel, #map .records-panel, #map .measure-result, #map .map-toast,
-    #map .cl-card, .page-header, .leaflet-popup-content-wrapper {
-        filter: drop-shadow(0 0 6px rgba(255, 255, 255, calc(.10 * var(--glass-halo) * var(--glass-sheen))));
-    }
+    --glass-halo: .55;
 }
 
 /* —— 二、夜间模式文字可读性专项 —— */
@@ -2685,15 +2632,7 @@ body.theme-night .map-toast { color: #eef2ff; }
 /* v125 B3：夜间错误提示——深底上用浅红字 + 暗红底，避免沿用白天 #b91c1c 在深底上发闷 */
 body.theme-night .map-toast.error { background-color: rgba(120, 28, 36, .92) !important; border-color: rgba(248, 113, 113, .5); color: #fecaca; }
 
-/* —— 三、折射组件光晕兼容：sidebar 已有液态折射 SVG filter（L1588），filter 无法叠加，
-   追加同 specificity 链式规则 —— 折射滤镜 + drop-shadow 光晕并存，覆盖 v92 基础光晕组 */
-body.refraction .sidebar {
-    filter:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='liq' x='-10%25' y='-10%25' width='130%25' height='130%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E")
-        drop-shadow(0 0 10px rgba(255, 255, 255, calc(.22 * var(--glass-halo) * var(--glass-sheen))))
-        drop-shadow(0 0 26px rgba(255, 255, 255, calc(.10 * var(--glass-halo) * var(--glass-sheen))))
-        drop-shadow(0 6px 20px rgba(15, 23, 42, calc(.16 * var(--glass-shadow))));
-}
+/* v130：移除 v92 遗留的整块侧栏 SVG feDisplacementMap 滤镜，避免拖动/点击时玻璃闪烁与离屏开销 */
 
 /* ================= v93 三修：夜间字体再提亮 + 瓦片反色闪亮根治 + 卡片动画减负 =================
    ① 夜间瓦片反色闪亮根治：L49 的 `transition: filter .7s ease` 是元凶——放大/缩小时新瓦片 DOM
@@ -2790,6 +2729,7 @@ body.theme-night #map .basemap-panel,
 body.theme-night #map .mark-panel,
 body.theme-night #map .legend-panel,
 body.theme-night #map .records-panel,
+body.theme-night #map .export-panel,
 body.theme-night #map .measure-result,
 body.theme-night #map .cl-card,
 body.theme-night #map .map-toast,
@@ -2852,6 +2792,7 @@ body.theme-night #map .basemap-panel button,
 body.theme-night #map .mark-panel button,
 body.theme-night #map .legend-panel button,
 body.theme-night #map .records-panel button,
+body.theme-night #map .export-panel button,
 body.theme-night #map .cl-card button {
     background-color: rgba(30, 41, 82, .96) !important;
     color: #f8faff !important;
@@ -3088,8 +3029,8 @@ body.theme-night .mark-btn.ghost { background: rgba(58, 44, 52, .7); color: #f2d
 }
 /* v114 修正 R3：详情卡是正文可读区，玻璃太透会在复杂底图上糊字。
    给它一层高一点的底色（夜间单独一套），同时把底部弹层高度放宽到 58dvh 让提示行完整露出。 */
-#map .cf-card { background: rgba(255, 255, 255, .93); }
-body.theme-night #map .cf-card { background: rgba(28, 30, 40, .93); }
+#map .cf-card { background-color: rgba(255, 255, 255, calc(min(1, var(--glass-alpha) + .35))); }
+body.theme-night #map .cf-card { background-color: #121a2e !important; }
 @media (max-width: 1024px) {
     #map .cf-card { max-height: 58dvh; }
 }
@@ -3934,24 +3875,17 @@ body.theme-night .group-head input[type="checkbox"] {
 }
 body.theme-night .cf-file-item .cf-layer-del { color: rgba(255, 255, 255, .55); }
 body.theme-night .cf-file-item .cf-layer-del:hover { color: #fca5a5; background: rgba(248, 113, 113, .12); }
-/* ================= v123 性能：地图交互期背景模糊降载 =================
-   拖动/缩放地图时，31 个 backdrop-filter 元素会逐帧重采样整屏 60% 的像素，这是「玻璃族拖地图发飘」
-   的头号开销。交互期间（movestart/zoomstart -> 结束 +240ms）常驻导航/装饰层关闭背景模糊：运动中人眼
-   辨不出磨砂，静止后自动恢复。
-   v129 修订：浮起卡片面板被排除出全局降载——此前 `*` 兜底把面板磨砂一并剥离，拖地图/点地图瞬间面板
-   透明度、模糊感跳变。面板互斥最多开 1 个、面积小，保留自身 blur 帧率可接受；纸笺包无玻璃，不参与豁免。 */
-body.nav-busy, body.nav-busy *,
-body.leaflet-dragging, body.leaflet-dragging *,
-body:has(.leaflet-container.leaflet-zoom-anim), body:has(.leaflet-container.leaflet-zoom-anim) * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-}
-body:not(.theme-paper) .settings-panel, body:not(.theme-paper) .basemap-panel,
-body:not(.theme-paper) .mark-panel, body:not(.theme-paper) .legend-panel,
-body:not(.theme-paper) .records-panel, body:not(.theme-paper) .export-panel,
-body:not(.theme-paper) .measure-result, body:not(.theme-paper) .map-toast {
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+/* ================= v130 地图交互期轻量减负（替代 v123/v129 `*` 全局去磨砂） =================
+   此前 `*` 选择器会把侧栏/顶栏/悬浮球/面板子元素的 backdrop-filter 瞬间剥离并在松手后弹回，
+   造成「点击或拖动界面时面板透明度、清晰度跳变」。
+   v130 改由只暂停连续装饰动画（花瓣飘落 / 悬浮球呼吸与涟漪），全站玻璃保持 100% 恒定不闪烁。 */
+body.nav-busy #petal-wrap .petal,
+body.leaflet-dragging #petal-wrap .petal,
+body.nav-busy #fab:not(.fab-open),
+body.nav-busy .fab-cell-core,
+body.nav-busy .fab-cell-glow,
+body.nav-busy #fab::after {
+    animation-play-state: paused !important;
 }
 
 /* ================= v124 纸笺材质下的设施点详情卡（.pw-box） =================
@@ -4043,7 +3977,7 @@ body.theme-night .poi-node-wrap.poi-sel .poi-node::before {
         transition-duration: .01ms !important;
         scroll-behavior: auto !important;
     }
-    #petal-wrap, .fab-cell-glow, .fab-cell-core, .fab::after { animation: none !important; }
+    #petal-wrap, .fab-cell-glow, .fab-cell-core, #fab::after { animation: none !important; }
 }
 
 /* ================= v127 导出配置面板 ================= */
