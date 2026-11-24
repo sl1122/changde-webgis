@@ -2787,6 +2787,13 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v134', t: '属性表自定义导出弹窗 + Shift / Ctrl / Ctrl+A / 方向键专业多选体系',
+            pts: [
+                '「导出选中」升级为交互式自定义配置弹窗：支持自定义文件名（非法字符自动清洗）、导出格式切换（GeoJSON 含几何 / CSV UTF-8 BOM 表格）、坐标系转换（GCJ-02 原坐标 / WGS-84 实时纠偏适配 QGIS/OSM）以及按需勾选导出字段',
+                '属性表引入专业多选与快捷键体系：支持普通单击定位（防误删仅显示选中集）、Shift 跨行范围连选、Ctrl / ⌘ 单行反选追加、Ctrl+A / ⌘+A 一键全选当前结果、↑ / ↓ 方向键上下移动（配合 Shift 连续扩选）、Enter 定位开卡及两段式 Esc（先清选中再关抽屉）；表格行开启 user-select:none 彻底告别 Shift 划蓝文本干扰'
+            ]
+        },
+        {
             v: 'v133', t: '属性表四周贴边无缝衔接 + 根治鼠标滚轮无法向下滑动（阻断 Leaflet 拦截）',
             pts: [
                 '根治属性表无法用鼠标滚轮向下滑动：`initPanelGuard` 接入 `L.DomEvent.disableScrollPropagation` 并阻断 `wheel` / `mousewheel` / `DOMMouseScroll` 事件向底图冒泡，避免 Leaflet 拦截 `preventDefault()` 并误缩放地图；`.attr-table-wrap` 巩固 `flex: 1 1 0%` 弹性滚动区高度',
@@ -3713,11 +3720,18 @@
                 closeFloatingPanels();
                 return;
             }
+            var expPop = document.getElementById('attr-export-pop');
+            if (expPop && !expPop.hidden) { expPop.hidden = true; return; }
             var colsPop = document.getElementById('attr-cols-pop');
             if (colsPop && !colsPop.hidden) { colsPop.hidden = true; return; }
             var attrP = document.getElementById('attr-panel');
             if (attrP && !attrP.hidden) {
-                if (window.__attrTable && window.__attrTable.close) window.__attrTable.close();
+                var stAttr = (window.__attrTable && window.__attrTable.getState) ? window.__attrTable.getState() : null;
+                if (stAttr && stAttr.selectedIds && stAttr.selectedIds.length) {
+                    window.__attrTable.clearSel();
+                } else if (window.__attrTable && window.__attrTable.close) {
+                    window.__attrTable.close();
+                }
                 return;
             }
             if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
@@ -3736,6 +3750,13 @@
             return;
         }
         if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+            var attrPanelEl = document.getElementById('attr-panel');
+            if (attrPanelEl && !attrPanelEl.hidden && !attrPanelEl.classList.contains('minimized') &&
+                window.__attrTable && window.__attrTable.selectAllView) {
+                e.preventDefault();
+                window.__attrTable.selectAllView();
+                return;
+            }
             if (customFeatures.length) { e.preventDefault(); selectAllCfVisible(); }
         }
     });
@@ -4682,6 +4703,15 @@
         var clearSelBtn = document.getElementById('attr-clear-sel');
         var colsBtn = document.getElementById('attr-cols-btn');
         var colsPop = document.getElementById('attr-cols-pop');
+        var expPop = document.getElementById('attr-export-pop');
+        var expCloseBtn = document.getElementById('attr-exp-close');
+        var expCancelBtn = document.getElementById('attr-exp-cancel');
+        var expConfirmBtn = document.getElementById('attr-exp-confirm');
+        var expNameEl = document.getElementById('attr-exp-name');
+        var expFmtEl = document.getElementById('attr-exp-fmt');
+        var expCrsEl = document.getElementById('attr-exp-crs');
+        var expFieldsBox = document.getElementById('attr-exp-fields');
+        var expSummaryEl = document.getElementById('attr-exp-summary');
         var minBtn = document.getElementById('attr-min');
         var closeBtn = document.getElementById('attr-close');
         var condsBox = document.getElementById('attr-conds');
@@ -4746,6 +4776,8 @@
         } catch (e) { }
 
         var attrHighlightLayer = L.layerGroup().addTo(map);
+        var expInitFields = {};
+        ATTR_COLS.forEach(function (c) { expInitFields[c.key] = !!savedCols[c.key]; });
         var state = {
             source: 'public',
             onlySelected: false,
@@ -4754,6 +4786,7 @@
             sortCol: null,
             sortDir: null,
             visibleCols: savedCols,
+            expFields: expInitFields,
             selectedMap: {},
             conds: [{ field: 'category', op: 'eq', val: '' }],
             currentRows: [],
@@ -4762,6 +4795,8 @@
             dirty: true,
             lastSliceKey: '',
             focusUidVal: null,
+            anchorIdx: -1,
+            focusIdx: -1,
             scrollRaf: 0
         };
 
@@ -4872,33 +4907,29 @@
                 customFeatures.forEach(function (f) {
                     if (f && f.geometry && f.geometry.type === 'Point') rows.push(makeCustomRow(f));
                 });
-                return rows;
-            }
-            if (source.indexOf('builtin:') === 0) {
+            } else if (source.indexOf('builtin:') === 0) {
                 var bk = source.slice(8);
                 if (alive.indexOf(bk) >= 0) {
                     (layerState[bk].data || []).forEach(function (f, idx) { rows.push(makeBuiltinRow(bk, f, idx)); });
                 }
-                return rows;
-            }
-            if (source === 'cf_all') {
+            } else if (source === 'cf_all') {
                 customFeatures.forEach(function (f) { rows.push(makeCustomRow(f)); });
-                return rows;
-            }
-            if (source.indexOf('cf_src:') === 0) {
+            } else if (source.indexOf('cf_src:') === 0) {
                 var src = source.slice(7);
                 customFeatures.forEach(function (f) {
                     if (cfSource(f) === src) rows.push(makeCustomRow(f));
                 });
-                return rows;
-            }
-            if (source.indexOf('cf_pair:') === 0) {
+            } else if (source.indexOf('cf_pair:') === 0) {
                 var pair = source.slice(8);
                 customFeatures.forEach(function (f) {
                     if (cfPairKey(f) === pair) rows.push(makeCustomRow(f));
                 });
-                return rows;
             }
+            var seen = {};
+            rows.forEach(function (r, idx) {
+                if (seen[r.uid]) r.uid = r.uid + '#' + idx;
+                seen[r.uid] = true;
+            });
             return rows;
         }
 
@@ -5221,24 +5252,49 @@
             return true;
         }
 
-        function buildSelectedGeoJSON() {
+        function round6(n) { return Math.round(Number(n) * 1e6) / 1e6; }
+        function gcjPairToWgs(c) {
+            var w = gcj2wgs([c[1], c[0]]);
+            return [round6(w[1]), round6(w[0])];
+        }
+        function convertGeomCrs(geom, crs) {
+            var out = JSON.parse(JSON.stringify(geom));
+            if (crs !== 'WGS-84' || !out || !out.coordinates) return out;
+            if (out.type === 'Point') out.coordinates = gcjPairToWgs(out.coordinates);
+            else if (out.type === 'LineString') out.coordinates = out.coordinates.map(gcjPairToWgs);
+            else if (out.type === 'Polygon') out.coordinates = out.coordinates.map(function (ring) { return ring.map(gcjPairToWgs); });
+            return out;
+        }
+        function activeExpFields() {
+            var f = ATTR_COLS.filter(function (c) { return !!state.expFields[c.key]; }).map(function (c) { return c.key; });
+            return f.length ? f : ['name'];
+        }
+        function safeAttrExpName(raw, fallback) {
+            var s = String(raw || '').replace(/[\\/:*?"<>|]+/g, '_').replace(/\.(geojson|csv)$/i, '').trim();
+            return (s || fallback || '常德属性筛选导出').slice(0, 60);
+        }
+
+        function buildSelectedGeoJSON(opts) {
+            opts = opts || {};
+            var fields = Array.isArray(opts.fields) && opts.fields.length ? opts.fields : activeExpFields();
+            var crs = opts.crs === 'WGS-84' ? 'WGS-84' : 'GCJ-02';
             var feats = [];
+            var fieldSet = {};
+            fields.forEach(function (k) { fieldSet[k] = true; });
             state.currentRows.forEach(function (r) {
                 if (!state.selectedMap[r.uid] || !r.feat || !r.feat.geometry) return;
-                var origProps = r.feat.properties || {};
                 var props = {};
-                Object.keys(origProps).forEach(function (pk) { props[pk] = origProps[pk]; });
-                props.name = r.name;
-                props.category = r.category;
-                if (r.subtype && !props.type) props.type = r.subtype;
-                if (r.adname && r.adname !== '-' && !props.adname) props.adname = r.adname;
-                if (r.address && r.address !== '-' && !props.address) props.address = r.address;
-                if (r.remark && r.remark !== '-' && !props.remark) props.remark = r.remark;
-                props.source = r.source;
+                if (fieldSet.name) props.name = r.name;
+                if (fieldSet.category) props.category = r.category;
+                if (fieldSet.subtype) props.type = r.subtype || '';
+                if (fieldSet.adname) props.adname = r.adname === '-' ? '' : r.adname;
+                if (fieldSet.address) props.address = r.address === '-' ? '' : r.address;
+                if (fieldSet.remark) props.remark = r.remark === '-' ? '' : r.remark;
+                if (fieldSet.source) props.source = r.source;
                 feats.push({
                     type: 'Feature',
                     id: r.feat.id || r.uid,
-                    geometry: JSON.parse(JSON.stringify(r.feat.geometry)),
+                    geometry: convertGeomCrs(r.feat.geometry, crs),
                     properties: props
                 });
             });
@@ -5246,30 +5302,107 @@
                 type: 'FeatureCollection',
                 name: 'changde-attr-selected',
                 selected_from: state.source,
-                crs_note: '坐标为 GCJ-02（高德/腾讯系，非 WGS-84）；如需 WGS-84 请先做 GCJ-02→WGS-84 偏移纠偏',
+                crs: crs,
+                crs_note: crs === 'WGS-84'
+                    ? '坐标已由 GCJ-02 实时纠偏为 WGS-84，可直接叠加 QGIS / OSM'
+                    : '坐标为 GCJ-02（高德/腾讯系，非 WGS-84）；如需 WGS-84 请切换坐标系导出',
                 generated: new Date().toISOString(),
                 count: feats.length,
                 features: feats
             };
         }
 
-        function exportSelected() {
-            var payload = buildSelectedGeoJSON();
-            if (!payload.features.length) { toast('请先选中至少一条要素', true); return false; }
-            var fname = '常德属性筛选导出_' + payload.count + '条.geojson';
+        function csvCell(v) {
+            var s = String(v == null ? '' : v);
+            if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+            return s;
+        }
+        function buildSelectedCSV(opts) {
+            opts = opts || {};
+            var fields = Array.isArray(opts.fields) && opts.fields.length ? opts.fields : activeExpFields();
+            var crs = opts.crs === 'WGS-84' ? 'WGS-84' : 'GCJ-02';
+            var colMap = {};
+            ATTR_COLS.forEach(function (c) { colMap[c.key] = c.label; });
+            var lines = [fields.map(function (k) { return csvCell(colMap[k] || k); }).concat(['lng', 'lat']).join(',')];
+            state.currentRows.forEach(function (r) {
+                if (!state.selectedMap[r.uid] || !r.feat) return;
+                var pts = cfCoordList(r.feat);
+                var pt = pts[0] ? (crs === 'WGS-84' ? gcjPairToWgs(pts[0]) : [round6(pts[0][0]), round6(pts[0][1])]) : ['', ''];
+                var vals = fields.map(function (k) {
+                    var v = r[k];
+                    return csvCell(v === '-' ? '' : v);
+                }).concat([pt[0], pt[1]]);
+                lines.push(vals.join(','));
+            });
+            return '\uFEFF' + lines.join('\r\n');
+        }
+
+        function triggerBlobDownload(blob, filename) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+        }
+
+        function renderExpFields() {
+            if (!expFieldsBox) return;
+            var onCnt = activeExpFields().length;
+            expFieldsBox.innerHTML = ATTR_COLS.map(function (c) {
+                var chk = !!state.expFields[c.key];
+                var dis = chk && onCnt <= 1 ? ' disabled' : '';
+                return '<label><input type="checkbox" data-exp-col="' + c.key + '"' + (chk ? ' checked' : '') + dis + '>' + esc(c.label) + '</label>';
+            }).join('');
+        }
+        function updateExpSummary() {
+            if (!expSummaryEl) return;
+            var cnt = Object.keys(state.selectedMap).length;
+            var fmt = (expFmtEl && expFmtEl.value === 'csv') ? 'CSV' : 'GeoJSON';
+            var crs = (expCrsEl && expCrsEl.value === 'WGS-84') ? 'WGS-84' : 'GCJ-02';
+            expSummaryEl.textContent = '已选 ' + cnt + ' 条 · ' + fmt + ' · ' + crs;
+        }
+        function openExportPop() {
+            var cnt = Object.keys(state.selectedMap).length;
+            if (!cnt) { toast('请先选中至少一条要素', true); return false; }
+            if (colsPop) colsPop.hidden = true;
+            if (!expPop) {
+                var payload = buildSelectedGeoJSON();
+                var fname = safeAttrExpName('', '常德属性筛选导出_' + payload.count + '条') + '.geojson';
+                triggerBlobDownload(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), fname);
+                toast('已导出 ' + payload.count + ' 条选中要素');
+                return true;
+            }
+            var srcOpt = layerSel.options[layerSel.selectedIndex];
+            var srcText = (srcOpt ? srcOpt.textContent : '属性表').replace(/[（(].*?[）)]/g, '').trim() || '属性表';
+            if (expNameEl) expNameEl.value = '常德_' + srcText + '_' + cnt + '条';
+            renderExpFields();
+            updateExpSummary();
+            expPop.hidden = false;
+            if (expNameEl) { setTimeout(function () { try { expNameEl.focus(); expNameEl.select(); } catch (e) { } }, 20); }
+            return true;
+        }
+        function confirmExport() {
+            var cnt = Object.keys(state.selectedMap).length;
+            if (!cnt) { toast('请先选中至少一条要素', true); return false; }
+            var fmt = (expFmtEl && expFmtEl.value === 'csv') ? 'csv' : 'geojson';
+            var crs = (expCrsEl && expCrsEl.value === 'WGS-84') ? 'WGS-84' : 'GCJ-02';
+            var fields = activeExpFields();
+            var base = safeAttrExpName(expNameEl ? expNameEl.value : '', '常德属性筛选导出_' + cnt + '条');
+            var ext = fmt === 'csv' ? '.csv' : '.geojson';
+            var fname = base + ext;
             try {
-                if (typeof downloadGeoJSON === 'function') downloadGeoJSON(payload, fname);
-                else {
-                    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-                    var a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = fname;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+                if (fmt === 'csv') {
+                    var csvStr = buildSelectedCSV({ fields: fields, crs: crs });
+                    triggerBlobDownload(new Blob([csvStr], { type: 'text/csv;charset=utf-8' }), fname);
+                } else {
+                    var payload = buildSelectedGeoJSON({ fields: fields, crs: crs });
+                    if (typeof downloadGeoJSON === 'function') downloadGeoJSON(payload, fname);
+                    else triggerBlobDownload(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), fname);
                 }
-                toast('已导出 ' + payload.count + ' 条选中要素为 GeoJSON');
+                if (expPop) expPop.hidden = true;
+                toast('已导出 ' + cnt + ' 条（' + fmt.toUpperCase() + ' · ' + crs + '）：' + fname);
                 return true;
             } catch (e) {
                 toast('导出失败：' + (e && e.message ? e.message : e), true);
@@ -5284,21 +5417,25 @@
             }
             return null;
         }
-
-        function locateRow(uid) {
+        function indexOfUid(uid) {
+            for (var i = 0; i < state.viewRows.length; i++) {
+                if (state.viewRows[i].uid === uid) return i;
+            }
+            return -1;
+        }
+        function syncMountedRowStates() {
+            var rows = tbodyEl.children;
+            for (var i = 0; i < rows.length; i++) {
+                var tr = rows[i];
+                var u = tr.getAttribute('data-uid');
+                if (!u) continue;
+                tr.classList.toggle('sel', !!state.selectedMap[u]);
+                tr.classList.toggle('attr-focus', !!(state.focusUidVal && state.focusUidVal === u));
+            }
+        }
+        function locateFeatureForUid(uid) {
             var r = state.rowMap[uid];
             if (!r) return;
-            state.selectedMap[uid] = true;
-            state.focusUidVal = uid;
-            var mountedTr = !state.onlySelected ? findMountedTr(uid) : null;
-            if (mountedTr) {
-                Array.prototype.forEach.call(tbodyEl.querySelectorAll('tr.attr-focus'), function (el) { el.classList.remove('attr-focus'); });
-                mountedTr.classList.add('sel', 'attr-focus');
-                updateHeaderControls();
-                renderHighlight();
-            } else {
-                renderTable();
-            }
             if (r.origin === 'builtin') {
                 if (!layerState[r.layerKey].visible) {
                     layerState[r.layerKey].visible = true;
@@ -5318,13 +5455,83 @@
             }
         }
 
+        function locateRow(uid, ev) {
+            var r = state.rowMap[uid];
+            if (!r) return;
+            var idx = indexOfUid(uid);
+            var isShift = !!(ev && ev.shiftKey);
+            var isMod = !!(ev && (ev.ctrlKey || ev.metaKey));
+
+            if (isShift && idx >= 0) {
+                var from = state.anchorIdx >= 0 ? state.anchorIdx : idx;
+                state.anchorIdx = from;
+                if (!isMod) state.selectedMap = {};
+                var lo = Math.min(from, idx), hi = Math.max(from, idx);
+                for (var i = lo; i <= hi; i++) {
+                    if (state.viewRows[i]) state.selectedMap[state.viewRows[i].uid] = true;
+                }
+                state.focusIdx = idx;
+                state.focusUidVal = uid;
+                updateHeaderControls();
+                syncMountedRowStates();
+                renderHighlight();
+                return;
+            }
+            if (isMod) {
+                if (state.selectedMap[uid]) delete state.selectedMap[uid];
+                else state.selectedMap[uid] = true;
+                state.anchorIdx = idx;
+                state.focusIdx = idx;
+                state.focusUidVal = uid;
+                if (state.onlySelected && !state.selectedMap[uid]) {
+                    renderTable();
+                } else {
+                    updateHeaderControls();
+                    syncMountedRowStates();
+                    renderHighlight();
+                }
+                return;
+            }
+
+            if (!state.onlySelected) {
+                state.selectedMap = {};
+                state.selectedMap[uid] = true;
+            } else {
+                state.selectedMap[uid] = true;
+            }
+            state.anchorIdx = idx;
+            state.focusIdx = idx;
+            state.focusUidVal = uid;
+            var mountedTr = findMountedTr(uid);
+            if (mountedTr) {
+                syncMountedRowStates();
+                updateHeaderControls();
+                renderHighlight();
+            } else {
+                renderTable();
+            }
+            locateFeatureForUid(uid);
+        }
+
+        function selectAllView() {
+            if (!state.viewRows.length) return 0;
+            state.selectedMap = {};
+            state.viewRows.forEach(function (r) { state.selectedMap[r.uid] = true; });
+            state.anchorIdx = 0;
+            state.focusIdx = 0;
+            state.focusUidVal = state.viewRows[0].uid;
+            updateHeaderControls();
+            syncMountedRowStates();
+            renderHighlight();
+            toast('已全选当前列表 ' + state.viewRows.length + ' 条要素');
+            return state.viewRows.length;
+        }
+
         function focusUid(uid) {
             if (panel.hidden || state.minimized || !uid) return false;
-            var idx = -1;
-            for (var i = 0; i < state.viewRows.length; i++) {
-                if (state.viewRows[i].uid === uid) { idx = i; break; }
-            }
+            var idx = indexOfUid(uid);
             if (idx < 0) return false;
+            state.focusIdx = idx;
             state.focusUidVal = uid;
             if (tableWrap) {
                 var vh = tableWrap.clientHeight || state.height || 220;
@@ -5347,6 +5554,7 @@
             renderTable();
             renderConds();
             renderColsPop();
+            if (expPop) expPop.hidden = true;
             state.dirty = false;
             if (typeof closeDrawer === 'function') closeDrawer();
             setTimeout(function () { try { map.invalidateSize(); } catch (e) { } }, 180);
@@ -5355,6 +5563,7 @@
         function closePanel() {
             panel.hidden = true;
             if (colsPop) colsPop.hidden = true;
+            if (expPop) expPop.hidden = true;
             document.body.classList.remove('attr-open');
             document.body.style.removeProperty('--attr-h');
             setTimeout(function () { try { map.invalidateSize(); } catch (e) { } }, 180);
@@ -5430,7 +5639,34 @@
             });
         }
         if (zoomSelBtn) zoomSelBtn.addEventListener('click', zoomToSelected);
-        if (exportSelBtn) exportSelBtn.addEventListener('click', exportSelected);
+        if (exportSelBtn) exportSelBtn.addEventListener('click', function (e) { e.stopPropagation(); openExportPop(); });
+        if (expCloseBtn) expCloseBtn.addEventListener('click', function () { if (expPop) expPop.hidden = true; });
+        if (expCancelBtn) expCancelBtn.addEventListener('click', function () { if (expPop) expPop.hidden = true; });
+        if (expConfirmBtn) expConfirmBtn.addEventListener('click', confirmExport);
+        if (expFmtEl) expFmtEl.addEventListener('change', updateExpSummary);
+        if (expCrsEl) expCrsEl.addEventListener('change', updateExpSummary);
+        if (expNameEl) {
+            expNameEl.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); confirmExport(); }
+            });
+        }
+        if (expFieldsBox) {
+            expFieldsBox.addEventListener('change', function (e) {
+                var cb = e.target;
+                var key = cb && cb.getAttribute('data-exp-col');
+                if (!key) return;
+                if (!cb.checked && activeExpFields().length <= 1) { cb.checked = true; return; }
+                state.expFields[key] = cb.checked;
+                renderExpFields();
+            });
+        }
+        if (expPop) {
+            document.addEventListener('pointerdown', function (e) {
+                if (expPop.hidden) return;
+                if (expPop.contains(e.target) || (exportSelBtn && exportSelBtn.contains(e.target))) return;
+                expPop.hidden = true;
+            }, true);
+        }
         if (clearSelBtn) {
             clearSelBtn.addEventListener('click', function () {
                 state.selectedMap = {};
@@ -5559,11 +5795,55 @@
             renderTable();
         });
 
-        // 表格点击行联动地图（定位 + 散开聚合 + 弹详情卡）
+        // 表格点击行（普通单击 / Shift 连选 / Ctrl 或 ⌘ 多选）
         tbodyEl.addEventListener('click', function (e) {
             var tr = e.target.closest && e.target.closest('tr[data-uid]');
             if (!tr) return;
-            locateRow(tr.getAttribute('data-uid'));
+            locateRow(tr.getAttribute('data-uid'), e);
+        });
+
+        // 键盘方向键导航（↑/↓ 配合 Shift 扩选，Enter 定位开卡）
+        document.addEventListener('keydown', function (e) {
+            if (panel.hidden || state.minimized) return;
+            if (expPop && !expPop.hidden) return;
+            var t = e.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                if (!state.viewRows.length) return;
+                e.preventDefault();
+                var baseIdx = state.focusIdx >= 0 ? state.focusIdx : (state.focusUidVal ? indexOfUid(state.focusUidVal) : -1);
+                if (baseIdx < 0) baseIdx = (e.key === 'ArrowDown') ? -1 : 0;
+                var nextIdx = Math.max(0, Math.min(state.viewRows.length - 1, baseIdx + (e.key === 'ArrowDown' ? 1 : -1)));
+                var nextRow = state.viewRows[nextIdx];
+                if (!nextRow) return;
+                if (e.shiftKey) {
+                    var anchor = state.anchorIdx >= 0 ? state.anchorIdx : Math.max(0, baseIdx);
+                    state.anchorIdx = anchor;
+                    if (!(e.ctrlKey || e.metaKey)) state.selectedMap = {};
+                    var lo = Math.min(anchor, nextIdx), hi = Math.max(anchor, nextIdx);
+                    for (var i = lo; i <= hi; i++) {
+                        if (state.viewRows[i]) state.selectedMap[state.viewRows[i].uid] = true;
+                    }
+                } else if (!state.onlySelected) {
+                    state.selectedMap = {};
+                    state.selectedMap[nextRow.uid] = true;
+                    state.anchorIdx = nextIdx;
+                }
+                state.focusIdx = nextIdx;
+                state.focusUidVal = nextRow.uid;
+                if (tableWrap) {
+                    var rowTop = nextIdx * ROW_H;
+                    var st = tableWrap.scrollTop, vh = tableWrap.clientHeight || 200;
+                    if (rowTop < st) tableWrap.scrollTop = rowTop;
+                    else if (rowTop + ROW_H > st + vh) tableWrap.scrollTop = rowTop + ROW_H - vh;
+                }
+                updateHeaderControls();
+                renderVisibleRows(true);
+                renderHighlight();
+            } else if (e.key === 'Enter' && state.focusUidVal && state.rowMap[state.focusUidVal]) {
+                e.preventDefault();
+                locateFeatureForUid(state.focusUidVal);
+            }
         });
 
         // 挑战 1：顶部拖拽调整属性表高度（rAF 节流）
@@ -5613,8 +5893,11 @@
             syncLive: syncLive,
             syncTheme: syncTheme,
             focusUid: focusUid,
+            selectAllView: selectAllView,
+            openExportPop: openExportPop,
             zoomToSelected: zoomToSelected,
             buildSelectedGeoJSON: buildSelectedGeoJSON,
+            buildSelectedCSV: buildSelectedCSV,
             setSource: function (s) { state.source = s || 'public'; syncLive(); },
             query: function (conds) {
                 if (Array.isArray(conds) && conds.length) {
@@ -5625,7 +5908,7 @@
                 }
                 return runQuery(true);
             },
-            clearSel: function () { state.selectedMap = {}; state.onlySelected = false; state.focusUidVal = null; renderTable(); },
+            clearSel: function () { state.selectedMap = {}; state.onlySelected = false; state.focusUidVal = null; state.anchorIdx = -1; state.focusIdx = -1; renderTable(); },
             getState: function () {
                 return {
                     open: !panel.hidden,
