@@ -7,7 +7,7 @@
 | 作品 | 常德市城市公共服务 WebGIS 系统（WebGIS 开发课程作业） |
 | 作者 | 佘磊　学号 202412040132　班级 地信24101 |
 | 线上地址 | https://sl1122.github.io/changde-webgis/ |
-| 当前版本 | **v131**（代码基线 commit `ac7a1c3`；含 v130 玻璃稳定性与全局动效收敛 `db92e17` + v131 第 15 节属性表/按属性选择/四项挑战/12 钮悬浮球） |
+| 当前版本 | **v132**（代码基线 commit `29b57b3`；含 v130 玻璃稳定性 `db92e17` + v131 属性表/四项挑战 `ac7a1c3` + v132 衍生功能/虚拟滚动性能/全材质玻璃同步） |
 | 仓库 | https://github.com/sl1122/changde-webgis.git ，分支 `main`；本地 commit + push 即上线 GitHub Pages |
 | 课程笔记（语雀，需登录） | 总笔记（作业任务与历次迭代语境）：https://www.yuque.com/u55073446/hwc5ho/lr0ut03vgnvtp0rr?singleDoc ；第 13 节：https://www.yuque.com/u55073446/hwc5ho/qgfom6puvqnkv7yq?singleDoc ；第 14 节：https://www.yuque.com/u55073446/hwc5ho/twgenhbxmce7adek ；第 15 节：https://www.yuque.com/u55073446/hwc5ho/ivwgnov43ddqnklg |
 | 技术栈 | 原生 HTML/CSS/JS 三文件，无构建、无框架；地图引擎 Leaflet 1.9.4 + leaflet.markercluster 1.5.3（jsDelivr CDN）；字体自托管 `fonts/` |
