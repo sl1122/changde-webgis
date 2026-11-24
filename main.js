@@ -2787,6 +2787,13 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v133', t: '属性表四周贴边无缝衔接 + 根治鼠标滚轮无法向下滑动（阻断 Leaflet 拦截）',
+            pts: [
+                '根治属性表无法用鼠标滚轮向下滑动：`initPanelGuard` 接入 `L.DomEvent.disableScrollPropagation` 并阻断 `wheel` / `mousewheel` / `DOMMouseScroll` 事件向底图冒泡，避免 Leaflet 拦截 `preventDefault()` 并误缩放地图；`.attr-table-wrap` 巩固 `flex: 1 1 0%` 弹性滚动区高度',
+                '属性表四周无缝贴边衔接：桌面端左右底改为 `0` 贴紧左侧边栏右界与地图右侧/底边（玻璃与夜间保留顶部 14px 圆角、纸笺贴边 0 圆角 1px 墨线顶边）；移动端左右 `0` 贴边并与底部导航 `#mobile-nav` 紧邻衔接'
+            ]
+        },
+        {
             v: 'v132', t: '属性表衍生能力闭环 + 虚拟滚动与闭态零重绘 + 全材质/玻璃四维同步',
             pts: [
                 '衍生功能完善：属性表新增「定位选中」（自动 fitBounds 并避让底部抽屉）、「导出选中」（当前筛选结果导出为 GCJ-02 标准 GeoJSON）、查询值输入框智能候选（<datalist> 按当前字段频次推荐），以及地图点位与表格行反向滚动聚焦高亮',
@@ -3428,8 +3435,14 @@
         ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'records-panel', 'export-panel', 'attr-panel', 'cl-card', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
+            if (typeof L !== 'undefined' && L.DomEvent && L.DomEvent.disableScrollPropagation) {
+                L.DomEvent.disableScrollPropagation(el);
+            }
             ['mousedown', 'pointerdown', 'pointermove', 'pointerup', 'click', 'dblclick', 'touchstart', 'touchmove', 'touchend'].forEach(function (t) {
                 el.addEventListener(t, function (e) { e.stopPropagation(); }, false);
+            });
+            ['wheel', 'mousewheel', 'DOMMouseScroll'].forEach(function (t) {
+                el.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true });
             });
         });
         ['click', 'dblclick'].forEach(function (t) {

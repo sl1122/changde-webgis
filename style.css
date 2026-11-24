@@ -4068,22 +4068,22 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
 /* 地图底部属性表抽屉（响应玻璃四维滑杆 + 合成隔离；绝不对 backdrop-filter 加 transition） */
 #map .attr-panel {
     position: absolute;
-    left: 10px; right: 10px; bottom: 10px;
+    left: 0; right: 0; bottom: 0;
     height: var(--attr-h, 290px);
     min-height: 168px; max-height: 68vh;
     z-index: 1268;
     display: flex;
     flex-direction: column;
     contain: layout style;
-    border-radius: 16px;
+    border-radius: 14px 14px 0 0;
     background-color: rgba(255, 255, 255, calc(.56 + var(--glass-alpha) * .38));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    border: 1px solid rgba(255, 255, 255, calc(.62 * var(--glass-edge)));
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, calc(.68 * var(--glass-edge)));
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, calc(.82 * var(--glass-sheen) * var(--glass-edge))),
-        0 2px 6px rgba(15, 23, 42, .08),
-        0 12px 32px rgba(15, 23, 42, calc(.16 * var(--glass-shadow)));
+        0 -4px 20px rgba(15, 23, 42, calc(.12 * var(--glass-shadow)));
     color: var(--text);
     overflow: hidden;
     transition: opacity .16s ease, background-color .18s ease, border-color .18s ease;
@@ -4249,10 +4249,11 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
 
 /* 表格区 */
 .attr-table-wrap {
-    flex: 1 1 auto;
+    flex: 1 1 0%;
     min-height: 0;
     overflow: auto;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 .attr-table {
     width: 100%;
@@ -4297,9 +4298,9 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
 .attr-empty { padding: 24px 12px; text-align: center; font-size: 12.5px; color: var(--text-2); }
 
 /* 属性表打开时自动上抬底部控件，避免遮挡缩放钮/比例尺/选择条 */
-body.attr-open .zoom-ctrl { bottom: calc(var(--attr-h, 290px) + 18px); }
-body.attr-open #map .leaflet-bottom { bottom: calc(var(--attr-h, 290px) + 10px); }
-body.attr-open .cf-selbar { bottom: calc(var(--attr-h, 290px) + 18px); }
+body.attr-open .zoom-ctrl { bottom: calc(var(--attr-h, 290px) + 12px); }
+body.attr-open #map .leaflet-bottom { bottom: calc(var(--attr-h, 290px) + 4px); }
+body.attr-open .cf-selbar { bottom: calc(var(--attr-h, 290px) + 12px); }
 
 /* 夜间模式覆盖 */
 body.theme-night .layer-attr-public { background: rgba(30, 41, 82, .92); border-color: #334155; color: #c7d2fe; }
@@ -4310,9 +4311,11 @@ body.theme-night #map .attr-panel {
     background-color: #121a2e !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border-color: #26304d !important;
+    border: none !important;
+    border-top: 1px solid #26304d !important;
+    border-radius: 14px 14px 0 0 !important;
     color: #eef2ff;
-    box-shadow: 0 12px 32px rgba(2, 6, 23, .6) !important;
+    box-shadow: 0 -6px 24px rgba(2, 6, 23, .52) !important;
 }
 body.theme-night .attr-head { border-bottom-color: #26304d; }
 body.theme-night #attr-layer-sel,
@@ -4343,9 +4346,10 @@ body.theme-paper #map .attr-panel {
     background-color: var(--paper-1) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border: 1px solid var(--rule) !important;
-    border-radius: 3px !important;
-    box-shadow: 0 2px 3px rgba(42, 36, 29, .06), 0 12px 28px -18px rgba(42, 36, 29, .45) !important;
+    border: none !important;
+    border-top: 1px solid var(--rule) !important;
+    border-radius: 0 !important;
+    box-shadow: 0 -2px 12px rgba(42, 36, 29, .08) !important;
     color: var(--ink-0);
 }
 body.theme-paper .attr-title { font-family: var(--paper-serif); letter-spacing: .06em; color: var(--ink-0); }
@@ -4372,10 +4376,13 @@ body.theme-paper .attr-table tbody tr.attr-focus { box-shadow: inset 3px 0 0 var
 /* 手机端属性表适配（避让底部导航 #mobile-nav） */
 @media (max-width: 768px) {
     #map .attr-panel {
-        left: 6px; right: 6px;
-        bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+        left: 0; right: 0;
+        bottom: calc(64px + env(safe-area-inset-bottom, 0px));
         height: var(--attr-h, 52vh);
         max-height: 62vh;
+        border-radius: 14px 14px 0 0;
+        border-left: none;
+        border-right: none;
     }
     .attr-head { flex-wrap: wrap; gap: 6px; padding: 0 10px 6px; }
     .attr-title-wrap { flex: 1 1 100%; min-width: 0; gap: 6px; }
@@ -4388,7 +4395,7 @@ body.theme-paper .attr-table tbody tr.attr-focus { box-shadow: inset 3px 0 0 var
     .attr-cond-row { width: 100%; max-width: 100%; flex-wrap: nowrap; }
     .attr-cond-row input[type="text"] { flex: 1 1 auto; min-width: 64px; width: auto; }
     .attr-query-ops { width: 100%; justify-content: flex-end; }
-    body.attr-open .zoom-ctrl { bottom: calc(var(--attr-h, 52vh) + 74px + env(safe-area-inset-bottom, 0px)); }
+    body.attr-open .zoom-ctrl { bottom: calc(var(--attr-h, 52vh) + 72px + env(safe-area-inset-bottom, 0px)); }
     body.attr-open #map .leaflet-bottom { bottom: calc(var(--attr-h, 52vh) + 64px + env(safe-area-inset-bottom, 0px)); }
-    body.attr-open .cf-selbar { bottom: calc(var(--attr-h, 52vh) + 74px + env(safe-area-inset-bottom, 0px)); }
+    body.attr-open .cf-selbar { bottom: calc(var(--attr-h, 52vh) + 72px + env(safe-area-inset-bottom, 0px)); }
 }
