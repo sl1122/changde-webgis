@@ -168,6 +168,7 @@
         if (wasGcj !== gcjMode) {
             try { refreshAllLayers(); } catch (e) { }
             try { if (typeof renderCustom === 'function') renderCustom(); } catch (e) { }
+            try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
             if (geoLastBest && typeof geoLastBest.lat === 'number' && typeof geoLastBest.lng === 'number')
                 renderLoc(L.latLng(geoLastBest.lat, geoLastBest.lng), geoLastBest.acc, geoLastBest.src || '', 'gps', false);
             if (typeof pointsLayer !== 'undefined' && pointsLayer &&
@@ -703,6 +704,7 @@
             updateCounts();
             syncLegend();
             syncLayerActions();
+            try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         });
     }
     GEO_KEYS.forEach(bindLayerCheck);
@@ -720,10 +722,12 @@
             var chk = document.getElementById('chk-' + k); if (chk) chk.checked = on;
         });
         refreshAllLayers(); syncLegend();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
     }
     function setCfVisible(on) {
         cfAllPairKeys().forEach(function (k) { cfPairOn[k] = on; });
         renderCustom(); syncCfCats();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
     }
     // 刷新组头三态（全勾 / 横线半选 / 全不选）与全局按钮禁用态；无存在层时禁用
     function syncLayerActions() {
@@ -925,7 +929,7 @@
     function uiHit(ev) {
         var t = ev && ev.originalEvent && ev.originalEvent.target;
         if (!t || !t.closest) return false;
-        return !!t.closest('.settings-panel, .basemap-panel, .mark-panel, .legend-panel, .measure-result, .records-panel, .export-panel, .cl-card, .map-toast, .toolbar, .zoom-ctrl, .leaflet-popup');
+        return !!t.closest('.settings-panel, .basemap-panel, .mark-panel, .legend-panel, .measure-result, .records-panel, .export-panel, .attr-panel, .cl-card, .map-toast, .toolbar, .zoom-ctrl, .leaflet-popup');
     }
     map.on('click', function (e) {
         if (uiHit(e)) return; // v75：卡片/面板内点击不触发测量
@@ -1556,6 +1560,7 @@
             renderMarkList();
             refreshSearch();
             updateCounts();
+            try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
             var txt = JSON.stringify(feat, null, 2);
             document.getElementById('mark-export').value = txt;
             document.getElementById('mark-copy').hidden = false;
@@ -1826,7 +1831,7 @@
                     if (sg) seenSig[sg] = true;
                     // v116：类型不再限于内置 5 类——按数据自带的业务类型成层（笔记「图层由数据决定」）
                     // v119：先归一同义类型（高校→学校、卫生院→医院），再成层，图层列表不被同义类型撑散
-                    var rawKind = String(p.kind || p.KIND || p.type || p.类型 || '').trim().slice(0, 12);
+                    var rawKind = String(p.kind || p.KIND || p.category || p.type || p.类型 || '').trim().slice(0, 12);
                     var kind = normKind(rawKind);
                     customFeatures.push({
                         id: id,
@@ -1834,6 +1839,9 @@
                         properties: {
                             name: nm,
                             kind: kind,
+                            subtype: String(p.subtype || p.type || '').slice(0, 40),
+                            adname: String(p.adname || p.district || '').slice(0, 40),
+                            address: String(p.address || '').slice(0, 120),
                             remark: String(p.remark || p.note || '').slice(0, 120),
                             source: srcName
                         },
@@ -1846,6 +1854,7 @@
                 } catch (eOne) { bad++; }
             });
             saveCustom(); renderCustom(); syncCfCats(); updateCounts(); renderMarkList(); refreshSearch();
+            try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
             // v116：导入后自动把视野移到数据范围（padding 避开左侧栏），新增业务类型由 syncCfCats 自动生成图层行
             if (added > 0 && newPts.length) {
                 try {
@@ -2112,6 +2121,7 @@
             updateCounts();
             renderMarkList();
             refreshSearch();
+            try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
             toast('已清空全部自建要素');
         });
         renderMarkList();
@@ -2424,6 +2434,7 @@
         if (typeof renderCustom === 'function') renderCustom();
         if (typeof syncCfCats === 'function') syncCfCats();
         if (typeof window.__refreshGlassVars === 'function') window.__refreshGlassVars();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         rebuildPetals();
         saveTheme();
     }
@@ -2488,10 +2499,10 @@
             var m = document.getElementById(pair[0]), o = document.getElementById(pair[1]);
             if (m && o) m.addEventListener('click', function (e) { e.stopPropagation(); o.click(); });
         });
-    [['q-locate', 'btn-locate'], ['q-home', 'btn-home'], ['q-mark', 'btn-mark']]
+    [['q-locate', 'btn-locate'], ['q-home', 'btn-home'], ['q-mark', 'btn-mark'], ['q-attr', 'btn-attr-table'], ['q-records', 'btn-records']]
         .forEach(function (pair) {
             var m = document.getElementById(pair[0]), o = document.getElementById(pair[1]);
-            if (m && o) m.addEventListener('click', function (e) { e.stopPropagation(); o.click(); });
+            if (m && o) m.addEventListener('click', function (e) { e.stopPropagation(); closeDrawer(); o.click(); });
         });
     if (menuBtn) {
         // click 监听作为次级兜底；capture 兜底正常时会 stopPropagation，这里不会重复触发
@@ -2774,6 +2785,15 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v131', t: '第 15 节属性表与按属性选择 + 挑战 1-4 + 悬浮球 12 钮全对称布局',
+            pts: [
+                '属性表（课程第 15 节）：支持各内置图层、导入/自建图层（按文件/地类）以及「公共设施总表」（学校/医院/景点 + 自建点，初始 558 条）查看；表格点击行自动定位并散开聚合弹出详情卡',
+                '按属性选择（AND 多条件）：支持字段（名称/类型/细类/区域/地址/备注/来源）× 运算符（等于/包含/不等于）多条件与组合，中英文同义类型自动匹配（医院↔hospital 等）；选中记录在地图用独立高亮层实时圈显（聚合状态下同样可见），支持「仅显示选中」与「清除选择」',
+                '四项进阶挑战全部落地：① 顶部拖动手柄拖拽调整属性表高度（自动上抬底部控件并持久记忆）；② 标题栏一键折叠最小化；③ 点击任意表头升序/降序中文自然排序；④ 列显隐控制弹窗自由开关字段',
+                '实时联动与对称桌面交互：绘制、编辑、导入、删点、删层、显隐、底图纠偏及主题切换后属性表行与高亮自动重绘对齐；保留桌面悬浮球 + 手机底部导航布局，悬浮球收紧为 3 组 × 4 钮（12 钮零落单）全对称网格'
+            ]
+        },
         {
             v: 'v130', t: '根治玻璃点击/拖动透明度清晰度跳变 + 全局材质动效收敛 + 12 处功能逻辑自洽修复',
             pts: [
@@ -3396,7 +3416,7 @@
 
     // ---------------- 13.9 面板点击穿透拦截（玻璃弹层点击/触摸不触发地图 / 不误关悬浮球） ----------------
     (function initPanelGuard() {
-        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'records-panel', 'export-panel', 'cl-card', 'map-toast'].forEach(function (id) {
+        ['settings-panel', 'basemap-panel', 'mark-panel', 'legend-panel', 'records-panel', 'export-panel', 'attr-panel', 'cl-card', 'map-toast'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
             ['mousedown', 'pointerdown', 'pointermove', 'pointerup', 'click', 'dblclick', 'touchstart', 'touchmove', 'touchend'].forEach(function (t) {
@@ -3622,6 +3642,7 @@
         saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
         updateCfSelBar();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         if (blocked) toast('已删除 ' + (ids.length - blocked) + ' 个；' + blocked + ' 个被编辑权限锁定未删', true);
         else toast('已删除 ' + (ids.length - blocked) + ' 个要素');
     }
@@ -3667,6 +3688,13 @@
                 (markPanel && markPanel.classList.contains('open')) ||
                 (recP && !recP.hidden)) {
                 closeFloatingPanels();
+                return;
+            }
+            var colsPop = document.getElementById('attr-cols-pop');
+            if (colsPop && !colsPop.hidden) { colsPop.hidden = true; return; }
+            var attrP = document.getElementById('attr-panel');
+            if (attrP && !attrP.hidden) {
+                if (window.__attrTable && window.__attrTable.close) window.__attrTable.close();
                 return;
             }
             if (cfEditing) { stopCfEdit(); toast('已退出编辑（改动已保存）'); return; }
@@ -3815,6 +3843,7 @@
         // v114i 修：改名/改类型后左栏「我的自建要素」列表行仍是旧名称与旧类型（列表由 renderMarkList 生成，
         // 这里此前漏了刷新），补上后名称、类型徽标、节点数一并同步
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         openCfCard(f);
         toast('属性已保存：' + name + '（' + kind + '），图层 / 搜索 / 图例已同步');
     }
@@ -3838,6 +3867,7 @@
         refreshSearch();
         updateCfSelBar();
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         toast('已删除「' + f.properties.name + '」，搜索与图例同步移除');
     }
 
@@ -4048,22 +4078,42 @@
             if (row) row.style.display = goneLayers[k] ? 'none' : '';
         });
     }
+    var ATTR_ICON_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5zm2 2v3h14V7H5zm0 5v3h6v-3H5zm8 0v3h6v-3h-6zm-8 5v2h6v-2H5zm8 0v2h6v-2h-6z"/></svg>';
     function renderBuiltinDelBtns() {
         GEO_KEYS.forEach(function (k) {
             var row = document.querySelector('.layer-item[data-layer="' + k + '"]');
-            if (!row || row.querySelector('.layer-del')) return;
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'layer-del';
-            btn.title = '整层删除「' + LAYER_CONFIG[k].name + '」：移除该类型全部要素，刷新后不再加载';
-            btn.setAttribute('aria-label', '删除该图层');
-            btn.textContent = '×';
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                deleteBuiltinLayer(k);
-            });
-            row.appendChild(btn);
+            if (!row) return;
+            if (!row.querySelector('.layer-attr-btn')) {
+                var ab = document.createElement('button');
+                ab.type = 'button';
+                ab.className = 'layer-attr-btn';
+                ab.setAttribute('data-attr-layer', 'builtin:' + k);
+                ab.title = '打开「' + LAYER_CONFIG[k].name + '」属性表';
+                ab.setAttribute('aria-label', '打开属性表');
+                ab.innerHTML = ATTR_ICON_SVG;
+                ab.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window.__attrTable && window.__attrTable.open) window.__attrTable.open('builtin:' + k);
+                });
+                var delExisting = row.querySelector('.layer-del');
+                if (delExisting) row.insertBefore(ab, delExisting);
+                else row.appendChild(ab);
+            }
+            if (!row.querySelector('.layer-del')) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'layer-del';
+                btn.title = '整层删除「' + LAYER_CONFIG[k].name + '」：移除该类型全部要素，刷新后不再加载';
+                btn.setAttribute('aria-label', '删除该图层');
+                btn.textContent = '×';
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteBuiltinLayer(k);
+                });
+                row.appendChild(btn);
+            }
         });
     }
     function deleteBuiltinLayer(k) {
@@ -4090,6 +4140,7 @@
         try { syncLegend(); } catch (e) { }
         syncGoneOptions();
         if (typeof syncLayerActions === 'function') syncLayerActions();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         toast('已删除「' + nm + '」整层 ' + n + ' 个要素');
     }
     function renderRestoreBtn() {
@@ -4121,6 +4172,7 @@
         try { syncLegend(); } catch (e) { }
         syncGoneOptions();
         if (typeof syncLayerActions === 'function') syncLayerActions();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         toast('已恢复 ' + keys.length + ' 个图层');
     }
 
@@ -4170,6 +4222,7 @@
         updateCounts();
         refreshSearch();
         renderPoiRestoreBtn();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         if (!poiBatchDel) toast('已删除「' + nm + '」这一个点，图层与其它点保留');
     }
     function renderPoiRestoreBtn() {
@@ -4192,6 +4245,7 @@
         updateCounts();
         refreshSearch();
         renderPoiRestoreBtn();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         toast('已恢复 ' + n + ' 个被删点位');
     }
     // popup 里的「删除此点」走事件委托：按钮由 HTML 字符串生成，逐个绑定会随弹窗销毁丢失
@@ -4297,6 +4351,7 @@
         });
         saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         toast('已删除「' + k + '」共 ' + hit.length + ' 个要素');
     }
 
@@ -4339,6 +4394,7 @@
                 '<span class="cf-file-name" title="导入文件：' + esc(s) + '">' + esc(s) + '</span>' +
                 '<span class="cf-region" data-region="' + esc(reg) + '" title="按坐标判定的所属地区">' + esc(reg) + '</span>' +
                 '<span class="count">' + t.list.length + '</span>' +
+                '<button type="button" class="layer-attr-btn" data-cf-attr-src="' + esc(s) + '" title="打开「' + esc(s) + '」属性表" aria-label="打开属性表">' + ATTR_ICON_SVG + '</button>' +
                 '<button type="button" class="cf-layer-del" data-cf-del-src="' + esc(s) + '" title="删除图层「' + esc(s) + '」及其 ' + t.list.length + ' 个要素" aria-label="删除该图层">×</button>' +
                 '</label>' +
                 '<div class="cf-kind-subs">';
@@ -4354,6 +4410,7 @@
                     '<span class="layer-name" title="' + esc(s) + ' · ' + esc(k) + '">' + esc(k) + '</span>' +
                     regHtml +
                     '<span class="count">' + items.length + '</span>' +
+                    '<button type="button" class="layer-attr-btn" data-cf-attr-pair="' + esc(cfPairKey(s, k)) + '" title="打开「' + esc(s) + ' · ' + esc(k) + '」属性表" aria-label="打开属性表">' + ATTR_ICON_SVG + '</button>' +
                     '<button type="button" class="cf-layer-del" data-cf-del-pair="' + esc(cfPairKey(s, k)) + '" title="删除「' + esc(s) + '」下的「' + esc(k) + '」（' + items.length + ' 个）">×</button>' +
                     '</label>';
             });
@@ -4387,6 +4444,7 @@
         });
         saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         toast('已删除图层「' + src + '」共 ' + hit.length + ' 个要素');
     }
     // 删除某个文件下的单个地类（地类行 ×）
@@ -4403,6 +4461,7 @@
         try { delete cfPairOn[pair]; } catch (e) { }
         saveCustom(); renderCustom(); syncCfCats(); updateCounts(); refreshSearch();
         try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         toast('已删除「' + src + ' · ' + kind + '」共 ' + hit.length + ' 个要素');
     }
 
@@ -4448,17 +4507,22 @@
                         renderCustom(); syncCfCats();
                     } else return;
                     syncLayerActions();
+                    try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
                 });
-                // 删除钮：文件行删整层，地类行删该类；label 内点击会顺带勾选，必须拦掉
+                // 删除钮与属性表钮：label 内点击会顺带勾选，必须拦掉
                 box.addEventListener('click', function (e) {
-                    var t = e.target;
-                    if (!t || typeof t.getAttribute !== 'function') return;
-                    var delSrc = t.getAttribute('data-cf-del-src');
-                    var delPair = t.getAttribute('data-cf-del-pair');
-                    if (delSrc === null && delPair === null) return;
+                    var btn = e.target && e.target.closest ? e.target.closest('button') : e.target;
+                    if (!btn || typeof btn.getAttribute !== 'function') return;
+                    var attrSrc = btn.getAttribute('data-cf-attr-src');
+                    var attrPair = btn.getAttribute('data-cf-attr-pair');
+                    var delSrc = btn.getAttribute('data-cf-del-src');
+                    var delPair = btn.getAttribute('data-cf-del-pair');
+                    if (attrSrc === null && attrPair === null && delSrc === null && delPair === null) return;
                     e.preventDefault();
                     e.stopPropagation();
-                    if (delSrc !== null) deleteCfFile(delSrc);
+                    if (attrSrc !== null) { if (window.__attrTable && window.__attrTable.open) window.__attrTable.open('cf_src:' + attrSrc); }
+                    else if (attrPair !== null) { if (window.__attrTable && window.__attrTable.open) window.__attrTable.open('cf_pair:' + attrPair); }
+                    else if (delSrc !== null) deleteCfFile(delSrc);
                     else deleteCfPair(delPair);
                 });
                 // 文件树排在「内置图层」整组之后（含聚合开关），内置与导入两组不交叉
@@ -4583,6 +4647,688 @@
     renderCustom();
     try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
 
+    // ---------------- 13.11 v131：属性表与按属性选择（第 15 节 + 挑战 1-4） ----------------
+    (function initAttrTable() {
+        var panel = document.getElementById('attr-panel');
+        var resizer = document.getElementById('attr-resizer');
+        var layerSel = document.getElementById('attr-layer-sel');
+        var statsEl = document.getElementById('attr-stats');
+        var onlySelBtn = document.getElementById('attr-only-sel');
+        var clearSelBtn = document.getElementById('attr-clear-sel');
+        var colsBtn = document.getElementById('attr-cols-btn');
+        var colsPop = document.getElementById('attr-cols-pop');
+        var minBtn = document.getElementById('attr-min');
+        var closeBtn = document.getElementById('attr-close');
+        var condsBox = document.getElementById('attr-conds');
+        var addCondBtn = document.getElementById('attr-add-cond');
+        var runQueryBtn = document.getElementById('attr-run-query');
+        var resetQueryBtn = document.getElementById('attr-reset-query');
+        var theadEl = document.getElementById('attr-thead');
+        var tbodyEl = document.getElementById('attr-tbody');
+        var emptyEl = document.getElementById('attr-empty');
+        var btnFabAttr = document.getElementById('btn-attr-table');
+        var btnPublic = document.getElementById('btn-attr-public');
+        if (!panel || !layerSel || !theadEl || !tbodyEl) return;
+
+        var ATTR_COLS = [
+            { key: 'name', label: '名称' },
+            { key: 'category', label: '类型' },
+            { key: 'subtype', label: '细类' },
+            { key: 'adname', label: '区域' },
+            { key: 'address', label: '地址' },
+            { key: 'remark', label: '备注' },
+            { key: 'source', label: '来源' }
+        ];
+        var ATTR_OPS = [
+            { key: 'contains', label: '包含' },
+            { key: 'eq', label: '等于' },
+            { key: 'neq', label: '不等于' }
+        ];
+        var ATTR_ALIAS = {
+            school: ['school', '学校'],
+            hospital: ['hospital', '医院'],
+            scenic: ['scenic', '景点'],
+            road: ['road', '道路']
+        };
+        var COL_STORAGE_KEY = 'cd_attr_cols_v131';
+        var H_STORAGE_KEY = 'cd_attr_h_v131';
+
+        var savedCols = {};
+        ATTR_COLS.forEach(function (c) { savedCols[c.key] = true; });
+        try {
+            var rawCols = JSON.parse(localStorage.getItem(COL_STORAGE_KEY) || 'null');
+            if (rawCols && typeof rawCols === 'object') {
+                var anyOn = false;
+                ATTR_COLS.forEach(function (c) {
+                    if (typeof rawCols[c.key] === 'boolean') {
+                        savedCols[c.key] = rawCols[c.key];
+                        if (rawCols[c.key]) anyOn = true;
+                    }
+                });
+                if (!anyOn) savedCols.name = true;
+            }
+        } catch (e) { }
+
+        var savedH = 290;
+        try {
+            var nh = Number(localStorage.getItem(H_STORAGE_KEY));
+            if (isFinite(nh) && nh >= 168 && nh <= 620) savedH = nh;
+        } catch (e) { }
+
+        var attrHighlightLayer = L.layerGroup().addTo(map);
+        var state = {
+            source: 'public',
+            onlySelected: false,
+            minimized: false,
+            height: savedH,
+            sortCol: null,
+            sortDir: null, // 'asc' | 'desc' | null
+            visibleCols: savedCols,
+            selectedMap: {}, // uid -> true
+            conds: [{ field: 'category', op: 'eq', val: '' }],
+            currentRows: [],
+            rowMap: {}
+        };
+
+        function normCanon(s) {
+            var v = String(s || '').trim().toLowerCase();
+            if (!v) return '';
+            var keys = Object.keys(ATTR_ALIAS);
+            for (var i = 0; i < keys.length; i++) {
+                if (ATTR_ALIAS[keys[i]].indexOf(v) >= 0) return keys[i];
+            }
+            return v;
+        }
+        function matchToken(val, target, op) {
+            var a = String(val || '').trim().toLowerCase();
+            var b = String(target || '').trim().toLowerCase();
+            if (op === 'eq') {
+                if (a === b) return true;
+                var ca = normCanon(a), cb = normCanon(b);
+                return !!(ca && cb && ca === cb);
+            }
+            if (op === 'contains') {
+                if (!b) return true;
+                if (a.indexOf(b) >= 0) return true;
+                var cb2 = normCanon(b);
+                if (ATTR_ALIAS[cb2]) {
+                    return ATTR_ALIAS[cb2].some(function (tok) { return a.indexOf(tok) >= 0; });
+                }
+                return false;
+            }
+            if (op === 'neq') {
+                return !matchToken(val, target, 'eq');
+            }
+            return false;
+        }
+        function evalCond(row, cond) {
+            var q = String(cond.val || '').trim();
+            if (!q) return true;
+            var field = cond.field || 'name';
+            var op = cond.op || 'contains';
+            if (field === 'category') {
+                if (op === 'neq') {
+                    return matchToken(row.category, q, 'neq') && matchToken(row.categoryRaw, q, 'neq');
+                }
+                return matchToken(row.category, q, op) || matchToken(row.categoryRaw, q, op) || matchToken(row.subtype, q, op);
+            }
+            return matchToken(row[field], q, op);
+        }
+
+        function colorForRow(r) {
+            if (r.origin === 'builtin' && LAYER_CONFIG[r.layerKey]) return LAYER_CONFIG[r.layerKey].color;
+            return cfColor(r.category || '设施点');
+        }
+        function isRowVisible(r) {
+            if (r.origin === 'builtin') return !!(layerState[r.layerKey] && layerState[r.layerKey].visible);
+            return cfRowVisible(r.feat);
+        }
+        function makeBuiltinRow(k, f, idx) {
+            var p = f.properties || {};
+            var fid = k === 'road' ? ('road_' + idx + '_' + (p.name || '')) : String(poiFid(f));
+            var c = cfCoordList(f)[0];
+            var reg = p.adname || (c ? regionOfPoint(c) : '');
+            return {
+                uid: 'b:' + k + ':' + fid,
+                origin: 'builtin',
+                layerKey: k,
+                feat: f,
+                name: String(p.name || '(未命名)'),
+                category: (LAYER_CONFIG[k] && LAYER_CONFIG[k].name) || k,
+                categoryRaw: k,
+                subtype: String(p.type || (k === 'road' ? '主干道' : '')),
+                adname: String(reg || '-'),
+                address: String(p.address || (k === 'road' && p.len_km != null ? (p.len_km + ' 公里') : '-')),
+                remark: String(p.remark || '-'),
+                source: String(p.source || '内置数据'),
+                color: colorForRow({ origin: 'builtin', layerKey: k })
+            };
+        }
+        function makeCustomRow(f) {
+            var p = f.properties || {};
+            var kind = cfKindOf(f);
+            var c = cfCoordList(f)[0];
+            var reg = p.adname || (c ? regionOfPoint(c) : '');
+            return {
+                uid: 'c:' + String(f.id),
+                origin: 'custom',
+                layerKey: 'custom',
+                feat: f,
+                name: String(p.name || '(未命名)'),
+                category: kind,
+                categoryRaw: String(p.category || kind),
+                subtype: String(p.subtype || p.type || cfGeoLabel(f.geometry && f.geometry.type)),
+                adname: String(reg || '-'),
+                address: String(p.address || '-'),
+                remark: String(p.remark || '-'),
+                source: cfSource(f),
+                color: cfColor(kind)
+            };
+        }
+
+        function collectRows(source) {
+            var rows = [];
+            var alive = builtinAliveKeys();
+            if (source === 'public') {
+                ['school', 'hospital', 'scenic'].forEach(function (k) {
+                    if (alive.indexOf(k) < 0) return;
+                    (layerState[k].data || []).forEach(function (f, idx) { rows.push(makeBuiltinRow(k, f, idx)); });
+                });
+                customFeatures.forEach(function (f) {
+                    if (f && f.geometry && f.geometry.type === 'Point') rows.push(makeCustomRow(f));
+                });
+                return rows;
+            }
+            if (source.indexOf('builtin:') === 0) {
+                var bk = source.slice(8);
+                if (alive.indexOf(bk) >= 0) {
+                    (layerState[bk].data || []).forEach(function (f, idx) { rows.push(makeBuiltinRow(bk, f, idx)); });
+                }
+                return rows;
+            }
+            if (source === 'cf_all') {
+                customFeatures.forEach(function (f) { rows.push(makeCustomRow(f)); });
+                return rows;
+            }
+            if (source.indexOf('cf_src:') === 0) {
+                var src = source.slice(7);
+                customFeatures.forEach(function (f) {
+                    if (cfSource(f) === src) rows.push(makeCustomRow(f));
+                });
+                return rows;
+            }
+            if (source.indexOf('cf_pair:') === 0) {
+                var pair = source.slice(8);
+                customFeatures.forEach(function (f) {
+                    if (cfPairKey(f) === pair) rows.push(makeCustomRow(f));
+                });
+                return rows;
+            }
+            return rows;
+        }
+
+        function buildSourceOptions() {
+            var alive = builtinAliveKeys();
+            var opts = [{ val: 'public', label: '公共设施总表（点要素汇总）' }];
+            alive.forEach(function (k) {
+                var cnt = (layerState[k].data || []).length;
+                opts.push({ val: 'builtin:' + k, label: (LAYER_CONFIG[k] ? LAYER_CONFIG[k].name : k) + '（' + cnt + '）' });
+            });
+            if (customFeatures.length) {
+                opts.push({ val: 'cf_all', label: '我的图层 · 全部（' + customFeatures.length + '）' });
+                var bySrc = {}, srcOrder = [];
+                var byPair = {}, pairOrder = [];
+                customFeatures.forEach(function (f) {
+                    var s = cfSource(f), pk = cfPairKey(f), k = cfKindOf(f);
+                    if (!bySrc[s]) { bySrc[s] = 0; srcOrder.push(s); }
+                    bySrc[s]++;
+                    if (!byPair[pk]) { byPair[pk] = { s: s, k: k, n: 0 }; pairOrder.push(pk); }
+                    byPair[pk].n++;
+                });
+                srcOrder.forEach(function (s) {
+                    opts.push({ val: 'cf_src:' + s, label: '文件：' + s + '（' + bySrc[s] + '）' });
+                });
+                pairOrder.forEach(function (pk) {
+                    var info = byPair[pk];
+                    opts.push({ val: 'cf_pair:' + pk, label: info.s + ' · ' + info.k + '（' + info.n + '）' });
+                });
+            }
+            var hasCur = opts.some(function (o) { return o.val === state.source; });
+            if (!hasCur) state.source = 'public';
+            layerSel.innerHTML = opts.map(function (o) {
+                return '<option value="' + esc(o.val) + '"' + (o.val === state.source ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+            }).join('');
+        }
+
+        function renderHighlight() {
+            attrHighlightLayer.clearLayers();
+            var accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#8e2a52';
+            state.currentRows.forEach(function (r) {
+                if (!state.selectedMap[r.uid]) return;
+                if (!isRowVisible(r)) return;
+                var g = r.feat && r.feat.geometry;
+                if (!g || !g.coordinates) return;
+                if (g.type === 'Point') {
+                    var ll = toMapCoord(g.coordinates);
+                    if (!ll || !isFinite(ll[0]) || !isFinite(ll[1])) return;
+                    attrHighlightLayer.addLayer(L.circleMarker(ll, {
+                        radius: 13,
+                        color: '#ffffff',
+                        weight: 3,
+                        fillColor: accent,
+                        fillOpacity: 0.36,
+                        opacity: 0.96,
+                        interactive: false
+                    }));
+                } else if (g.type === 'LineString') {
+                    var pts = cfCoordList(r.feat).map(toMapCoord);
+                    if (pts.length >= 2) {
+                        attrHighlightLayer.addLayer(L.polyline(pts, {
+                            color: '#f59e0b',
+                            weight: 8,
+                            opacity: 0.9,
+                            interactive: false
+                        }));
+                    }
+                } else if (g.type === 'Polygon') {
+                    var poly = cfCoordList(r.feat).map(toMapCoord);
+                    if (poly.length >= 3) {
+                        attrHighlightLayer.addLayer(L.polygon(poly, {
+                            color: '#f59e0b',
+                            weight: 3.5,
+                            fillColor: accent,
+                            fillOpacity: 0.28,
+                            opacity: 0.95,
+                            interactive: false
+                        }));
+                    }
+                }
+            });
+        }
+
+        function activeCols() {
+            return ATTR_COLS.filter(function (c) { return !!state.visibleCols[c.key]; });
+        }
+
+        function renderColsPop() {
+            if (!colsPop) return;
+            var onCount = activeCols().length;
+            colsPop.innerHTML = ATTR_COLS.map(function (c) {
+                var chk = !!state.visibleCols[c.key];
+                var dis = chk && onCount <= 1 ? ' disabled' : '';
+                return '<label><input type="checkbox" data-attr-col="' + c.key + '"' + (chk ? ' checked' : '') + dis + '>' + esc(c.label) + '</label>';
+            }).join('');
+        }
+
+        function renderConds() {
+            if (!condsBox) return;
+            condsBox.innerHTML = state.conds.map(function (c, i) {
+                var fieldOpts = ATTR_COLS.map(function (col) {
+                    return '<option value="' + col.key + '"' + (col.key === c.field ? ' selected' : '') + '>' + esc(col.label) + '</option>';
+                }).join('');
+                var opOpts = ATTR_OPS.map(function (op) {
+                    return '<option value="' + op.key + '"' + (op.key === c.op ? ' selected' : '') + '>' + esc(op.label) + '</option>';
+                }).join('');
+                var andTag = i > 0 ? '<span class="attr-and-tag">AND</span>' : '';
+                var delBtn = state.conds.length > 1 ? '<button type="button" class="attr-cond-del" data-cond-del="' + i + '" title="删除条件">×</button>' : '';
+                return '<div class="attr-cond-row" data-cond-idx="' + i + '">' +
+                    andTag +
+                    '<select class="attr-cond-field">' + fieldOpts + '</select>' +
+                    '<select class="attr-cond-op">' + opOpts + '</select>' +
+                    '<input type="text" class="attr-cond-val" value="' + esc(c.val) + '" placeholder="输入关键字…">' +
+                    delBtn +
+                    '</div>';
+            }).join('');
+        }
+
+        function updateHeightVar() {
+            panel.style.setProperty('--attr-h', state.height + 'px');
+            if (!panel.hidden && document.body.classList.contains('attr-open')) {
+                document.body.style.setProperty('--attr-h', state.minimized ? '44px' : (state.height + 'px'));
+            }
+        }
+
+        function renderTable() {
+            var rows = collectRows(state.source);
+            var mapById = {};
+            rows.forEach(function (r) { mapById[r.uid] = r; });
+            state.currentRows = rows;
+            state.rowMap = mapById;
+            // 自动清掉已不属于当前数据源或已被删掉的选中记录
+            Object.keys(state.selectedMap).forEach(function (uid) {
+                if (!mapById[uid]) delete state.selectedMap[uid];
+            });
+
+            var shown = rows.slice();
+            if (state.onlySelected) {
+                shown = shown.filter(function (r) { return !!state.selectedMap[r.uid]; });
+            }
+            if (state.sortCol && state.sortDir) {
+                var sc = state.sortCol;
+                var dir = state.sortDir === 'desc' ? -1 : 1;
+                shown.sort(function (a, b) {
+                    return String(a[sc] || '').localeCompare(String(b[sc] || ''), 'zh-CN', { numeric: true }) * dir;
+                });
+            }
+
+            var cols = activeCols();
+            theadEl.innerHTML = '<tr>' + cols.map(function (c) {
+                var ind = state.sortCol === c.key ? (state.sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+                return '<th data-sort-col="' + c.key + '" title="点击按「' + esc(c.label) + '」排序">' +
+                    esc(c.label) + '<span class="attr-sort-ind">' + ind + '</span></th>';
+            }).join('') + '</tr>';
+
+            var selCount = Object.keys(state.selectedMap).length;
+            if (statsEl) {
+                statsEl.textContent = state.onlySelected
+                    ? ('已选 ' + selCount + ' / 共 ' + rows.length + ' 条')
+                    : ('共 ' + rows.length + ' 条' + (selCount ? (' · 已选 ' + selCount + ' 条') : ''));
+            }
+            if (onlySelBtn) onlySelBtn.classList.toggle('on', state.onlySelected);
+
+            if (!shown.length) {
+                tbodyEl.innerHTML = '';
+                if (emptyEl) {
+                    emptyEl.hidden = false;
+                    emptyEl.textContent = state.onlySelected ? '暂无选中记录（请先勾选条件点击「按属性选择」）' : '当前图层暂无要素记录';
+                }
+            } else {
+                if (emptyEl) emptyEl.hidden = true;
+                tbodyEl.innerHTML = shown.map(function (r) {
+                    var isSel = !!state.selectedMap[r.uid];
+                    var tds = cols.map(function (c) {
+                        var v = r[c.key] || '-';
+                        if (c.key === 'category') {
+                            return '<td><span class="attr-kind-pill"><span class="attr-kind-dot" style="background:' + esc(r.color) + '"></span>' + esc(v) + '</span></td>';
+                        }
+                        return '<td title="' + esc(v) + '">' + esc(v) + '</td>';
+                    }).join('');
+                    return '<tr data-uid="' + esc(r.uid) + '"' + (isSel ? ' class="sel"' : '') + '>' + tds + '</tr>';
+                }).join('');
+            }
+            renderHighlight();
+        }
+
+        function runQuery(silent) {
+            var activeConds = state.conds.filter(function (c) { return String(c.val || '').trim() !== ''; });
+            if (!activeConds.length) {
+                if (!silent) toast('请输入至少一个筛选条件值', true);
+                return 0;
+            }
+            var hits = 0;
+            state.selectedMap = {};
+            state.currentRows.forEach(function (r) {
+                var ok = activeConds.every(function (c) { return evalCond(r, c); });
+                if (ok) { state.selectedMap[r.uid] = true; hits++; }
+            });
+            renderTable();
+            if (!silent) toast(hits ? ('按属性选中 ' + hits + ' 条要素') : '没有满足组合条件的记录', !hits);
+            return hits;
+        }
+
+        function locateRow(uid) {
+            var r = state.rowMap[uid];
+            if (!r) return;
+            state.selectedMap[uid] = true;
+            renderTable();
+            if (r.origin === 'builtin') {
+                if (!layerState[r.layerKey].visible) {
+                    layerState[r.layerKey].visible = true;
+                    var chk = document.getElementById('chk-' + r.layerKey);
+                    if (chk) chk.checked = true;
+                    refreshLayer(r.layerKey);
+                    updateCounts();
+                    syncLegend();
+                    syncLayerActions();
+                    renderHighlight();
+                }
+                locateFeature(r.layerKey, r.feat);
+            } else {
+                selectCf(r.feat.id, true, false);
+            }
+        }
+
+        function openPanel(sourceKey) {
+            if (sourceKey) state.source = sourceKey;
+            buildSourceOptions();
+            state.minimized = false;
+            panel.classList.remove('minimized');
+            if (minBtn) { minBtn.textContent = '▾'; minBtn.title = '折叠 / 展开属性表'; }
+            panel.hidden = false;
+            document.body.classList.add('attr-open');
+            updateHeightVar();
+            renderConds();
+            renderColsPop();
+            renderTable();
+            if (typeof closeDrawer === 'function') closeDrawer();
+            setTimeout(function () { try { map.invalidateSize(); } catch (e) { } }, 180);
+        }
+
+        function closePanel() {
+            panel.hidden = true;
+            if (colsPop) colsPop.hidden = true;
+            document.body.classList.remove('attr-open');
+            document.body.style.removeProperty('--attr-h');
+            setTimeout(function () { try { map.invalidateSize(); } catch (e) { } }, 180);
+        }
+
+        function syncLive() {
+            buildSourceOptions();
+            renderTable();
+        }
+
+        // 事件绑定
+        if (btnFabAttr) {
+            btnFabAttr.addEventListener('click', function () {
+                if (!panel.hidden) closePanel();
+                else openPanel(state.source || 'public');
+            });
+        }
+        if (btnPublic) {
+            btnPublic.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openPanel('public');
+            });
+        }
+        layerSel.addEventListener('change', function () {
+            state.source = this.value || 'public';
+            state.selectedMap = {};
+            state.onlySelected = false;
+            renderTable();
+        });
+        if (onlySelBtn) {
+            onlySelBtn.addEventListener('click', function () {
+                state.onlySelected = !state.onlySelected;
+                renderTable();
+            });
+        }
+        if (clearSelBtn) {
+            clearSelBtn.addEventListener('click', function () {
+                state.selectedMap = {};
+                state.onlySelected = false;
+                renderTable();
+                toast('已清除属性表选中与地图高亮');
+            });
+        }
+        if (minBtn) {
+            minBtn.addEventListener('click', function () {
+                state.minimized = !state.minimized;
+                panel.classList.toggle('minimized', state.minimized);
+                minBtn.textContent = state.minimized ? '▴' : '▾';
+                if (colsPop) colsPop.hidden = true;
+                updateHeightVar();
+                setTimeout(function () { try { map.invalidateSize(); } catch (e) { } }, 180);
+            });
+        }
+        if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+        // 挑战 4：列显隐弹窗
+        if (colsBtn && colsPop) {
+            colsBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                renderColsPop();
+                colsPop.hidden = !colsPop.hidden;
+            });
+            colsPop.addEventListener('change', function (e) {
+                var cb = e.target;
+                var key = cb && cb.getAttribute('data-attr-col');
+                if (!key) return;
+                if (!cb.checked && activeCols().length <= 1) { cb.checked = true; return; }
+                state.visibleCols[key] = cb.checked;
+                try { localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(state.visibleCols)); } catch (err) { }
+                renderColsPop();
+                renderTable();
+            });
+            document.addEventListener('pointerdown', function (e) {
+                if (colsPop.hidden) return;
+                if (colsPop.contains(e.target) || colsBtn.contains(e.target)) return;
+                colsPop.hidden = true;
+            }, true);
+        }
+
+        // 查询条件区事件委托
+        if (condsBox) {
+            condsBox.addEventListener('change', function (e) {
+                var rowEl = e.target.closest && e.target.closest('.attr-cond-row');
+                if (!rowEl) return;
+                var idx = Number(rowEl.getAttribute('data-cond-idx'));
+                var c = state.conds[idx];
+                if (!c) return;
+                if (e.target.classList.contains('attr-cond-field')) c.field = e.target.value;
+                else if (e.target.classList.contains('attr-cond-op')) c.op = e.target.value;
+            });
+            condsBox.addEventListener('input', function (e) {
+                var rowEl = e.target.closest && e.target.closest('.attr-cond-row');
+                if (!rowEl) return;
+                var idx = Number(rowEl.getAttribute('data-cond-idx'));
+                if (state.conds[idx] && e.target.classList.contains('attr-cond-val')) {
+                    state.conds[idx].val = e.target.value;
+                }
+            });
+            condsBox.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.classList.contains('attr-cond-val')) {
+                    e.preventDefault();
+                    runQuery(false);
+                }
+            });
+            condsBox.addEventListener('click', function (e) {
+                var del = e.target.closest && e.target.closest('.attr-cond-del');
+                if (!del) return;
+                var idx = Number(del.getAttribute('data-cond-del'));
+                if (state.conds.length > 1) {
+                    state.conds.splice(idx, 1);
+                    renderConds();
+                }
+            });
+        }
+        if (addCondBtn) {
+            addCondBtn.addEventListener('click', function () {
+                if (state.conds.length >= 5) { toast('最多组合 5 个 AND 条件', true); return; }
+                state.conds.push({ field: 'name', op: 'contains', val: '' });
+                renderConds();
+            });
+        }
+        if (runQueryBtn) runQueryBtn.addEventListener('click', function () { runQuery(false); });
+        if (resetQueryBtn) {
+            resetQueryBtn.addEventListener('click', function () {
+                state.conds = [{ field: 'category', op: 'eq', val: '' }];
+                state.selectedMap = {};
+                state.onlySelected = false;
+                renderConds();
+                renderTable();
+            });
+        }
+
+        // 挑战 3：点击表头升/降序排序
+        theadEl.addEventListener('click', function (e) {
+            var th = e.target.closest && e.target.closest('th[data-sort-col]');
+            if (!th) return;
+            var col = th.getAttribute('data-sort-col');
+            if (state.sortCol !== col) {
+                state.sortCol = col;
+                state.sortDir = 'asc';
+            } else if (state.sortDir === 'asc') {
+                state.sortDir = 'desc';
+            } else {
+                state.sortCol = null;
+                state.sortDir = null;
+            }
+            renderTable();
+        });
+
+        // 表格点击行联动地图（定位 + 散开聚合 + 弹详情卡）
+        tbodyEl.addEventListener('click', function (e) {
+            var tr = e.target.closest && e.target.closest('tr[data-uid]');
+            if (!tr) return;
+            locateRow(tr.getAttribute('data-uid'));
+        });
+
+        // 挑战 1：顶部拖拽调整属性表高度
+        if (resizer) {
+            var dragH = null;
+            resizer.addEventListener('pointerdown', function (e) {
+                if (e.button !== 0 && e.pointerType === 'mouse') return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (state.minimized) {
+                    state.minimized = false;
+                    panel.classList.remove('minimized');
+                    if (minBtn) minBtn.textContent = '▾';
+                }
+                dragH = { startY: e.clientY, startH: panel.getBoundingClientRect().height || state.height };
+            });
+            document.addEventListener('pointermove', function (e) {
+                if (!dragH) return;
+                var maxH = Math.max(220, Math.round(window.innerHeight * 0.68));
+                var nextH = Math.round(Math.max(168, Math.min(maxH, dragH.startH + (dragH.startY - e.clientY))));
+                state.height = nextH;
+                updateHeightVar();
+            }, true);
+            function endDragH() {
+                if (!dragH) return;
+                dragH = null;
+                try { localStorage.setItem(H_STORAGE_KEY, String(state.height)); } catch (e) { }
+                try { map.invalidateSize(); } catch (e) { }
+            }
+            document.addEventListener('pointerup', endDragH, true);
+            document.addEventListener('pointercancel', endDragH, true);
+        }
+
+        window.__attrTable = {
+            open: openPanel,
+            close: closePanel,
+            syncLive: syncLive,
+            setSource: function (s) { state.source = s || 'public'; syncLive(); },
+            query: function (conds) {
+                if (Array.isArray(conds) && conds.length) {
+                    state.conds = conds.map(function (c) {
+                        return { field: c.field || 'name', op: c.op || 'contains', val: String(c.val || '') };
+                    });
+                    renderConds();
+                }
+                return runQuery(true);
+            },
+            clearSel: function () { state.selectedMap = {}; state.onlySelected = false; renderTable(); },
+            getState: function () {
+                return {
+                    open: !panel.hidden,
+                    minimized: state.minimized,
+                    source: state.source,
+                    height: state.height,
+                    sortCol: state.sortCol,
+                    sortDir: state.sortDir,
+                    visibleCols: activeCols().map(function (c) { return c.key; }),
+                    totalRows: state.currentRows.length,
+                    shownRows: tbodyEl.querySelectorAll('tr').length,
+                    selectedIds: Object.keys(state.selectedMap),
+                    highlightCount: attrHighlightLayer.getLayers().length,
+                    onlySelected: state.onlySelected
+                };
+            }
+        };
+    })();
+
     // ---------------- 14. 启动 ----------------
     loadGoneLayers();
     loadGonePois();
@@ -4613,6 +5359,7 @@
         buildSearchIndex();
         refreshAllLayers();
         if (typeof syncLayerActions === 'function') syncLayerActions();
+        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
         fitDataView();
         map.invalidateSize();
         console.log('常德市城市公共服务WebGIS系统（Leaflet + OpenStreetMap）初始化完成');
