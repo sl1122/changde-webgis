@@ -2787,6 +2787,13 @@
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
         {
+            v: 'v135', t: '悬浮球展开/收起过渡动画重构（纯 GPU 双阶段缩放淡入淡出 + 清除纸笺方补丁残影）',
+            pts: [
+                '根治收起瞬间「拉扁长胶囊」残影：移除 `.toolbar` 上导致每帧重排的 `width/height/border-radius` 过渡（此前 `height:auto` 0ms 坍缩为 56px 而 `width` 200ms 慢缩形成 224×56 扁香肠），改为按停靠边自适应 `transform-origin` 的纯 GPU `transform + opacity` 两阶段动画（展开 `fabPanelIn` 180ms；收起先完整淡出收回 130ms 再正圆球回弹归位 150ms），支持快速连点零卡死',
+                '根治纸笺主题折叠态「左方右圆」米白方补丁：锁定 `#fab:not(.fab-open) #fab-trigger` 在所有材质包下均保持纯透明无边框，不再被纸笺 `.toolbar button` 通用规则覆盖'
+            ]
+        },
+        {
             v: 'v134', t: '属性表自定义导出弹窗 + Shift / Ctrl / Ctrl+A / 方向键专业多选体系',
             pts: [
                 '「导出选中」升级为交互式自定义配置弹窗：支持自定义文件名（非法字符自动清洗）、导出格式切换（GeoJSON 含几何 / CSV UTF-8 BOM 表格）、坐标系转换（GCJ-02 原坐标 / WGS-84 实时纠偏适配 QGIS/OSM）以及按需勾选导出字段',
@@ -3101,15 +3108,26 @@
         var btns = Array.prototype.slice.call(fab.querySelectorAll('button'));
         var mapEl = document.getElementById('map');
         var isMobile = window.matchMedia && window.matchMedia('(max-width:768px)').matches;
-        var open = false, openedAt = 0;
+        var open = false, openedAt = 0, closeTimer = null, ballTimer = null;
         function layout(doOpen) {
             if (doOpen === open) return;
             open = doOpen;
             openedAt = Date.now();
-            fab.classList.toggle('fab-open', doOpen);
-            if (!doOpen) {
+            clearTimeout(closeTimer);
+            clearTimeout(ballTimer);
+            if (doOpen) {
+                fab.classList.remove('fab-closing', 'fab-ball-in');
+                fab.classList.add('fab-open');
+            } else {
+                // v135：两阶段优雅收起——先保持完整面板缩放淡出(130ms)，再切换正圆球回弹归位(150ms)，零压扁长胶囊残影
                 fab.classList.add('fab-closing');
-                setTimeout(function () { fab.classList.remove('fab-closing'); }, 220);
+                closeTimer = setTimeout(function () {
+                    fab.classList.remove('fab-open', 'fab-closing');
+                    fab.classList.add('fab-ball-in');
+                    ballTimer = setTimeout(function () {
+                        fab.classList.remove('fab-ball-in');
+                    }, 150);
+                }, 130);
             }
         }
         // —— 长按拖拽 + 智能吸附（quickLiquid 弹簧物理概念：拖拽结束果冻回弹吸附最近边缘） ——
@@ -3135,7 +3153,7 @@
         fab.addEventListener('pointerdown', function (e) {
             if (e.target.closest && e.target.closest('button')) return;
             // v80：展开态（双排功能栏）一律禁用拖拽——浏览功能时不误吸走；折叠态长按可拖、沿边吸附
-            if (fab.classList.contains('fab-open')) return;
+            if (fab.classList.contains('fab-open') || fab.classList.contains('fab-closing')) return;
             drag.on = true; drag.moved = false;
             drag.sx = e.clientX; drag.sy = e.clientY;
             var r = fab.getBoundingClientRect(), mr = mapEl.getBoundingClientRect();

@@ -554,8 +554,9 @@ body.theme-night .panel-close, body.theme-night .measure-close {
         inset 0 -1px 0 rgba(255, 255, 255, calc(.35 * var(--glass-sheen))),
         0 0 0 .5px rgba(255, 255, 255, .55);
     cursor: pointer;
-    transition: width .2s cubic-bezier(.22, .9, .3, 1), height .2s cubic-bezier(.22, .9, .3, 1),
-        border-radius .2s cubic-bezier(.22, .9, .3, 1), background-color .18s ease, box-shadow .18s ease,
+    /* v135：移除 width/height/border-radius 布局重排过渡（彻底消除 height:auto 坍缩 + width 拖尾导致的扁长胶囊残影），改纯 GPU transform/opacity 双阶段动画 */
+    transition: transform .18s cubic-bezier(.22, 1, .36, 1), opacity .16s ease,
+        background-color .18s ease, box-shadow .18s ease,
         top .22s cubic-bezier(.22, .9, .3, 1), left .22s cubic-bezier(.22, .9, .3, 1);
     user-select: none;
     -webkit-user-select: none;
@@ -2285,7 +2286,11 @@ body.theme-night .poi-node svg g[stroke="#fff"] { stroke: rgba(233, 238, 255, .9
    ③ 磨砂透光 backdrop blur 随 --glass-blur（滑杆动 → 球面透光/磨砂同步变）；
    ④ 双描边（内亮边 + 外细边）+ 内投影 + 外柔光，随 --glass-sheen/-shadow；
    颜色仅用材质包同色系（亮 accent → accent → 深 accent），白色只用于高光，杜绝纯黑/纯白生硬对比 */
-#fab { border-radius: 50%; }
+#fab { border-radius: 50%; transform-origin: top right; }
+#fab[data-anchor="right"] { transform-origin: top right; }
+#fab[data-anchor="left"] { transform-origin: top left; }
+#fab[data-anchor="top"] { transform-origin: top left; }
+#fab[data-anchor="bottom"] { transform-origin: bottom left; }
 #fab:not(.fab-open) {
     background:
         /* 层0：内部折射光路（顶部透光带，模拟液态玻璃对背景的折射位移，随 sheen） */
@@ -2333,6 +2338,30 @@ body.theme-night #fab:not(.fab-open) {
     align-items: center; justify-content: center; gap: 2px;
     border: none; background: transparent; color: var(--plum); cursor: pointer;
 }
+/* v135：锁定折叠态触发球为纯透明无边框，杜绝纸笺 .toolbar button 规则泄漏贴出米白直角方补丁 */
+#fab:not(.fab-open) #fab-trigger,
+body.theme-paper #fab:not(.fab-open) #fab-trigger,
+body.theme-night #fab:not(.fab-open) #fab-trigger {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+@keyframes fabPanelIn {
+    from { opacity: 0; transform: scale(.86) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes fabPanelOut {
+    from { opacity: 1; transform: scale(1) translateY(0); }
+    to   { opacity: 0; transform: scale(.88) translateY(-3px); }
+}
+@keyframes fabBallIn {
+    from { opacity: 0; transform: scale(.78); }
+    to   { opacity: 1; transform: scale(1); }
+}
+#fab.fab-open { animation: fabPanelIn .18s cubic-bezier(.22, 1, .36, 1) both; }
+#fab.fab-open.fab-closing { animation: fabPanelOut .13s cubic-bezier(.4, 0, 1, 1) both; pointer-events: none; }
+#fab:not(.fab-open).fab-ball-in { animation: fabBallIn .15s cubic-bezier(.22, 1, .36, 1) both; }
 #fab-trigger span { font-size: 9px; font-weight: 600; line-height: 1; }
 #fab-trigger svg { width: 16px; height: 16px; }
 
