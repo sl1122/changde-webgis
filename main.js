@@ -533,6 +533,7 @@
             if (add || poiSel.ids.length) { poiToggle(fid, key); return; }
             openPwCard(pointPopupHtml(key, p, fid), mk.getLatLng());
             highlightSearchRow(p.name);
+            try { if (window.__attrTable && window.__attrTable.focusUid) window.__attrTable.focusUid('b:' + key + ':' + fid); } catch (e) { }
         });
         return mk;
     }
@@ -2434,7 +2435,7 @@
         if (typeof renderCustom === 'function') renderCustom();
         if (typeof syncCfCats === 'function') syncCfCats();
         if (typeof window.__refreshGlassVars === 'function') window.__refreshGlassVars();
-        try { if (window.__attrTable && window.__attrTable.syncLive) window.__attrTable.syncLive(); } catch (e) { }
+        try { if (window.__attrTable && window.__attrTable.syncTheme) window.__attrTable.syncTheme(); } catch (e) { }
         rebuildPetals();
         saveTheme();
     }
@@ -2785,6 +2786,14 @@
 
     // ---------------- 13.5 更新日志（点击顶部版本号打开） ----------------
     var CHANGELOG = [
+        {
+            v: 'v132', t: '属性表衍生能力闭环 + 虚拟滚动与闭态零重绘 + 全材质/玻璃四维同步',
+            pts: [
+                '衍生功能完善：属性表新增「定位选中」（自动 fitBounds 并避让底部抽屉）、「导出选中」（当前筛选结果导出为 GCJ-02 标准 GeoJSON）、查询值输入框智能候选（<datalist> 按当前字段频次推荐），以及地图点位与表格行反向滚动聚焦高亮',
+                '性能衔接：引入 33px 固定行高轻量虚拟滚动窗口（千行以下滚动区恒定仅挂载可见切片行）；属性表关闭态切换材质或轮播实现零 DOM 重绘（仅记录 dirty 与选中清理）；开态切换材质原地更新圆点与高亮色不重建表格；行选态增量切换、高度拖拽走 rAF 节流',
+                '全材质与玻璃滑杆联动：彻底消除属性表残留硬编码梅红，改用 --accent / --accent-soft + color-mix() 同步桃花/桂花/绿叶/玫瑰四包；#attr-panel 接入玻璃透明度/模糊/高光/阴影四维变量，高对比夜间实底与纸笺直角宋体墨棕同步完善'
+            ]
+        },
         {
             v: 'v131', t: '第 15 节属性表与按属性选择 + 挑战 1-4 + 悬浮球 12 钮全对称布局',
             pts: [
@@ -3599,6 +3608,7 @@
         renderCustom();
         openCfCard(f);
         updateCfSelBar();
+        try { if (window.__attrTable && window.__attrTable.focusUid) window.__attrTable.focusUid('c:' + String(f.id)); } catch (e) { }
         if (zoom) {
             var lls = cfLatLngs(f);
             if (lls.length === 1) map.setView(lls[0], Math.max(map.getZoom(), 16));
@@ -4647,13 +4657,15 @@
     renderCustom();
     try { if (window.__renderMarkList) window.__renderMarkList(); } catch (e) { }
 
-    // ---------------- 13.11 v131：属性表与按属性选择（第 15 节 + 挑战 1-4） ----------------
+    // ---------------- 13.11 v131-v132：属性表与按属性选择（第 15 节 + 挑战 1-4 + 衍生/性能/材质同步） ----------------
     (function initAttrTable() {
         var panel = document.getElementById('attr-panel');
         var resizer = document.getElementById('attr-resizer');
         var layerSel = document.getElementById('attr-layer-sel');
         var statsEl = document.getElementById('attr-stats');
         var onlySelBtn = document.getElementById('attr-only-sel');
+        var zoomSelBtn = document.getElementById('attr-zoom-sel');
+        var exportSelBtn = document.getElementById('attr-export-sel');
         var clearSelBtn = document.getElementById('attr-clear-sel');
         var colsBtn = document.getElementById('attr-cols-btn');
         var colsPop = document.getElementById('attr-cols-pop');
@@ -4665,7 +4677,9 @@
         var resetQueryBtn = document.getElementById('attr-reset-query');
         var theadEl = document.getElementById('attr-thead');
         var tbodyEl = document.getElementById('attr-tbody');
+        var tableWrap = panel ? panel.querySelector('.attr-table-wrap') : null;
         var emptyEl = document.getElementById('attr-empty');
+        var valListEl = document.getElementById('attr-val-list');
         var btnFabAttr = document.getElementById('btn-attr-table');
         var btnPublic = document.getElementById('btn-attr-public');
         if (!panel || !layerSel || !theadEl || !tbodyEl) return;
@@ -4692,6 +4706,9 @@
         };
         var COL_STORAGE_KEY = 'cd_attr_cols_v131';
         var H_STORAGE_KEY = 'cd_attr_h_v131';
+        var ROW_H = 33;
+        var OVERSCAN = 8;
+        var VIRTUAL_THRESHOLD = 60;
 
         var savedCols = {};
         ATTR_COLS.forEach(function (c) { savedCols[c.key] = true; });
@@ -4722,12 +4739,17 @@
             minimized: false,
             height: savedH,
             sortCol: null,
-            sortDir: null, // 'asc' | 'desc' | null
+            sortDir: null,
             visibleCols: savedCols,
-            selectedMap: {}, // uid -> true
+            selectedMap: {},
             conds: [{ field: 'category', op: 'eq', val: '' }],
             currentRows: [],
-            rowMap: {}
+            viewRows: [],
+            rowMap: {},
+            dirty: true,
+            lastSliceKey: '',
+            focusUidVal: null,
+            scrollRaf: 0
         };
 
         function normCanon(s) {
@@ -4900,9 +4922,21 @@
             }).join('');
         }
 
+        function themeHighlightPalette() {
+            var cls = document.body.classList;
+            if (cls.contains('theme-paper')) {
+                return { stroke: '#faf7ef', fill: '#9a3412', line: '#9a3412', ptWeight: 2.5, fillOp: 0.42 };
+            }
+            if (cls.contains('theme-night')) {
+                return { stroke: '#e0e7ff', fill: '#6366f1', line: '#fbbf24', ptWeight: 3, fillOp: 0.45 };
+            }
+            var accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#8e2a52';
+            return { stroke: '#ffffff', fill: accent, line: accent, ptWeight: 3, fillOp: 0.38 };
+        }
+
         function renderHighlight() {
             attrHighlightLayer.clearLayers();
-            var accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#8e2a52';
+            var pal = themeHighlightPalette();
             state.currentRows.forEach(function (r) {
                 if (!state.selectedMap[r.uid]) return;
                 if (!isRowVisible(r)) return;
@@ -4913,10 +4947,10 @@
                     if (!ll || !isFinite(ll[0]) || !isFinite(ll[1])) return;
                     attrHighlightLayer.addLayer(L.circleMarker(ll, {
                         radius: 13,
-                        color: '#ffffff',
-                        weight: 3,
-                        fillColor: accent,
-                        fillOpacity: 0.36,
+                        color: pal.stroke,
+                        weight: pal.ptWeight,
+                        fillColor: pal.fill,
+                        fillOpacity: pal.fillOp,
                         opacity: 0.96,
                         interactive: false
                     }));
@@ -4924,7 +4958,7 @@
                     var pts = cfCoordList(r.feat).map(toMapCoord);
                     if (pts.length >= 2) {
                         attrHighlightLayer.addLayer(L.polyline(pts, {
-                            color: '#f59e0b',
+                            color: pal.line,
                             weight: 8,
                             opacity: 0.9,
                             interactive: false
@@ -4934,9 +4968,9 @@
                     var poly = cfCoordList(r.feat).map(toMapCoord);
                     if (poly.length >= 3) {
                         attrHighlightLayer.addLayer(L.polygon(poly, {
-                            color: '#f59e0b',
+                            color: pal.line,
                             weight: 3.5,
-                            fillColor: accent,
+                            fillColor: pal.fill,
                             fillOpacity: 0.28,
                             opacity: 0.95,
                             interactive: false
@@ -4960,6 +4994,21 @@
             }).join('');
         }
 
+        function updateValDatalist(fieldKey) {
+            if (!valListEl) return;
+            var key = fieldKey || 'category';
+            var counts = {};
+            state.currentRows.forEach(function (r) {
+                var v = String(r[key] || '').trim();
+                if (!v || v === '-') return;
+                counts[v] = (counts[v] || 0) + 1;
+            });
+            var vals = Object.keys(counts).sort(function (a, b) {
+                return (counts[b] - counts[a]) || a.localeCompare(b, 'zh-CN');
+            }).slice(0, 40);
+            valListEl.innerHTML = vals.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('');
+        }
+
         function renderConds() {
             if (!condsBox) return;
             condsBox.innerHTML = state.conds.map(function (c, i) {
@@ -4975,10 +5024,11 @@
                     andTag +
                     '<select class="attr-cond-field">' + fieldOpts + '</select>' +
                     '<select class="attr-cond-op">' + opOpts + '</select>' +
-                    '<input type="text" class="attr-cond-val" value="' + esc(c.val) + '" placeholder="输入关键字…">' +
+                    '<input type="text" class="attr-cond-val" list="attr-val-list" value="' + esc(c.val) + '" placeholder="输入关键字…">' +
                     delBtn +
                     '</div>';
             }).join('');
+            if (state.conds[0]) updateValDatalist(state.conds[0].field);
         }
 
         function updateHeightVar() {
@@ -4988,17 +5038,80 @@
             }
         }
 
-        function renderTable() {
+        function updateHeaderControls() {
+            var total = state.currentRows.length;
+            var selCount = Object.keys(state.selectedMap).length;
+            if (statsEl) {
+                statsEl.textContent = state.onlySelected
+                    ? ('已选 ' + selCount + ' / 共 ' + total + ' 条')
+                    : ('共 ' + total + ' 条' + (selCount ? (' · 已选 ' + selCount + ' 条') : ''));
+            }
+            if (onlySelBtn) onlySelBtn.classList.toggle('on', state.onlySelected);
+            if (zoomSelBtn) zoomSelBtn.disabled = !selCount;
+            if (exportSelBtn) exportSelBtn.disabled = !selCount;
+            if (clearSelBtn) clearSelBtn.disabled = !selCount && !state.onlySelected;
+        }
+
+        function syncCurrentData() {
             var rows = collectRows(state.source);
             var mapById = {};
             rows.forEach(function (r) { mapById[r.uid] = r; });
             state.currentRows = rows;
             state.rowMap = mapById;
-            // 自动清掉已不属于当前数据源或已被删掉的选中记录
             Object.keys(state.selectedMap).forEach(function (uid) {
                 if (!mapById[uid]) delete state.selectedMap[uid];
             });
+            return rows;
+        }
 
+        function renderRowHtml(r, cols) {
+            var isSel = !!state.selectedMap[r.uid];
+            var isFocus = state.focusUidVal && state.focusUidVal === r.uid;
+            var cls = (isSel ? 'sel' : '') + (isFocus ? (isSel ? ' attr-focus' : 'attr-focus') : '');
+            var tds = cols.map(function (c) {
+                var v = r[c.key] || '-';
+                if (c.key === 'category') {
+                    return '<td><span class="attr-kind-pill"><span class="attr-kind-dot" style="background:' + esc(r.color) + '"></span>' + esc(v) + '</span></td>';
+                }
+                return '<td title="' + esc(v) + '">' + esc(v) + '</td>';
+            }).join('');
+            return '<tr data-uid="' + esc(r.uid) + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + tds + '</tr>';
+        }
+
+        function renderVisibleRows(force) {
+            var total = state.viewRows.length;
+            var cols = activeCols();
+            if (!total) {
+                state.lastSliceKey = '';
+                tbodyEl.innerHTML = '';
+                if (emptyEl) {
+                    emptyEl.hidden = false;
+                    emptyEl.textContent = state.onlySelected ? '暂无选中记录（请先勾选条件点击「按属性选择」）' : '当前图层暂无要素记录';
+                }
+                return;
+            }
+            if (emptyEl) emptyEl.hidden = true;
+            var start = 0, end = total, topH = 0, botH = 0;
+            if (total > VIRTUAL_THRESHOLD) {
+                var st = tableWrap ? tableWrap.scrollTop : 0;
+                var vh = (tableWrap && tableWrap.clientHeight) || state.height || 220;
+                start = Math.max(0, Math.floor(st / ROW_H) - OVERSCAN);
+                end = Math.min(total, Math.ceil((st + vh) / ROW_H) + OVERSCAN);
+                topH = start * ROW_H;
+                botH = Math.max(0, (total - end) * ROW_H);
+            }
+            var sliceKey = start + ':' + end + ':' + total + ':' + cols.length + ':' + (state.onlySelected ? 1 : 0);
+            if (!force && sliceKey === state.lastSliceKey) return;
+            state.lastSliceKey = sliceKey;
+            var html = '';
+            if (topH > 0) html += '<tr class="attr-spacer"><td colspan="' + cols.length + '" style="height:' + topH + 'px"></td></tr>';
+            for (var i = start; i < end; i++) html += renderRowHtml(state.viewRows[i], cols);
+            if (botH > 0) html += '<tr class="attr-spacer"><td colspan="' + cols.length + '" style="height:' + botH + 'px"></td></tr>';
+            tbodyEl.innerHTML = html;
+        }
+
+        function renderTable() {
+            var rows = syncCurrentData();
             var shown = rows.slice();
             if (state.onlySelected) {
                 shown = shown.filter(function (r) { return !!state.selectedMap[r.uid]; });
@@ -5010,6 +5123,7 @@
                     return String(a[sc] || '').localeCompare(String(b[sc] || ''), 'zh-CN', { numeric: true }) * dir;
                 });
             }
+            state.viewRows = shown;
 
             var cols = activeCols();
             theadEl.innerHTML = '<tr>' + cols.map(function (c) {
@@ -5018,34 +5132,8 @@
                     esc(c.label) + '<span class="attr-sort-ind">' + ind + '</span></th>';
             }).join('') + '</tr>';
 
-            var selCount = Object.keys(state.selectedMap).length;
-            if (statsEl) {
-                statsEl.textContent = state.onlySelected
-                    ? ('已选 ' + selCount + ' / 共 ' + rows.length + ' 条')
-                    : ('共 ' + rows.length + ' 条' + (selCount ? (' · 已选 ' + selCount + ' 条') : ''));
-            }
-            if (onlySelBtn) onlySelBtn.classList.toggle('on', state.onlySelected);
-
-            if (!shown.length) {
-                tbodyEl.innerHTML = '';
-                if (emptyEl) {
-                    emptyEl.hidden = false;
-                    emptyEl.textContent = state.onlySelected ? '暂无选中记录（请先勾选条件点击「按属性选择」）' : '当前图层暂无要素记录';
-                }
-            } else {
-                if (emptyEl) emptyEl.hidden = true;
-                tbodyEl.innerHTML = shown.map(function (r) {
-                    var isSel = !!state.selectedMap[r.uid];
-                    var tds = cols.map(function (c) {
-                        var v = r[c.key] || '-';
-                        if (c.key === 'category') {
-                            return '<td><span class="attr-kind-pill"><span class="attr-kind-dot" style="background:' + esc(r.color) + '"></span>' + esc(v) + '</span></td>';
-                        }
-                        return '<td title="' + esc(v) + '">' + esc(v) + '</td>';
-                    }).join('');
-                    return '<tr data-uid="' + esc(r.uid) + '"' + (isSel ? ' class="sel"' : '') + '>' + tds + '</tr>';
-                }).join('');
-            }
+            updateHeaderControls();
+            renderVisibleRows(true);
             renderHighlight();
         }
 
@@ -5057,20 +5145,147 @@
             }
             var hits = 0;
             state.selectedMap = {};
+            state.focusUidVal = null;
             state.currentRows.forEach(function (r) {
                 var ok = activeConds.every(function (c) { return evalCond(r, c); });
                 if (ok) { state.selectedMap[r.uid] = true; hits++; }
             });
+            if (tableWrap) tableWrap.scrollTop = 0;
             renderTable();
             if (!silent) toast(hits ? ('按属性选中 ' + hits + ' 条要素') : '没有满足组合条件的记录', !hits);
             return hits;
+        }
+
+        function panelBottomPad() {
+            if (!panel.hidden && !state.minimized) {
+                return Math.round((panel.getBoundingClientRect().height || state.height) + 28);
+            }
+            return 48;
+        }
+
+        function panAboveDrawerIfNeeded(feat) {
+            if (panel.hidden || state.minimized || !feat || !feat.geometry) return;
+            if (feat.geometry.type !== 'Point') return;
+            var h = panel.getBoundingClientRect().height || state.height;
+            if (h <= 60) return;
+            try {
+                var ll = toMapCoord(feat.geometry.coordinates);
+                var pt = map.latLngToContainerPoint(ll);
+                var mapH = map.getSize().y;
+                if (pt.y > mapH - h - 48) {
+                    map.panBy([0, Math.round(h * 0.38)], { animate: false });
+                }
+            } catch (e) { }
+        }
+
+        function zoomToSelected() {
+            var selUids = Object.keys(state.selectedMap);
+            if (!selUids.length) { toast('请先选中至少一条要素', true); return false; }
+            var pts = [];
+            selUids.forEach(function (uid) {
+                var r = state.rowMap[uid];
+                if (!r || !r.feat) return;
+                cfCoordList(r.feat).forEach(function (c) {
+                    var ll = toMapCoord(c);
+                    if (ll && isFinite(ll[0]) && isFinite(ll[1])) pts.push(ll);
+                });
+            });
+            if (!pts.length) { toast('当前选中要素没有有效坐标', true); return false; }
+            if (pts.length === 1) {
+                map.setView(pts[0], Math.max(map.getZoom(), 16), { animate: false });
+                if (!panel.hidden && !state.minimized) {
+                    var h = panel.getBoundingClientRect().height || state.height;
+                    map.panBy([0, Math.round(h * 0.42)], { animate: false });
+                }
+            } else {
+                map.fitBounds(L.latLngBounds(pts), {
+                    paddingTopLeft: [40, 40],
+                    paddingBottomRight: [40, panelBottomPad()],
+                    maxZoom: 16,
+                    animate: false
+                });
+            }
+            return true;
+        }
+
+        function buildSelectedGeoJSON() {
+            var feats = [];
+            state.currentRows.forEach(function (r) {
+                if (!state.selectedMap[r.uid] || !r.feat || !r.feat.geometry) return;
+                var origProps = r.feat.properties || {};
+                var props = {};
+                Object.keys(origProps).forEach(function (pk) { props[pk] = origProps[pk]; });
+                props.name = r.name;
+                props.category = r.category;
+                if (r.subtype && !props.type) props.type = r.subtype;
+                if (r.adname && r.adname !== '-' && !props.adname) props.adname = r.adname;
+                if (r.address && r.address !== '-' && !props.address) props.address = r.address;
+                if (r.remark && r.remark !== '-' && !props.remark) props.remark = r.remark;
+                props.source = r.source;
+                feats.push({
+                    type: 'Feature',
+                    id: r.feat.id || r.uid,
+                    geometry: JSON.parse(JSON.stringify(r.feat.geometry)),
+                    properties: props
+                });
+            });
+            return {
+                type: 'FeatureCollection',
+                name: 'changde-attr-selected',
+                selected_from: state.source,
+                crs_note: '坐标为 GCJ-02（高德/腾讯系，非 WGS-84）；如需 WGS-84 请先做 GCJ-02→WGS-84 偏移纠偏',
+                generated: new Date().toISOString(),
+                count: feats.length,
+                features: feats
+            };
+        }
+
+        function exportSelected() {
+            var payload = buildSelectedGeoJSON();
+            if (!payload.features.length) { toast('请先选中至少一条要素', true); return false; }
+            var fname = '常德属性筛选导出_' + payload.count + '条.geojson';
+            try {
+                if (typeof downloadGeoJSON === 'function') downloadGeoJSON(payload, fname);
+                else {
+                    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = fname;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+                }
+                toast('已导出 ' + payload.count + ' 条选中要素为 GeoJSON');
+                return true;
+            } catch (e) {
+                toast('导出失败：' + (e && e.message ? e.message : e), true);
+                return false;
+            }
+        }
+
+        function findMountedTr(uid) {
+            var rows = tbodyEl.children;
+            for (var i = 0; i < rows.length; i++) {
+                if (rows[i].getAttribute('data-uid') === uid) return rows[i];
+            }
+            return null;
         }
 
         function locateRow(uid) {
             var r = state.rowMap[uid];
             if (!r) return;
             state.selectedMap[uid] = true;
-            renderTable();
+            state.focusUidVal = uid;
+            var mountedTr = !state.onlySelected ? findMountedTr(uid) : null;
+            if (mountedTr) {
+                Array.prototype.forEach.call(tbodyEl.querySelectorAll('tr.attr-focus'), function (el) { el.classList.remove('attr-focus'); });
+                mountedTr.classList.add('sel', 'attr-focus');
+                updateHeaderControls();
+                renderHighlight();
+            } else {
+                renderTable();
+            }
             if (r.origin === 'builtin') {
                 if (!layerState[r.layerKey].visible) {
                     layerState[r.layerKey].visible = true;
@@ -5082,10 +5297,28 @@
                     syncLayerActions();
                     renderHighlight();
                 }
+                map.once('popupopen', function () { panAboveDrawerIfNeeded(r.feat); });
                 locateFeature(r.layerKey, r.feat);
             } else {
                 selectCf(r.feat.id, true, false);
+                panAboveDrawerIfNeeded(r.feat);
             }
+        }
+
+        function focusUid(uid) {
+            if (panel.hidden || state.minimized || !uid) return false;
+            var idx = -1;
+            for (var i = 0; i < state.viewRows.length; i++) {
+                if (state.viewRows[i].uid === uid) { idx = i; break; }
+            }
+            if (idx < 0) return false;
+            state.focusUidVal = uid;
+            if (tableWrap) {
+                var vh = tableWrap.clientHeight || state.height || 220;
+                tableWrap.scrollTop = Math.max(0, Math.round(idx * ROW_H - vh / 2 + ROW_H / 2));
+            }
+            renderVisibleRows(true);
+            return true;
         }
 
         function openPanel(sourceKey) {
@@ -5097,9 +5330,11 @@
             panel.hidden = false;
             document.body.classList.add('attr-open');
             updateHeightVar();
+            if (tableWrap) tableWrap.scrollTop = 0;
+            renderTable();
             renderConds();
             renderColsPop();
-            renderTable();
+            state.dirty = false;
             if (typeof closeDrawer === 'function') closeDrawer();
             setTimeout(function () { try { map.invalidateSize(); } catch (e) { } }, 180);
         }
@@ -5114,10 +5349,44 @@
 
         function syncLive() {
             buildSourceOptions();
+            if (panel.hidden) {
+                state.dirty = true;
+                if (Object.keys(state.selectedMap).length > 0) {
+                    syncCurrentData();
+                    renderHighlight();
+                }
+                return;
+            }
             renderTable();
+            state.dirty = false;
+        }
+
+        function syncTheme() {
+            state.currentRows.forEach(function (r) { r.color = colorForRow(r); });
+            if (!panel.hidden) {
+                var children = tbodyEl.children;
+                for (var i = 0; i < children.length; i++) {
+                    var tr = children[i];
+                    var uid = tr.getAttribute('data-uid');
+                    if (!uid || !state.rowMap[uid]) continue;
+                    var dot = tr.querySelector('.attr-kind-dot');
+                    if (dot) dot.style.backgroundColor = state.rowMap[uid].color;
+                }
+            }
+            if (Object.keys(state.selectedMap).length > 0) renderHighlight();
         }
 
         // 事件绑定
+        if (tableWrap) {
+            tableWrap.addEventListener('scroll', function () {
+                if (state.viewRows.length <= VIRTUAL_THRESHOLD) return;
+                if (state.scrollRaf) return;
+                state.scrollRaf = requestAnimationFrame(function () {
+                    state.scrollRaf = 0;
+                    renderVisibleRows(false);
+                });
+            }, { passive: true });
+        }
         if (btnFabAttr) {
             btnFabAttr.addEventListener('click', function () {
                 if (!panel.hidden) closePanel();
@@ -5135,18 +5404,26 @@
             state.source = this.value || 'public';
             state.selectedMap = {};
             state.onlySelected = false;
+            state.focusUidVal = null;
+            if (tableWrap) tableWrap.scrollTop = 0;
             renderTable();
+            if (state.conds[0]) updateValDatalist(state.conds[0].field);
         });
         if (onlySelBtn) {
             onlySelBtn.addEventListener('click', function () {
                 state.onlySelected = !state.onlySelected;
+                if (tableWrap) tableWrap.scrollTop = 0;
                 renderTable();
             });
         }
+        if (zoomSelBtn) zoomSelBtn.addEventListener('click', zoomToSelected);
+        if (exportSelBtn) exportSelBtn.addEventListener('click', exportSelected);
         if (clearSelBtn) {
             clearSelBtn.addEventListener('click', function () {
                 state.selectedMap = {};
                 state.onlySelected = false;
+                state.focusUidVal = null;
+                if (tableWrap) tableWrap.scrollTop = 0;
                 renderTable();
                 toast('已清除属性表选中与地图高亮');
             });
@@ -5189,14 +5466,24 @@
 
         // 查询条件区事件委托
         if (condsBox) {
+            condsBox.addEventListener('focusin', function (e) {
+                var rowEl = e.target.closest && e.target.closest('.attr-cond-row');
+                if (!rowEl) return;
+                var idx = Number(rowEl.getAttribute('data-cond-idx'));
+                if (state.conds[idx]) updateValDatalist(state.conds[idx].field);
+            });
             condsBox.addEventListener('change', function (e) {
                 var rowEl = e.target.closest && e.target.closest('.attr-cond-row');
                 if (!rowEl) return;
                 var idx = Number(rowEl.getAttribute('data-cond-idx'));
                 var c = state.conds[idx];
                 if (!c) return;
-                if (e.target.classList.contains('attr-cond-field')) c.field = e.target.value;
-                else if (e.target.classList.contains('attr-cond-op')) c.op = e.target.value;
+                if (e.target.classList.contains('attr-cond-field')) {
+                    c.field = e.target.value;
+                    updateValDatalist(c.field);
+                } else if (e.target.classList.contains('attr-cond-op')) {
+                    c.op = e.target.value;
+                }
             });
             condsBox.addEventListener('input', function (e) {
                 var rowEl = e.target.closest && e.target.closest('.attr-cond-row');
@@ -5235,6 +5522,8 @@
                 state.conds = [{ field: 'category', op: 'eq', val: '' }];
                 state.selectedMap = {};
                 state.onlySelected = false;
+                state.focusUidVal = null;
+                if (tableWrap) tableWrap.scrollTop = 0;
                 renderConds();
                 renderTable();
             });
@@ -5264,9 +5553,9 @@
             locateRow(tr.getAttribute('data-uid'));
         });
 
-        // 挑战 1：顶部拖拽调整属性表高度
+        // 挑战 1：顶部拖拽调整属性表高度（rAF 节流）
         if (resizer) {
-            var dragH = null;
+            var dragH = null, dragRaf = 0, pendingH = null;
             resizer.addEventListener('pointerdown', function (e) {
                 if (e.button !== 0 && e.pointerType === 'mouse') return;
                 e.preventDefault();
@@ -5281,14 +5570,24 @@
             document.addEventListener('pointermove', function (e) {
                 if (!dragH) return;
                 var maxH = Math.max(220, Math.round(window.innerHeight * 0.68));
-                var nextH = Math.round(Math.max(168, Math.min(maxH, dragH.startH + (dragH.startY - e.clientY))));
-                state.height = nextH;
-                updateHeightVar();
+                pendingH = Math.round(Math.max(168, Math.min(maxH, dragH.startH + (dragH.startY - e.clientY))));
+                if (!dragRaf) {
+                    dragRaf = requestAnimationFrame(function () {
+                        dragRaf = 0;
+                        if (pendingH !== null) {
+                            state.height = pendingH;
+                            updateHeightVar();
+                        }
+                    });
+                }
             }, true);
             function endDragH() {
                 if (!dragH) return;
                 dragH = null;
+                if (dragRaf) { cancelAnimationFrame(dragRaf); dragRaf = 0; }
+                if (pendingH !== null) { state.height = pendingH; pendingH = null; updateHeightVar(); }
                 try { localStorage.setItem(H_STORAGE_KEY, String(state.height)); } catch (e) { }
+                renderVisibleRows(true);
                 try { map.invalidateSize(); } catch (e) { }
             }
             document.addEventListener('pointerup', endDragH, true);
@@ -5299,6 +5598,10 @@
             open: openPanel,
             close: closePanel,
             syncLive: syncLive,
+            syncTheme: syncTheme,
+            focusUid: focusUid,
+            zoomToSelected: zoomToSelected,
+            buildSelectedGeoJSON: buildSelectedGeoJSON,
             setSource: function (s) { state.source = s || 'public'; syncLive(); },
             query: function (conds) {
                 if (Array.isArray(conds) && conds.length) {
@@ -5309,7 +5612,7 @@
                 }
                 return runQuery(true);
             },
-            clearSel: function () { state.selectedMap = {}; state.onlySelected = false; renderTable(); },
+            clearSel: function () { state.selectedMap = {}; state.onlySelected = false; state.focusUidVal = null; renderTable(); },
             getState: function () {
                 return {
                     open: !panel.hidden,
@@ -5320,10 +5623,13 @@
                     sortDir: state.sortDir,
                     visibleCols: activeCols().map(function (c) { return c.key; }),
                     totalRows: state.currentRows.length,
-                    shownRows: tbodyEl.querySelectorAll('tr').length,
+                    filteredRows: state.viewRows.length,
+                    shownRows: state.viewRows.length,
+                    renderedDomRows: tbodyEl.querySelectorAll('tr:not(.attr-spacer)').length,
                     selectedIds: Object.keys(state.selectedMap),
                     highlightCount: attrHighlightLayer.getLayers().length,
-                    onlySelected: state.onlySelected
+                    onlySelected: state.onlySelected,
+                    dirty: state.dirty
                 };
             }
         };

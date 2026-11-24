@@ -4029,18 +4029,18 @@ body.theme-night .exp-filename-row input[type="text"] { background: rgba(15, 22,
 body.theme-paper .exp-file-subs { border-left-color: rgba(42, 36, 29, .18); }
 body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 255, 255, .5); border-color: rgba(42, 36, 29, .28); border-radius: 2px; }
 
-/* ================= v131：属性表与按属性选择面板（第 15 节 + 挑战 1-4） ================= */
+/* ================= v131-v132：属性表与按属性选择面板（第 15 节 + 挑战 1-4 + 全材质/玻璃同步） ================= */
 .layer-attr-public {
     margin-left: auto;
     padding: 1px 8px;
     font-size: 10.5px;
     font-weight: 600;
     border-radius: 999px;
-    border: 1px solid rgba(142, 42, 82, .24);
-    background: rgba(255, 255, 255, .75);
+    border: 1px solid color-mix(in srgb, var(--accent, var(--plum)) 28%, transparent);
+    background: color-mix(in srgb, var(--accent-soft, #fdf2f6) 55%, rgba(255, 255, 255, .86));
     color: var(--accent, var(--plum));
     cursor: pointer;
-    transition: background-color .15s ease, border-color .15s ease;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 .layer-attr-public:hover { background: var(--accent-soft, #fdf2f6); border-color: var(--accent, var(--plum)); }
 .layer-attr-btn {
@@ -4062,10 +4062,10 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
     opacity: 1;
     color: var(--accent, var(--plum));
     background: var(--accent-soft, #fdf2f6);
-    border-color: rgba(142, 42, 82, .22);
+    border-color: color-mix(in srgb, var(--accent, var(--plum)) 28%, transparent);
 }
 
-/* 地图底部属性表抽屉 */
+/* 地图底部属性表抽屉（响应玻璃四维滑杆 + 合成隔离；绝不对 backdrop-filter 加 transition） */
 #map .attr-panel {
     position: absolute;
     left: 10px; right: 10px; bottom: 10px;
@@ -4074,8 +4074,9 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
     z-index: 1268;
     display: flex;
     flex-direction: column;
+    contain: layout style;
     border-radius: 16px;
-    background-color: rgba(255, 255, 255, calc(max(var(--glass-alpha), .86)));
+    background-color: rgba(255, 255, 255, calc(.56 + var(--glass-alpha) * .38));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border: 1px solid rgba(255, 255, 255, calc(.62 * var(--glass-edge)));
@@ -4085,7 +4086,7 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
         0 12px 32px rgba(15, 23, 42, calc(.16 * var(--glass-shadow)));
     color: var(--text);
     overflow: hidden;
-    transition: opacity .16s ease, background-color .18s ease;
+    transition: opacity .16s ease, background-color .18s ease, border-color .18s ease;
 }
 #map .attr-panel[hidden] { display: none !important; }
 #map .attr-panel.minimized {
@@ -4157,6 +4158,7 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
     transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 .attr-chip:hover { background: rgba(255, 255, 255, .96); border-color: var(--accent, var(--plum)); }
+.attr-chip:disabled { opacity: .42; cursor: default; pointer-events: none; }
 .attr-chip.on {
     background: var(--accent-soft, #fdf2f6);
     border-color: var(--accent, var(--plum));
@@ -4206,7 +4208,7 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
     display: flex; align-items: center; justify-content: space-between;
     gap: 8px; flex-wrap: wrap;
     padding: 7px 12px;
-    background: rgba(248, 250, 252, .52);
+    background: color-mix(in srgb, var(--accent-soft, #f8fafc) 38%, rgba(255, 255, 255, .62));
     border-bottom: 1px solid rgba(148, 163, 184, .2);
 }
 .attr-conds { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
@@ -4260,7 +4262,7 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
 }
 .attr-table thead th {
     position: sticky; top: 0; z-index: 2;
-    background: rgba(248, 250, 252, .94);
+    background: color-mix(in srgb, var(--accent-soft, #f8fafc) 32%, rgba(255, 255, 255, .94));
     border-bottom: 1px solid rgba(148, 163, 184, .28);
     padding: 7px 10px;
     font-size: 12px; font-weight: 600; color: var(--text);
@@ -4271,12 +4273,16 @@ body.theme-paper .exp-filename-row input[type="text"] { background: rgba(255, 25
 .attr-table thead th:hover { color: var(--accent, var(--plum)); }
 .attr-table thead th .attr-sort-ind { margin-left: 4px; font-size: 10px; opacity: .7; }
 .attr-table tbody tr {
+    height: 33px;
     border-bottom: 1px solid rgba(148, 163, 184, .14);
     cursor: pointer;
     transition: background-color .12s ease;
 }
-.attr-table tbody tr:hover { background: rgba(142, 42, 82, .06); }
-.attr-table tbody tr.sel { background: rgba(142, 42, 82, .13); }
+.attr-table tbody tr:hover { background: color-mix(in srgb, var(--accent, var(--plum)) 7%, transparent); }
+.attr-table tbody tr.sel { background: color-mix(in srgb, var(--accent, var(--plum)) 15%, transparent); }
+.attr-table tbody tr.attr-focus { box-shadow: inset 3px 0 0 var(--accent, var(--plum)); background: color-mix(in srgb, var(--accent, var(--plum)) 11%, transparent); }
+.attr-table tbody tr.attr-spacer { height: auto; pointer-events: none; border-bottom: none; background: transparent !important; }
+.attr-table tbody tr.attr-spacer td { padding: 0; border: none; }
 .attr-table tbody td {
     padding: 6px 10px;
     max-width: 240px;
@@ -4297,6 +4303,7 @@ body.attr-open .cf-selbar { bottom: calc(var(--attr-h, 290px) + 18px); }
 
 /* 夜间模式覆盖 */
 body.theme-night .layer-attr-public { background: rgba(30, 41, 82, .92); border-color: #334155; color: #c7d2fe; }
+body.theme-night .layer-attr-public:hover { background: rgba(99, 102, 241, .28); border-color: #818cf8; color: #eef2ff; }
 body.theme-night .layer-attr-btn { color: #94a3b8; }
 body.theme-night .layer-attr-btn:hover { color: #c7d2fe; background: rgba(129, 140, 248, .18); border-color: rgba(129, 140, 248, .38); }
 body.theme-night #map .attr-panel {
@@ -4324,10 +4331,12 @@ body.theme-night .attr-table thead th { background: #16203a; color: #eef2ff; bor
 body.theme-night .attr-table tbody tr { border-bottom-color: rgba(148, 163, 184, .12); }
 body.theme-night .attr-table tbody tr:hover { background: rgba(129, 140, 248, .12); }
 body.theme-night .attr-table tbody tr.sel { background: rgba(99, 102, 241, .26); }
+body.theme-night .attr-table tbody tr.attr-focus { box-shadow: inset 3px 0 0 #818cf8; background: rgba(129, 140, 248, .18); }
 body.theme-night .attr-table tbody td { color: #dbe7ff; }
 
 /* 纸笺模式覆盖 */
 body.theme-paper .layer-attr-public { border-radius: 2px; border-color: var(--rule); background: var(--paper-1); color: var(--ink-1); }
+body.theme-paper .layer-attr-public:hover { background: var(--paper-2); border-color: var(--accent, #7d6a4f); color: var(--ink-0); }
 body.theme-paper .layer-attr-btn { border-radius: 2px; color: var(--ink-2); }
 body.theme-paper .layer-attr-btn:hover { background: rgba(125, 106, 79, .10); color: var(--ink-0); border-color: var(--rule); }
 body.theme-paper #map .attr-panel {
@@ -4339,7 +4348,9 @@ body.theme-paper #map .attr-panel {
     box-shadow: 0 2px 3px rgba(42, 36, 29, .06), 0 12px 28px -18px rgba(42, 36, 29, .45) !important;
     color: var(--ink-0);
 }
-body.theme-paper .attr-title { font-family: var(--paper-serif); letter-spacing: .06em; }
+body.theme-paper .attr-title { font-family: var(--paper-serif); letter-spacing: .06em; color: var(--ink-0); }
+body.theme-paper .attr-stats,
+body.theme-paper .attr-empty { color: var(--ink-2); }
 body.theme-paper .attr-query-bar { background: var(--paper-2); border-bottom-color: var(--rule); }
 body.theme-paper .attr-cond-row,
 body.theme-paper #attr-layer-sel,
@@ -4352,9 +4363,11 @@ body.theme-paper .attr-cols-pop {
 }
 body.theme-paper .attr-chip.primary { background: var(--accent, #7d6a4f); border-color: var(--accent, #7d6a4f); color: #fff; }
 body.theme-paper .attr-chip.on { background: rgba(125, 106, 79, .14); border-color: var(--accent, #7d6a4f); color: var(--ink-0); }
-body.theme-paper .attr-table thead th { background: var(--paper-2); border-bottom-color: var(--rule); font-family: var(--paper-serif); }
+body.theme-paper .attr-table thead th { background: var(--paper-2); border-bottom-color: var(--rule); font-family: var(--paper-serif); color: var(--ink-0); }
+body.theme-paper .attr-table tbody td { color: var(--ink-1); }
 body.theme-paper .attr-table tbody tr:hover { background: rgba(125, 106, 79, .07); }
 body.theme-paper .attr-table tbody tr.sel { background: rgba(125, 106, 79, .16); }
+body.theme-paper .attr-table tbody tr.attr-focus { box-shadow: inset 3px 0 0 var(--accent, #7d6a4f); background: rgba(125, 106, 79, .12); }
 
 /* 手机端属性表适配（避让底部导航 #mobile-nav） */
 @media (max-width: 768px) {
@@ -4367,8 +4380,9 @@ body.theme-paper .attr-table tbody tr.sel { background: rgba(125, 106, 79, .16);
     .attr-head { flex-wrap: wrap; gap: 6px; padding: 0 10px 6px; }
     .attr-title-wrap { flex: 1 1 100%; min-width: 0; gap: 6px; }
     #attr-layer-sel { flex: 1 1 auto; max-width: none; min-width: 90px; }
-    .attr-head-ops { width: 100%; justify-content: flex-end; gap: 5px; flex-wrap: wrap; }
-    .attr-chip { padding: 3px 8px; font-size: 11px; }
+    .attr-head-ops { width: 100%; justify-content: flex-end; gap: 3px; flex-wrap: wrap; }
+    .attr-chip { padding: 3px 6px; font-size: 10.5px; }
+    .attr-icon-btn { width: 22px; height: 22px; font-size: 12px; }
     .attr-query-bar { padding: 6px 10px; gap: 6px; }
     .attr-conds { flex: 1 1 100%; }
     .attr-cond-row { width: 100%; max-width: 100%; flex-wrap: nowrap; }
